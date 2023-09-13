@@ -10,9 +10,8 @@ class ExampleAuthentication {
         scopes: scopes,
         redirectUrl: redirectUrl,
         forceShowingApproval: false,
-        callbackUrlScheme: "ride_tide_stride",
-        preferEphemeral: true
-    );
+        callbackUrlScheme: "com.example.flutter",
+        preferEphemeral: true);
   }
 
   Future<void> testDeauthorize() {
