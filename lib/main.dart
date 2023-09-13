@@ -1,5 +1,6 @@
 import 'dart:async';
-
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'examples/authentication.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -33,6 +34,9 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
   final TextEditingController _textEditingController = TextEditingController();
   final DateFormat dateFormatter = DateFormat("HH:mm:ss");
   late final StravaClient stravaClient;
+  Map<String, dynamic>? athleteData;
+  Map<String, dynamic>? athleteActivityData;
+  List<dynamic>? athleteActivities;
 
   bool isLoggedIn = false;
   TokenResponse? token;
@@ -41,6 +45,9 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
   void initState() {
     stravaClient = StravaClient(secret: secret, clientId: clientId);
     super.initState();
+    if (token != null) {
+      _textEditingController.text = token!.accessToken;
+    }
   }
 
   FutureOr<Null> showErrorMessage(dynamic error, dynamic stackTrace) {
@@ -62,15 +69,19 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
       [
         AuthenticationScope.profile_read_all,
         AuthenticationScope.read_all,
-        AuthenticationScope.activity_read_all
+        AuthenticationScope.activity_read_all,
       ],
-      "ride_tide_stride://oath?callback=oauth", // Use your custom scheme here
+      "com.example.flutter://localhost", // Use your custom scheme here
     ).then((token) {
       setState(() {
-        isLoggedIn = true;
+        isLoggedIn =
+            true; // Set isLoggedIn to true when authentication is successful
         this.token = token;
+        _textEditingController.text = token.accessToken;
       });
-      _textEditingController.text = token.accessToken;
+
+      // After authentication, you can fetch athlete data or perform other actions.
+      fetchAthleteData(token.accessToken).catchError(showErrorMessage);
     }).catchError(showErrorMessage);
   }
 
@@ -82,6 +93,62 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
         _textEditingController.clear();
       });
     }).catchError(showErrorMessage);
+  }
+
+  Future<void> fetchAthleteData(String accessToken) async {
+    final url = Uri.parse('https://www.strava.com/api/v3/athlete');
+    final headers = {
+      'Authorization': 'Bearer $accessToken',
+    };
+
+    try {
+      final response = await http.get(url, headers: headers);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        setState(() {
+          athleteData = data;
+        });
+      } else {
+        // Handle the error
+        print(
+            'Failed to fetch athlete data. Status code: ${response.statusCode}');
+      }
+    } catch (error) {
+      print('Error fetching athlete data: $error');
+    }
+  }
+
+  Future<void> fetchAthleteActivityData(String accessToken) async {
+    final url = Uri.parse('https://www.strava.com/api/v3/athlete/activities');
+    final headers = {
+      'Authorization': 'Bearer $accessToken',
+    };
+
+    try {
+      final response = await http.get(url, headers: headers);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          athleteActivities = data;
+        });
+      } else {
+        // Handle the error
+        print(
+            'Failed to fetch athlete activities. Status code: ${response.statusCode}');
+      }
+    } catch (error) {
+      print('Error fetching athlete activities: $error');
+    }
+  }
+
+  String formatDuration(int seconds) {
+    final Duration duration = Duration(seconds: seconds);
+    final int hours = duration.inHours;
+    final int minutes = (duration.inMinutes % 60);
+    final int remainingSeconds = (duration.inSeconds % 60);
+    return '$hours:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -96,7 +163,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                 : Icons.radio_button_off,
             color: isLoggedIn ? Colors.white : Colors.red,
           ),
-          SizedBox(
+          const SizedBox(
             width: 8,
           )
         ],
@@ -106,7 +173,65 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [_login(), _apiGroups()],
+            children: [
+              _login(),
+              ElevatedButton(
+                onPressed: () {
+                  if (token != null) {
+                    fetchAthleteData(token!.accessToken);
+                  } else {
+                    // Handle the case when token is null (e.g., show an error message).
+                    // You can display a message to the user or take appropriate action.
+                  }
+                },
+                child: Text("Get Logged In Athlete Data"),
+              ),
+              if (athleteData != null)
+                Column(
+                  children: [
+                    Text('ID: ${athleteData!['id']}'),
+                    Text('Username: ${athleteData!['username']}'),
+                    Text('Firstname: ${athleteData!['firstname']}'),
+                    Text('Lastname: ${athleteData!['lastname']}'),
+                    Text('City: ${athleteData!['city']}'),
+                    Text('State: ${athleteData!['state']}'),
+                    Text('followers: ${athleteData!['follower_count']}'),
+                    Text(
+                        'mutual followers: ${athleteData!['mutual_friend_count']}'),
+
+                    // Add more athlete data as needed
+                  ],
+                ),
+              ElevatedButton(
+                onPressed: () {
+                  if (token != null) {
+                    fetchAthleteActivityData(token!.accessToken);
+                  } else {
+                    // Handle the case when token is null (e.g., show an error message).
+                  }
+                },
+                child: Text("Get Athlete Activity Data"),
+              ),
+              if (athleteActivities != null)
+                Column(
+                  children: [
+                    ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: athleteActivities!.length,
+                      itemBuilder: (context, index) {
+                        final activity = athleteActivities![index];
+                        final int movingTimeSeconds = activity['moving_time'];
+                        return ListTile(
+                          title: Text('Activity ID: ${activity['id']}'),
+                          subtitle: Text('Name: ${activity['name']}'),
+                          trailing: Text(
+                              'Moving Time: ${formatDuration(movingTimeSeconds)}'),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+            ],
           ),
         ),
       ),
@@ -130,7 +255,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
             )
           ],
         ),
-        SizedBox(
+        const SizedBox(
           height: 8,
         ),
         TextField(
@@ -152,59 +277,8 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                 },
               )),
         ),
-        Divider()
+        const Divider()
       ],
-    );
-  }
-
-  Widget _apiGroups() {
-    return IgnorePointer(
-      ignoring: !isLoggedIn,
-      child: AnimatedOpacity(
-        opacity: isLoggedIn ? 1.0 : 0.4,
-        duration: Duration(milliseconds: 200),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: Text("Athletes"),
-              trailing: Icon(Icons.chevron_right),
-            ),
-            ListTile(
-              title: Text("Clubs"),
-              trailing: Icon(Icons.chevron_right),
-            ),
-            ListTile(
-              title: Text("Gears"),
-              trailing: Icon(Icons.chevron_right),
-            ),
-            ListTile(
-              title: Text("Routes"),
-              trailing: Icon(Icons.chevron_right),
-            ),
-            ListTile(
-              title: Text("Running Races"),
-              trailing: Icon(Icons.chevron_right),
-            ),
-            ListTile(
-              title: Text("Segment Efforts"),
-              trailing: Icon(Icons.chevron_right),
-            ),
-            ListTile(
-              title: Text("Segments"),
-              trailing: Icon(Icons.chevron_right),
-            ),
-            ListTile(
-              title: Text("Streams"),
-              trailing: Icon(Icons.chevron_right),
-            ),
-            ListTile(
-              title: Text("Uploads"),
-              trailing: Icon(Icons.chevron_right),
-            )
-          ],
-        ),
-      ),
     );
   }
 }
