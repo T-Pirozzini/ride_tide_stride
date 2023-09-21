@@ -1,18 +1,24 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'examples/authentication.dart';
+import 'package:ride_tide_stride/firebase_options.dart';
+import 'Auth/authentication.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:strava_client/strava_client.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'secret.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-void main() => runApp(MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -43,10 +49,22 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
 
   @override
   void initState() {
+    signInWithFirebase();
     stravaClient = StravaClient(secret: secret, clientId: clientId);
     super.initState();
     if (token != null) {
       _textEditingController.text = token!.accessToken;
+    }
+  }
+
+  Future<void> signInWithFirebase() async {
+    try {
+      final UserCredential userCredential =
+          await FirebaseAuth.instance.signInAnonymously();
+      final User? user = userCredential.user;
+      print('User signed in: ${user?.uid}');
+    } catch (e) {
+      print('Error signing in: $e');
     }
   }
 
@@ -221,11 +239,26 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                       itemBuilder: (context, index) {
                         final activity = athleteActivities![index];
                         final int movingTimeSeconds = activity['moving_time'];
-                        return ListTile(
-                          title: Text('Activity ID: ${activity['id']}'),
-                          subtitle: Text('Name: ${activity['name']}'),
-                          trailing: Text(
-                              'Moving Time: ${formatDuration(movingTimeSeconds)}'),
+
+                        // Add a button for submission
+                        return Column(
+                          children: [
+                            ListTile(
+                              title: Text('Activity ID: ${activity['id']}'),
+                              subtitle: Text('Name: ${activity['name']}'),
+                              trailing: Text(
+                                'Moving Time: ${formatDuration(movingTimeSeconds)}',
+                              ),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                // Call a function to submit activity data to Firestore
+                                submitActivityToFirestore(activity);
+                              },
+                              child: Text("Submit to Firestore"),
+                            ),
+                            const Divider(),
+                          ],
                         );
                       },
                     ),
@@ -277,8 +310,30 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                 },
               )),
         ),
+        Text('Access ID#: ${_textEditingController.text}'),
         const Divider()
       ],
     );
+  }
+
+  void submitActivityToFirestore(Map<String, dynamic> activity) {
+    final CollectionReference activitiesCollection = FirebaseFirestore.instance
+        .collection(
+            'activities'); // Replace 'activities' with your desired collection name
+
+    // Create a map with the activity data you want to store
+    final Map<String, dynamic> activityData = {
+      'activity_id': activity['id'],
+      'name': activity['name'],
+      'moving_time': activity['moving_time'],
+      'timestamp': FieldValue.serverTimestamp(), // Add a timestamp
+    };
+
+    // Add the data to Firestore
+    activitiesCollection.add(activityData).then((value) {
+      print("Activity data submitted to Firestore successfully!");
+    }).catchError((error) {
+      print("Error submitting activity data to Firestore: $error");
+    });
   }
 }

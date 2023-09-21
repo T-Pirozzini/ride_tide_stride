@@ -37,9 +37,12 @@ dependencies:
   cupertino_icons: ^1.0.2
   intl: ^0.18.0
   strava_client: ^2.1.0
-  flutter_web_auth_2: ^2.0.0
-  flutter_web_auth: ^0.5.0  
+  # flutter_web_auth_2: ^2.0.0
+  # flutter_web_auth: ^0.5.0  
   http: ^1.1.0
+  cloud_firestore: ^4.9.2
+  firebase_core: ^2.16.0
+  firebase_auth: ^4.10.0
 
 dev_dependencies:
   flutter_test:
