@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:ride_tide_stride/Components/map.dart';
 import 'package:ride_tide_stride/firebase_options.dart';
 import 'Auth/authentication.dart';
 import 'package:flutter/material.dart';
@@ -311,7 +312,8 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
               )),
         ),
         Text('Access ID#: ${_textEditingController.text}'),
-        const Divider()
+        const Divider(),
+        // MapRouteWidget(activityData: activityData),
       ],
     );
   }
@@ -326,6 +328,20 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
       'activity_id': activity['id'],
       'name': activity['name'],
       'moving_time': activity['moving_time'],
+      'distance': activity['distance'],
+      'elevation gain': activity['total_elevation_gain'],
+      'type': activity['type'],
+      'sport_type': activity['sport_type'],
+      'start_date': activity['start_date'],
+      'start_date_local': activity['start_date_local'],
+      'timezone': activity['timezone'],
+      'utc_offset': activity['utc_offset'],
+      "map": {
+        "id": activity['map']['id'],
+        "polyline": activity['map']['polyline'],
+        "resource_state": activity['map']['resource_state'],
+        "summary_polyline": activity['map']['summary_polyline'],
+      },
       'timestamp': FieldValue.serverTimestamp(), // Add a timestamp
     };
 
