@@ -44,8 +44,7 @@ class LeaderboardTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<QuerySnapshot>(
-      // Replace 'activities' with the name of your Firestore collection
+    return FutureBuilder<QuerySnapshot>(      
       future: FirebaseFirestore.instance.collection('activities').get(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -64,18 +63,29 @@ class LeaderboardTab extends StatelessWidget {
           itemCount: activityData.length,
           itemBuilder: (context, index) {
             final entry = activityData[index];
-            return ListTile(
-              title: Text('Full Name: ${entry['full_name']}'),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                      'Total Moving Time: ${entry['total_moving_time']} seconds'),
-                  Text('Total Distance: ${entry['total_distance']} km'),
-                  Text('Total Elevation: ${entry['total_elevation']}'),
-                ],
-              ),
-            );
+            Widget dataWidget;
+            
+            if (title == 'Moving Time') {
+              dataWidget = ListTile(
+                title: Text('Full Name: ${entry['full_name']}'),
+                subtitle:
+                    Text('Moving Time: ${entry['total_moving_time']} seconds'),
+              );
+            } else if (title == 'Total Distance (km)') {
+              dataWidget = ListTile(
+                title: Text('Full Name: ${entry['full_name']}'),
+                subtitle: Text('Total Distance: ${entry['total_distance']} km'),
+              );
+            } else if (title == 'Total Elevation') {
+              dataWidget = ListTile(
+                title: Text('Full Name: ${entry['full_name']}'),
+                subtitle: Text('Total Elevation: ${entry['total_elevation']}'),
+              );
+            } else {
+              dataWidget = SizedBox();
+            }
+
+            return dataWidget;
           },
         );
       },
