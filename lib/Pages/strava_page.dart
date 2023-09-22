@@ -21,7 +21,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
   late final StravaClient stravaClient;
   Map<String, dynamic>? athleteData;
   Map<String, dynamic>? athleteActivityData;
-  List<dynamic>? athleteActivities;
+  List<dynamic>? athleteActivities;  
 
   bool isLoggedIn = false;
   TokenResponse? token;

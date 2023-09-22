@@ -92,9 +92,11 @@ class _RegisterPageState extends State<RegisterPage> {
                   fit: BoxFit.contain,
                 ),
                 Text(
-                  'Come join the cool kids...',
+                  'Come join the cool kids . . .',
                   style: GoogleFonts.specialElite(
-                      fontSize: 20, color: Color(0xFFF8EDE3)),
+                      fontSize: 18,
+                      color: Color(0xFFF8EDE3),
+                      letterSpacing: 1.2),
                 ),
                 const SizedBox(height: 25),
                 MyTextField(
@@ -122,7 +124,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   children: [
                     Text(
                       'Already have an account?',
-                      style: TextStyle(color: Colors.grey[700]),
+                      style: TextStyle(color: Color(0xFFF8EDE3)),
                     ),
                     const SizedBox(width: 5),
                     GestureDetector(

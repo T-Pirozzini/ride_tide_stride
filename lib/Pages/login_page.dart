@@ -60,59 +60,57 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       backgroundColor: Color(0xFF283D3B).withOpacity(0.8),
       body: Center(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 25.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Image.asset(
-                  'assets/images/rts.png',
-                  fit: BoxFit.contain,
-                ),
-                Text(
-                  'Movement is a choice.',
-                  style: GoogleFonts.specialElite(
-                      fontSize: 20, color: Color(0xFFF8EDE3)),
-                ),
-                const SizedBox(height: 25),
-                MyTextField(
-                  controller: emailTextController,
-                  hintText: 'Email',
-                  obscureText: false,
-                ),
-                const SizedBox(height: 10),
-                MyTextField(
-                  controller: passwordTextController,
-                  hintText: 'Password',
-                  obscureText: true,
-                ),
-                const SizedBox(height: 10),
-                MyButton(onTap: signIn, text: 'Sign In'),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Not registered?',
-                      style: TextStyle(color: Color(0xFFF8EDE3)),
-                    ),
-                    const SizedBox(width: 5),
-                    GestureDetector(
-                      onTap: widget.onTap,
-                      child: const Text(
-                        'Create an account!',
-                        style: TextStyle(
-                          color: Colors.blue,
-                          fontWeight: FontWeight.bold,
-                        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 25.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Image.asset(
+                'assets/images/rts.png',
+                fit: BoxFit.contain,
+              ),
+              Text(
+                'Choose to move.',
+                style: GoogleFonts.specialElite(
+                    fontSize: 20, color: Color(0xFFF8EDE3)),
+              ),
+              const SizedBox(height: 25),
+              MyTextField(
+                controller: emailTextController,
+                hintText: 'Email',
+                obscureText: false,
+              ),
+              const SizedBox(height: 10),
+              MyTextField(
+                controller: passwordTextController,
+                hintText: 'Password',
+                obscureText: true,
+              ),
+              const SizedBox(height: 10),
+              MyButton(onTap: signIn, text: 'Sign In'),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Not registered?',
+                    style: TextStyle(color: Color(0xFFF8EDE3)),
+                  ),
+                  const SizedBox(width: 5),
+                  GestureDetector(
+                    onTap: widget.onTap,
+                    child: const Text(
+                      'Create an account!',
+                      style: TextStyle(
+                        color: Colors.blue,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),

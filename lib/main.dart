@@ -19,29 +19,20 @@ import 'package:firebase_core/firebase_core.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(MyApp());
+
+  runApp(const MyApp());
 }
 
-class MyApp extends StatefulWidget {
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
-class _MyAppState extends State<MyApp> {
   // int _selectedIndex = 0;
-
-  // void _onItemTapped(int index) {
-  //   setState(() {
-  //     _selectedIndex = index;
-  //   });
-  // }
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: MaterialColor(0xFF283D3B, <int, Color>{
+        primarySwatch: const MaterialColor(0xFF283D3B, <int, Color>{
           50: Color(0xFFA09A6A),
           100: Color(0xFFA09A6A),
           200: Color(0xFFA09A6A),
@@ -53,7 +44,7 @@ class _MyAppState extends State<MyApp> {
           800: Color(0xFFA09A6A),
           900: Color(0xFFA09A6A),
         }), // Define your primary color here
-        buttonTheme: ButtonThemeData(
+        buttonTheme: const ButtonThemeData(
           buttonColor: Color(0xFFD0B8A8), // Set the button color here
         ),
       ),
