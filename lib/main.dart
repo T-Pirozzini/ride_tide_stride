@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:ride_tide_stride/Components/map.dart';
+// import 'package:ride_tide_stride/Components/map.dart';
+import 'package:ride_tide_stride/Pages/leaderboard_page.dart';
 import 'package:ride_tide_stride/firebase_options.dart';
 import 'Auth/authentication.dart';
 import 'package:flutter/material.dart';
@@ -19,15 +20,63 @@ Future<void> main() async {
   runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  int _selectedIndex = 0;
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Strava Flutter',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
+      title: 'Flutter Strava Plugin',
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text("Flutter Strava Plugin"),
+          actions: [
+            Icon(
+              Icons.radio_button_checked_outlined,
+              color: Colors.white,
+            ),
+            const SizedBox(
+              width: 8,
+            )
+          ],
+        ),
+        body: IndexedStack(
+          index: _selectedIndex,
+          children: [
+            Builder(
+              builder: (BuildContext context) => StravaFlutterPage(),
+            ),
+            Builder(
+              builder: (BuildContext context) => Leaderboard(),
+            ),
+          ],
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              label: 'Strava',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.leaderboard),
+              label: 'Leaderboard',
+            ),
+          ],
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+        ),
       ),
-      home: StravaFlutterPage(),
     );
   }
 }
