@@ -303,7 +303,8 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                             ElevatedButton(
                               onPressed: () {
                                 // Call a function to submit activity data to Firestore
-                                submitActivityToFirestore(activity);
+                                submitActivityToFirestore(
+                                    activity, athleteData!);
                               },
                               child: Text("Submit to Firestore"),
                             ),
@@ -367,7 +368,8 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
     );
   }
 
-  void submitActivityToFirestore(Map<String, dynamic> activity) {
+  void submitActivityToFirestore(
+      Map<String, dynamic> activity, Map<String, dynamic> athlete) {
     final CollectionReference activitiesCollection = FirebaseFirestore.instance
         .collection(
             'activities'); // Replace 'activities' with your desired collection name
@@ -378,7 +380,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
       'name': activity['name'],
       'moving_time': activity['moving_time'],
       'distance': activity['distance'],
-      'elevation gain': activity['total_elevation_gain'],
+      'elevation_gain': activity['total_elevation_gain'],
       'type': activity['type'],
       'sport_type': activity['sport_type'],
       'start_date': activity['start_date'],
@@ -391,8 +393,19 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
         "resource_state": activity['map']['resource_state'],
         "summary_polyline": activity['map']['summary_polyline'],
       },
-      'timestamp': FieldValue.serverTimestamp(), // Add a timestamp
+      'timestamp': FieldValue.serverTimestamp(),
+      'username': athlete['username'],
+      'fullname': athlete['firstname'] + ' ' + athlete['lastname'],
+      'city': athlete['city'],
+      'state': athlete['state'], // Add a timestamp
     };
+
+    // final Map<String, dynamic> athleteData = {
+    //   'username': athlete['username'],
+    //   'name': athlete['firstname'] + ' ' + athlete['lastname'],
+    //   'city': athlete['city'],
+    //   'state': athlete['state'],
+    // };
 
     // Add the data to Firestore
     activitiesCollection.add(activityData).then((value) {
