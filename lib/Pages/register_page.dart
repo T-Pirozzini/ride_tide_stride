@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../components/button.dart';
 import '../components/text_field.dart';
 
@@ -46,7 +47,7 @@ class _RegisterPageState extends State<RegisterPage> {
         'username': emailTextController.text.split('@')[0],
         'email': emailTextController.text,
         'dateCreated': DateTime.now(),
-        'role': 'employee',
+        'role': 'user',
       });
 
       // pop loading circle
@@ -77,25 +78,23 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200],
+      backgroundColor: Color(0xFF283D3B).withOpacity(0.8),
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 25.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(18.0),
-                  child: Image.asset(
-                    'assets/hpc_logo.png',
-                    fit: BoxFit.contain,
-                  ),
+                Image.asset(
+                  'assets/rts.png',
+                  fit: BoxFit.contain,
                 ),
-                const SizedBox(height: 25),
-                const Text(
-                  'Let\'s create an account for you...',
-                  style: TextStyle(fontSize: 18),
+                Text(
+                  'Come join the cool kids...',
+                  style: GoogleFonts.specialElite(
+                      fontSize: 20, color: Color(0xFFF8EDE3)),
                 ),
                 const SizedBox(height: 25),
                 MyTextField(

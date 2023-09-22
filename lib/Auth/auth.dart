@@ -11,10 +11,15 @@ class Auth {
     required String email,
     required String password,
   }) async {
-    await _firebaseAuth.signInWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
+    try {
+      await _firebaseAuth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      // Authentication succeeded, you can now navigate to the next page.
+    } catch (e) {
+      // Handle authentication failure.
+    }
   }
 
   Future<void> createUserWithEmailAndPassword({
