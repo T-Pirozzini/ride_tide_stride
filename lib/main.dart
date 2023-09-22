@@ -13,6 +13,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'secret.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,19 +38,29 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primarySwatch: MaterialColor(0xFF283D3B, <int, Color>{
+          50: Color(0xFFA09A6A),
+          100: Color(0xFFA09A6A),
+          200: Color(0xFFA09A6A),
+          300: Color(0xFFA09A6A),
+          400: Color(0xFFA09A6A),
+          500: Color(0xFFA09A6A),
+          600: Color(0xFFA09A6A),
+          700: Color(0xFFA09A6A),
+          800: Color(0xFFA09A6A),
+          900: Color(0xFFA09A6A),
+        }), // Define your primary color here
+        buttonTheme: ButtonThemeData(
+          buttonColor: Color(0xFFD0B8A8), // Set the button color here
+        ),
+      ),
       title: 'Flutter Strava Plugin',
       home: Scaffold(
         appBar: AppBar(
-          title: Text("Flutter Strava Plugin"),
-          actions: [
-            Icon(
-              Icons.radio_button_checked_outlined,
-              color: Colors.white,
-            ),
-            const SizedBox(
-              width: 8,
-            )
-          ],
+          title: Text("Hey {username}. Get after it!",
+              style: GoogleFonts.specialElite(fontWeight: FontWeight.w300)),
         ),
         body: IndexedStack(
           index: _selectedIndex,
@@ -222,14 +233,22 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFFDFD3C3),
       appBar: AppBar(
-        title: Text("Flutter Strava Plugin"),
+        backgroundColor: Colors.white,
+        toolbarHeight: 100,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset("assets/RideTideStride.png", height: 150),
+          ],
+        ),
         actions: [
           Icon(
             isLoggedIn
                 ? Icons.radio_button_checked_outlined
                 : Icons.radio_button_off,
-            color: isLoggedIn ? Colors.white : Colors.red,
+            color: isLoggedIn ? Color(0xFF283D3B) : Color(0xFFA09A6A),
           ),
           const SizedBox(
             width: 8,
