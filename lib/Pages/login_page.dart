@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:ride_tide_stride/components/button.dart';
 import 'package:ride_tide_stride/components/text_field.dart';
 
@@ -57,7 +58,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200],
+      backgroundColor: Color(0xFFDFD3C3),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 25.0),
@@ -66,13 +67,13 @@ class _LoginPageState extends State<LoginPage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Image.asset(
-                'assets/hpc_logo.png',
+                'RideTideStride_trans.png',
                 fit: BoxFit.contain,
               ),
               const SizedBox(height: 25),
-              const Text(
-                'Welcome back! Ready to start your day?',
-                style: TextStyle(fontSize: 18),
+              Text(
+                'Movement is a choice.',
+                style: GoogleFonts.specialElite(fontSize: 20),
               ),
               const SizedBox(height: 25),
               MyTextField(
