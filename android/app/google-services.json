@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "816075419527",
+    "project_id": "ride-tide-stride",
+    "storage_bucket": "ride-tide-stride.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:816075419527:android:34d67a7b2abd621210ed22",
+        "android_client_info": {
+          "package_name": "com.tpiro.ride_tide_stride"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC3N0bkEo51rFz-h4lkYa2mSWiVcCZpsq4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
