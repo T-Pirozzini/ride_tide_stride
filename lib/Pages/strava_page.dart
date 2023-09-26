@@ -1,12 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:ui';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter/material.dart';
 import 'package:ride_tide_stride/auth/authentication.dart';
 import 'package:ride_tide_stride/secret.dart';
 import 'package:strava_client/strava_client.dart';
@@ -37,18 +34,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
     }
     testAuthentication();
   }
-
-  // Future<void> signInWithFirebase() async {
-  //   try {
-  //     final UserCredential userCredential =
-  //         await FirebaseAuth.instance.signInAnonymously();
-  //     final User? user = userCredential.user;
-  //     print('User signed in: ${user?.uid}');
-  //   } catch (e) {
-  //     print('Error signing in: $e');
-  //   }
-  // }
-
+  
   FutureOr<Null> showErrorMessage(dynamic error, dynamic stackTrace) {
     if (error is Fault) {
       showDialog(
@@ -183,17 +169,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
             padding: const EdgeInsets.all(8.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ElevatedButton(
-                //   onPressed: () {
-                //     if (token != null) {
-                //       fetchAthleteData(token!.accessToken);
-                //     } else {
-                //       const SnackBar(content: Text('no athlete data available'));
-                //     }
-                //   },
-                //   child: Text("Get Logged In Athlete Data"),
-                // ),
+              children: [               
                 Row(
                   children: [
                     const Text(
@@ -274,17 +250,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                         ],
                       ),
                     ),
-                  ),
-                // ElevatedButton(
-                //   onPressed: () {
-                //     if (token != null) {
-                //       fetchAthleteActivityData(token!.accessToken);
-                //     } else {
-                //       // Handle the case when token is null (e.g., show an error message).
-                //     }
-                //   },
-                //   child: Text("Get Athlete Activity Data"),
-                // ),
+                  ),                
                 if (athleteActivities != null)
                   Column(
                     children: [
@@ -311,45 +277,107 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
+                                        Text(
+                                          DateFormat('EEE, MMM d, yyyy h:mm a').format(DateTime.parse(activity['start_date_local'])),
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 10),
                                         Text('${activity['name']}'),
-                                        SizedBox(height: 10),
+                                        const SizedBox(height: 10),
                                       ],
                                     ),
                                     // title: Text('Activity ID: ${activity['id']}'),
                                     subtitle: Row(
                                       children: [
-                                        if (activity['type'] == 'Run') const Icon(Icons.directions_run_outlined),
-                                        if (activity['type'] == 'Ride') const Icon(Icons.directions_bike_outlined),
-                                        if (activity['type'] == 'Swim') const Icon(Icons.pool_outlined),
-                                        if (activity['type'] == 'Walk') const Icon(Icons.directions_walk_outlined),
-                                        if (activity['type'] == 'Hike') const Icon(Icons.terrain_outlined),
-                                        if (activity['type'] == 'AlpineSki') const Icon(Icons.snowboarding_outlined),
-                                        if (activity['type'] == 'BackcountrySki') const Icon(Icons.snowboarding_outlined),
-                                        if (activity['type'] == 'Canoeing') const Icon(Icons.kayaking_outlined),
-                                        if (activity['type'] == 'Crossfit') const Icon(Icons.fitness_center_outlined),
-                                        if (activity['type'] == 'EBikeRide') const Icon(Icons.electric_bike_outlined),
-                                        if (activity['type'] == 'Elliptical') const Icon(Icons.fitness_center_outlined),
-                                        if (activity['type'] == 'Handcycle') const Icon(Icons.directions_bike_outlined),
-                                        if (activity['type'] == 'IceSkate') const Icon(Icons.ice_skating_outlined),
-                                        if (activity['type'] == 'InlineSkate') const Icon(Icons.ice_skating_outlined),
-                                        if (activity['type'] == 'Kayaking') const Icon(Icons.kayaking_outlined),
-                                        if (activity['type'] == 'Kitesurf') const Icon(Icons.kitesurfing_outlined),
-                                        if (activity['type'] == 'NordicSki') const Icon(Icons.snowboarding_outlined),
-                                        if (activity['type'] == 'RockClimbing') const Icon(Icons.terrain_outlined),
-                                        if (activity['type'] == 'RollerSki') const Icon(Icons.directions_bike_outlined),
-                                        if (activity['type'] == 'Rowing') const Icon(Icons.kayaking_outlined),
-                                        if (activity['type'] == 'Snowboard') const Icon(Icons.snowboarding_outlined),
-                                        if (activity['type'] == 'Snowshoe') const Icon(Icons.snowshoeing_outlined),
-                                        if (activity['type'] == 'StairStepper') const Icon(Icons.fitness_center_outlined),
-                                        if (activity['type'] == 'StandUpPaddling') const Icon(Icons.kayaking_outlined),
-                                        if (activity['type'] == 'Surfing') const Icon(Icons.surfing_outlined),
-                                        if (activity['type'] == 'VirtualRide') const Icon(Icons.directions_bike_outlined),
-                                        if (activity['type'] == 'VirtualRun') const Icon(Icons.directions_run_outlined),
-                                        if (activity['type'] == 'WeightTraining') const Icon(Icons.fitness_center_outlined),
-                                        if (activity['type'] == 'Windsurf') const Icon(Icons.surfing_outlined),
-                                        if (activity['type'] == 'Workout') const Icon(Icons.fitness_center_outlined),
-                                        if (activity['type'] == 'Yoga') const Icon(Icons.fitness_center_outlined),                                        
-
+                                        if (activity['type'] == 'Run')
+                                          const Icon(
+                                              Icons.directions_run_outlined),
+                                        if (activity['type'] == 'Ride')
+                                          const Icon(
+                                              Icons.directions_bike_outlined),
+                                        if (activity['type'] == 'Swim')
+                                          const Icon(Icons.pool_outlined),
+                                        if (activity['type'] == 'Walk')
+                                          const Icon(
+                                              Icons.directions_walk_outlined),
+                                        if (activity['type'] == 'Hike')
+                                          const Icon(Icons.terrain_outlined),
+                                        if (activity['type'] == 'AlpineSki')
+                                          const Icon(
+                                              Icons.snowboarding_outlined),
+                                        if (activity['type'] ==
+                                            'BackcountrySki')
+                                          const Icon(
+                                              Icons.snowboarding_outlined),
+                                        if (activity['type'] == 'Canoeing')
+                                          const Icon(Icons.kayaking_outlined),
+                                        if (activity['type'] == 'Crossfit')
+                                          const Icon(
+                                              Icons.fitness_center_outlined),
+                                        if (activity['type'] == 'EBikeRide')
+                                          const Icon(
+                                              Icons.electric_bike_outlined),
+                                        if (activity['type'] == 'Elliptical')
+                                          const Icon(
+                                              Icons.fitness_center_outlined),
+                                        if (activity['type'] == 'Handcycle')
+                                          const Icon(
+                                              Icons.directions_bike_outlined),
+                                        if (activity['type'] == 'IceSkate')
+                                          const Icon(
+                                              Icons.ice_skating_outlined),
+                                        if (activity['type'] == 'InlineSkate')
+                                          const Icon(
+                                              Icons.ice_skating_outlined),
+                                        if (activity['type'] == 'Kayaking')
+                                          const Icon(Icons.kayaking_outlined),
+                                        if (activity['type'] == 'Kitesurf')
+                                          const Icon(
+                                              Icons.kitesurfing_outlined),
+                                        if (activity['type'] == 'NordicSki')
+                                          const Icon(
+                                              Icons.snowboarding_outlined),
+                                        if (activity['type'] == 'RockClimbing')
+                                          const Icon(Icons.terrain_outlined),
+                                        if (activity['type'] == 'RollerSki')
+                                          const Icon(
+                                              Icons.directions_bike_outlined),
+                                        if (activity['type'] == 'Rowing')
+                                          const Icon(Icons.kayaking_outlined),
+                                        if (activity['type'] == 'Snowboard')
+                                          const Icon(
+                                              Icons.snowboarding_outlined),
+                                        if (activity['type'] == 'Snowshoe')
+                                          const Icon(
+                                              Icons.snowshoeing_outlined),
+                                        if (activity['type'] == 'StairStepper')
+                                          const Icon(
+                                              Icons.fitness_center_outlined),
+                                        if (activity['type'] ==
+                                            'StandUpPaddling')
+                                          const Icon(Icons.kayaking_outlined),
+                                        if (activity['type'] == 'Surfing')
+                                          const Icon(Icons.surfing_outlined),
+                                        if (activity['type'] == 'VirtualRide')
+                                          const Icon(
+                                              Icons.directions_bike_outlined),
+                                        if (activity['type'] == 'VirtualRun')
+                                          const Icon(
+                                              Icons.directions_run_outlined),
+                                        if (activity['type'] ==
+                                            'WeightTraining')
+                                          const Icon(
+                                              Icons.fitness_center_outlined),
+                                        if (activity['type'] == 'Windsurf')
+                                          const Icon(Icons.surfing_outlined),
+                                        if (activity['type'] == 'Workout')
+                                          const Icon(
+                                              Icons.fitness_center_outlined),
+                                        if (activity['type'] == 'Yoga')
+                                          const Icon(
+                                              Icons.fitness_center_outlined),
                                         Text('${activity['type']}'),
                                       ],
                                     ),
@@ -362,11 +390,13 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                         Text(
                                           'Moving Time: ${formatDuration(movingTimeSeconds)}',
                                         ),
+                                        const SizedBox(height: 2),
                                         Text(
-                                          'Distance: ${activity['distance']}',
+                                          'Distance: ${(activity['distance'] / 1000).toStringAsFixed(2)} km',
                                         ),
+                                        const SizedBox(height: 2),
                                         Text(
-                                          'Elevation Gain: ${activity['total_elevation_gain']}',
+                                          'Elevation Gain: ${activity['total_elevation_gain']} m',
                                         ),
                                       ],
                                     ),
@@ -376,11 +406,12 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                     children: [
                                       ElevatedButton(
                                         onPressed: () {
-                                          // Call a function to submit activity data to Firestore
+                                          // Call a function to submit activity data to Firestore                                          
                                           submitActivityToFirestore(
                                               activity, athleteData!);
                                         },
-                                        child: Text("Submit to Leaderboard"),
+                                        child:
+                                            const Text("Submit to Leaderboard"),
                                       ),
                                       // Add more buttons or actions here
                                     ],
@@ -400,52 +431,6 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
       ),
     );
   }
-
-  // Widget _login() {
-  //   return Column(
-  //     crossAxisAlignment: CrossAxisAlignment.start,
-  //     children: [
-  //       Row(
-  //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //         children: [
-  //           ElevatedButton(
-  //             child: Text("Fetch your latest activities"),
-  //             onPressed: testAuthentication,
-  //           ),
-  //           ElevatedButton(
-  //             child: Text("De Authorize"),
-  //             onPressed: testDeauth,
-  //           )
-  //         ],
-  //       ),
-  //       // const SizedBox(
-  //       //   height: 8,
-  //       // ),
-  //       // TextField(
-  //       //   minLines: 1,
-  //       //   maxLines: 3,
-  //       //   controller: _textEditingController,
-  //       //   decoration: InputDecoration(
-  //       //       border: OutlineInputBorder(),
-  //       //       label: Text("Access Token"),
-  //       //       suffixIcon: TextButton(
-  //       //         child: Text("Copy"),
-  //       //         onPressed: () {
-  //       //           Clipboard.setData(
-  //       //                   ClipboardData(text: _textEditingController.text))
-  //       //               .then((value) =>
-  //       //                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-  //       //                     content: Text("Copied!"),
-  //       //                   )));
-  //       //         },
-  //       //       )),
-  //       // ),
-  //       Text('Access ID#: ${_textEditingController.text}'),
-  //       const Divider(),
-  //       // MapRouteWidget(activityData: activityData),
-  //     ],
-  //   );
-  // }
 
   void submitActivityToFirestore(
       Map<String, dynamic> activity, Map<String, dynamic> athlete) {
@@ -476,7 +461,8 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
       'username': athlete['username'],
       'fullname': athlete['firstname'] + ' ' + athlete['lastname'],
       'city': athlete['city'],
-      'state': athlete['state'], // Add a timestamp
+      'state': athlete['state'], 
+      'submitted': true,
     };
 
     // final Map<String, dynamic> athleteData = {
