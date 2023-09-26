@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class Leaderboard extends StatefulWidget {
@@ -9,22 +10,24 @@ class Leaderboard extends StatefulWidget {
 }
 
 class _LeaderboardState extends State<Leaderboard> {
+  final currentUser = FirebaseAuth.instance.currentUser;
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 3, // Number of tabs
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Leaderboard'),
-          bottom: TabBar(
+          title: const Text('Leaderboard'),
+          bottom: const TabBar(
             tabs: [
-              Tab(text: 'Moving Time'),
-              Tab(text: 'Total Distance (km)'),
-              Tab(text: 'Total Elevation'),
+              Tab(text: 'Time'),
+              Tab(text: 'Distance'),
+              Tab(text: 'Elevation'),
             ],
           ),
         ),
-        body: TabBarView(
+        body: const TabBarView(
           children: [
             // Add your leaderboard widgets for each tab here
             LeaderboardTab(title: 'Moving Time'),
@@ -40,16 +43,101 @@ class _LeaderboardState extends State<Leaderboard> {
 class LeaderboardTab extends StatelessWidget {
   final String title;
 
-  const LeaderboardTab({required this.title});
+  const LeaderboardTab({super.key, required this.title});
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    Future<void> updateLeaderboardWithNewEntry(String email, int newMovingTime,
+        int newDistance, int newElevation) async {
+      // Get the current leaderboard data for 'moving_time'
+      final leaderboardData = await FirebaseFirestore.instance
+          .collection('Leaderboard')
+          .doc('moving_time')
+          .get();
+
+      // Extract the current leaderboard data
+      final data = leaderboardData.data() as Map<String, dynamic>;
+      print(data);
+
+      // Calculate the current place for the new entry
+      int currentTimePlace = 1;
+      for (final entry in data.entries) {
+        final int existingMovingTime = entry.value;
+        if (newMovingTime < existingMovingTime) {
+          currentTimePlace++;
+        }
+      }
+      int currentDistancePlace = 1;
+      for (final entry in data.entries) {
+        final int existingDistance = entry.value;
+        if (newDistance < existingDistance) {
+          currentDistancePlace++;
+        }
+      }
+      int currentElevationPlace = 1;
+      for (final entry in data.entries) {
+        final int existingElevation = entry.value;
+        if (newElevation < existingElevation) {
+          currentElevationPlace++;
+        }
+      }
+
+      // Update the user's current place for 'moving_time' in Firestore
+      await FirebaseFirestore.instance
+          .collection('Users')
+          .doc(currentUser?.email)
+          .update({'leaderboard_places.moving_time': currentTimePlace});
+
+      // Update the leaderboard data with the new entry
+      data['movingTime'] = newMovingTime;
+      await FirebaseFirestore.instance
+          .collection('Leaderboard')
+          .doc('moving_time')
+          .set(data);
+
+      // Update the user's current place for 'moving_time' in Firestore
+      await FirebaseFirestore.instance
+          .collection('Users')
+          .doc(currentUser?.email)
+          .update({'leaderboard_places.distance': currentDistancePlace});
+
+      // Update the leaderboard data with the new entry
+      data['movingTime'] = newMovingTime;
+      await FirebaseFirestore.instance
+          .collection('Leaderboard')
+          .doc('distance')
+          .set(data);
+
+      // Update the user's current place for 'moving_time' in Firestore
+      await FirebaseFirestore.instance
+          .collection('Users')
+          .doc(currentUser?.email)
+          .update({'leaderboard_places.elevation_gain': currentElevationPlace});
+
+      // Update the leaderboard data with the new entry
+      data['movingTime'] = newMovingTime;
+      await FirebaseFirestore.instance
+          .collection('Leaderboard')
+          .doc('elevation_gain')
+          .set(data);
+    }
+
+    String formatDuration(int seconds) {
+      final Duration duration = Duration(seconds: seconds);
+      final int hours = duration.inHours;
+      final int minutes = (duration.inMinutes % 60);
+      final int remainingSeconds = (duration.inSeconds % 60);
+      return '$hours:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+    }
+
     return Scaffold(
       body: FutureBuilder<QuerySnapshot>(
         future: FirebaseFirestore.instance.collection('activities').get(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return CircularProgressIndicator(); // Loading indicator while data is being fetched
+            return const CircularProgressIndicator(); // Loading indicator while data is being fetched
           }
 
           if (snapshot.hasError) {
@@ -69,10 +157,10 @@ class LeaderboardTab extends StatelessWidget {
 
               if (title == 'Moving Time') {
                 dataWidget = ListTile(
-                  title: Text('Full Name: ${entry['full_name']}'),
+                  title: Text('${entry['full_name']}'),
                   leading: Text('Place: $currentPlace'),
                   subtitle: Text(
-                      'Moving Time: ${entry['total_moving_time']} seconds'),
+                      'Moving Time: ${formatDuration(entry['total_moving_time'])}'),
                   trailing: Icon(
                     currentPlace > 0
                         ? Icons.arrow_upward
@@ -82,10 +170,11 @@ class LeaderboardTab extends StatelessWidget {
                 );
               } else if (title == 'Total Distance (km)') {
                 dataWidget = ListTile(
-                  title: Text('Full Name: ${entry['full_name']}'),
+                  title: Text('${entry['full_name']}'),
                   leading: Text('Place: $currentPlace'),
-                  subtitle:
-                      Text('Total Distance: ${entry['total_distance']} km'),
+                  subtitle: Text(
+                    'Total Distance: ${(entry['total_distance'] / 1000).toStringAsFixed(2)} km',
+                  ),
                   trailing: Icon(
                     currentPlace > 0
                         ? Icons.arrow_upward
@@ -95,10 +184,10 @@ class LeaderboardTab extends StatelessWidget {
                 );
               } else if (title == 'Total Elevation') {
                 dataWidget = ListTile(
-                  title: Text('Full Name: ${entry['full_name']}'),
+                  title: Text('${entry['full_name']}'),
                   leading: Text('Place: $currentPlace'),
                   subtitle:
-                      Text('Total Elevation: ${entry['total_elevation']}'),
+                      Text('Total Elevation: ${entry['total_elevation']} m'),
                   trailing: Icon(
                     currentPlace > 0
                         ? Icons.arrow_upward
@@ -107,7 +196,7 @@ class LeaderboardTab extends StatelessWidget {
                   ),
                 );
               } else {
-                dataWidget = SizedBox();
+                dataWidget = const SizedBox();
               }
 
               return dataWidget;
@@ -116,35 +205,26 @@ class LeaderboardTab extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        // child: Icon(Icons.refresh),
         onPressed: () async {
-          //   try {
-          //                 final previousPlace = entry['previous_place'];
+          // Get the current user's email
+          final currentUser = FirebaseAuth.instance.currentUser;
+          final email = currentUser?.email;
 
-          //                 if (currentPlace < previousPlace) {
-          //                   // The current position is better (closer to 1)
+          // Get the current user's moving time
+          final userDoc = await FirebaseFirestore.instance
+              .collection('Users')
+              .doc(email)
+              .get();
+          final userData = userDoc.data() as Map<String, dynamic>;
+          final movingTime = userData['moving_time'];
+          final distance = userData['distance'];
+          final elevation = userData['elevation_gain'];
 
-          //                   // Update Firestore document
-          //                   final docId = entry[
-          //                       'activity_id']; // Replace with the actual document ID
-          //                   final firestore = FirebaseFirestore.instance;
-          //                   await firestore
-          //                       .collection('activities')
-          //                       .doc(docId)
-          //                       .update({
-          //                     'previous_place': currentPlace,
-          //                     // You can update other fields as needed
-          //                   });
-
-          //                   // Optionally, display a success message or perform other actions
-          //                 } else {
-          //                   // The current position is not better (or equal)
-          //                   // You can display a message or take other actions as needed
-          //                 }
-          //               } catch (e) {
-          //                 print('Error in reset button onPressed: $e');
-          //               }
+          // Update the leaderboard with the new entry
+          await updateLeaderboardWithNewEntry(
+              email!, movingTime, distance, elevation);
         },
+        child: const Icon(Icons.add),
       ),
     );
   }

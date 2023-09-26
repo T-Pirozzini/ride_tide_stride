@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
@@ -23,6 +24,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
   Map<String, dynamic>? athleteData;
   Map<String, dynamic>? athleteActivityData;
   List<dynamic>? athleteActivities;
+  final currentUser = FirebaseAuth.instance.currentUser;
 
   bool isLoggedIn = false;
   TokenResponse? token;
@@ -294,7 +296,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                         Text('${activity['name']}'),
                                         const SizedBox(height: 10),
                                       ],
-                                    ),                                    
+                                    ),
                                     subtitle: Row(
                                       children: [
                                         if (activity['type'] == 'Run')
