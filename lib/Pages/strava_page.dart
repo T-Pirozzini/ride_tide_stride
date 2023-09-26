@@ -9,7 +9,10 @@ import 'package:ride_tide_stride/secret.dart';
 import 'package:strava_client/strava_client.dart';
 
 class StravaFlutterPage extends StatefulWidget {
+  const StravaFlutterPage({super.key});
+
   @override
+  // ignore: library_private_types_in_public_api
   _StravaFlutterPageState createState() => _StravaFlutterPageState();
 }
 
@@ -34,7 +37,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
     }
     testAuthentication();
   }
-  
+
   FutureOr<Null> showErrorMessage(dynamic error, dynamic stackTrace) {
     if (error is Fault) {
       showDialog(
@@ -75,7 +78,8 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
     ExampleAuthentication(stravaClient).testDeauthorize().then((value) {
       setState(() {
         isLoggedIn = false;
-        this.token = null;
+        // this.token = null;
+        token = null;
         _textEditingController.clear();
       });
     }).catchError(showErrorMessage);
@@ -140,7 +144,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFDFD3C3),
+      backgroundColor: const Color(0xFFDFD3C3),
       appBar: AppBar(
         backgroundColor: Colors.white,
         toolbarHeight: 100,
@@ -155,7 +159,8 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
             isLoggedIn
                 ? Icons.radio_button_checked_outlined
                 : Icons.radio_button_off,
-            color: isLoggedIn ? Color(0xFF283D3B) : Color(0xFFA09A6A),
+            color:
+                isLoggedIn ? const Color(0xFF283D3B) : const Color(0xFFA09A6A),
           ),
           const SizedBox(
             width: 8,
@@ -169,7 +174,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
             padding: const EdgeInsets.all(8.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [               
+              children: [
                 Row(
                   children: [
                     const Text(
@@ -250,7 +255,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                         ],
                       ),
                     ),
-                  ),                
+                  ),
                 if (athleteActivities != null)
                   Column(
                     children: [
@@ -278,7 +283,9 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          DateFormat('EEE, MMM d, yyyy h:mm a').format(DateTime.parse(activity['start_date_local'])),
+                                          DateFormat('EEE, MMM d, yyyy h:mm a')
+                                              .format(DateTime.parse(activity[
+                                                  'start_date_local'])),
                                           style: const TextStyle(
                                             fontSize: 10,
                                           ),
@@ -401,20 +408,51 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                       ],
                                     ),
                                   ),
-                                  ButtonBar(
-                                    alignment: MainAxisAlignment.center,
-                                    children: [
-                                      ElevatedButton(
-                                        onPressed: () {
-                                          // Call a function to submit activity data to Firestore                                          
-                                          submitActivityToFirestore(
-                                              activity, athleteData!);
-                                        },
+                                  StreamBuilder<QuerySnapshot>(
+                                    stream: FirebaseFirestore.instance
+                                        .collection('activities')
+                                        .where('activity_id',
+                                            isEqualTo: activity['id'])
+                                        .snapshots(),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.hasError) {
+                                        return Text("Error: ${snapshot.error}");
+                                      }
+
+                                      if (snapshot.connectionState ==
+                                          ConnectionState.waiting) {
+                                        return const CircularProgressIndicator();
+                                      }
+
+                                      final List<DocumentSnapshot> documents =
+                                          snapshot.data!.docs;
+                                      bool isSubmitted = false;
+
+                                      if (documents.isNotEmpty) {
+                                        final DocumentSnapshot document =
+                                            documents.first;
+                                        isSubmitted =
+                                            document.get('submitted') ?? false;
+                                      }
+
+                                      return ElevatedButton(
+                                        onPressed: isSubmitted
+                                            ? null
+                                            : () {
+                                                // Call the function to submit activity data to Firestore
+                                                submitActivityToFirestore(
+                                                    activity, athleteData!);
+                                              },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: isSubmitted
+                                              ? Colors.grey
+                                              : const Color(
+                                                  0xFF283D3B), // Change color when submitted
+                                        ),
                                         child:
                                             const Text("Submit to Leaderboard"),
-                                      ),
-                                      // Add more buttons or actions here
-                                    ],
+                                      );
+                                    },
                                   ),
                                 ],
                               ),
@@ -434,11 +472,9 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
 
   void submitActivityToFirestore(
       Map<String, dynamic> activity, Map<String, dynamic> athlete) {
-    final CollectionReference activitiesCollection = FirebaseFirestore.instance
-        .collection(
-            'activities'); // Replace 'activities' with your desired collection name
+    final CollectionReference activitiesCollection =
+        FirebaseFirestore.instance.collection('activities');
 
-    // Create a map with the activity data you want to store
     final Map<String, dynamic> activityData = {
       'activity_id': activity['id'],
       'name': activity['name'],
@@ -461,16 +497,9 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
       'username': athlete['username'],
       'fullname': athlete['firstname'] + ' ' + athlete['lastname'],
       'city': athlete['city'],
-      'state': athlete['state'], 
+      'state': athlete['state'],
       'submitted': true,
     };
-
-    // final Map<String, dynamic> athleteData = {
-    //   'username': athlete['username'],
-    //   'name': athlete['firstname'] + ' ' + athlete['lastname'],
-    //   'city': athlete['city'],
-    //   'state': athlete['state'],
-    // };
 
     // Add the data to Firestore
     activitiesCollection.add(activityData).then((value) {
