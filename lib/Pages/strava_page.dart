@@ -44,7 +44,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
           context: context,
           builder: (context) {
             return AlertDialog(
-              title: Text("Did Receive Fault"),
+              title: const Text("Did Receive Fault"),
               content: Text(
                   "Message: ${error.message}\n-----------------\nErrors:\n${(error.errors ?? []).map((e) => "Code: ${e.code}\nResource: ${e.resource}\nField: ${e.field}\n").toList().join("\n----------\n")}"),
             );
@@ -294,8 +294,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                         Text('${activity['name']}'),
                                         const SizedBox(height: 10),
                                       ],
-                                    ),
-                                    // title: Text('Activity ID: ${activity['id']}'),
+                                    ),                                    
                                     subtitle: Row(
                                       children: [
                                         if (activity['type'] == 'Run')
