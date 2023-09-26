@@ -15,7 +15,7 @@ class _LeaderboardState extends State<Leaderboard> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3, // Number of tabs
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Leaderboard'),
@@ -29,7 +29,6 @@ class _LeaderboardState extends State<Leaderboard> {
         ),
         body: const TabBarView(
           children: [
-            // Add your leaderboard widgets for each tab here
             LeaderboardTab(title: 'Moving Time'),
             LeaderboardTab(title: 'Total Distance (km)'),
             LeaderboardTab(title: 'Total Elevation'),
@@ -49,79 +48,38 @@ class LeaderboardTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
 
-    Future<void> updateLeaderboardWithNewEntry(String email, int newMovingTime,
-        int newDistance, int newElevation) async {
-      // Get the current leaderboard data for 'moving_time'
-      final leaderboardData = await FirebaseFirestore.instance
-          .collection('Leaderboard')
-          .doc('moving_time')
+    // Define a function to calculate current totals
+    Future<void> updateCurrentTotals(String email) async {
+      // Get all activities for the user
+      final userActivitiesQuery = await FirebaseFirestore.instance
+          .collection('activities')
+          .where('user_email', isEqualTo: email)
           .get();
 
-      // Extract the current leaderboard data
-      final data = leaderboardData.data() as Map<String, dynamic>;
-      print(data);
+      double totalMovingTime = 0;
+      double totalDistance = 0;
+      double totalElevation = 0;
 
-      // Calculate the current place for the new entry
-      int currentTimePlace = 1;
-      for (final entry in data.entries) {
-        final int existingMovingTime = entry.value;
-        if (newMovingTime < existingMovingTime) {
-          currentTimePlace++;
-        }
-      }
-      int currentDistancePlace = 1;
-      for (final entry in data.entries) {
-        final int existingDistance = entry.value;
-        if (newDistance < existingDistance) {
-          currentDistancePlace++;
-        }
-      }
-      int currentElevationPlace = 1;
-      for (final entry in data.entries) {
-        final int existingElevation = entry.value;
-        if (newElevation < existingElevation) {
-          currentElevationPlace++;
-        }
+// Calculate totals from user activities
+      for (final activity in userActivitiesQuery.docs) {
+        final activityData = activity.data() as Map<String, dynamic>;
+        totalMovingTime += activityData['moving_time'];
+        totalDistance += activityData['distance'];
+
+        // Convert elevation_gain to a number (if it's stored as a string)
+        final elevationGain = activityData['elevation_gain'] is String
+            ? double.tryParse(activityData['elevation_gain'] ?? '')?.toInt() ??
+                0
+            : (activityData['elevation_gain'] ?? 0);
+        totalElevation += elevationGain;
       }
 
-      // Update the user's current place for 'moving_time' in Firestore
-      await FirebaseFirestore.instance
-          .collection('Users')
-          .doc(currentUser?.email)
-          .update({'leaderboard_places.moving_time': currentTimePlace});
-
-      // Update the leaderboard data with the new entry
-      data['movingTime'] = newMovingTime;
-      await FirebaseFirestore.instance
-          .collection('Leaderboard')
-          .doc('moving_time')
-          .set(data);
-
-      // Update the user's current place for 'moving_time' in Firestore
-      await FirebaseFirestore.instance
-          .collection('Users')
-          .doc(currentUser?.email)
-          .update({'leaderboard_places.distance': currentDistancePlace});
-
-      // Update the leaderboard data with the new entry
-      data['movingTime'] = newMovingTime;
-      await FirebaseFirestore.instance
-          .collection('Leaderboard')
-          .doc('distance')
-          .set(data);
-
-      // Update the user's current place for 'moving_time' in Firestore
-      await FirebaseFirestore.instance
-          .collection('Users')
-          .doc(currentUser?.email)
-          .update({'leaderboard_places.elevation_gain': currentElevationPlace});
-
-      // Update the leaderboard data with the new entry
-      data['movingTime'] = newMovingTime;
-      await FirebaseFirestore.instance
-          .collection('Leaderboard')
-          .doc('elevation_gain')
-          .set(data);
+// Update the currentTotals in the user's document
+      await FirebaseFirestore.instance.collection('Users').doc(email).update({
+        'currentTotals.time': totalMovingTime,
+        'currentTotals.distance': totalDistance,
+        'currentTotals.elevation': totalElevation,
+      });
     }
 
     String formatDuration(int seconds) {
@@ -146,12 +104,12 @@ class LeaderboardTab extends StatelessWidget {
 
           // Process and aggregate data based on the title (full name) of activities
           final activityDocs = snapshot.data!.docs;
-          final activityData = groupAndAggregateData(activityDocs);
+          final activityData = groupAndAggregateData(activityDocs, title);
 
           return ListView.builder(
-            itemCount: activityData.length,
+            itemCount: activityData[title]!.length,
             itemBuilder: (context, index) {
-              final entry = activityData[index];
+              final entry = activityData[title]![index];
               final currentPlace = index + 1;
               Widget dataWidget;
 
@@ -161,12 +119,6 @@ class LeaderboardTab extends StatelessWidget {
                   leading: Text('Place: $currentPlace'),
                   subtitle: Text(
                       'Moving Time: ${formatDuration(entry['total_moving_time'])}'),
-                  trailing: Icon(
-                    currentPlace > 0
-                        ? Icons.arrow_upward
-                        : Icons.arrow_downward,
-                    color: currentPlace > 0 ? Colors.green : Colors.red,
-                  ),
                 );
               } else if (title == 'Total Distance (km)') {
                 dataWidget = ListTile(
@@ -175,12 +127,6 @@ class LeaderboardTab extends StatelessWidget {
                   subtitle: Text(
                     'Total Distance: ${(entry['total_distance'] / 1000).toStringAsFixed(2)} km',
                   ),
-                  trailing: Icon(
-                    currentPlace > 0
-                        ? Icons.arrow_upward
-                        : Icons.arrow_downward,
-                    color: currentPlace > 0 ? Colors.green : Colors.red,
-                  ),
                 );
               } else if (title == 'Total Elevation') {
                 dataWidget = ListTile(
@@ -188,12 +134,6 @@ class LeaderboardTab extends StatelessWidget {
                   leading: Text('Place: $currentPlace'),
                   subtitle:
                       Text('Total Elevation: ${entry['total_elevation']} m'),
-                  trailing: Icon(
-                    currentPlace > 0
-                        ? Icons.arrow_upward
-                        : Icons.arrow_downward,
-                    color: currentPlace > 0 ? Colors.green : Colors.red,
-                  ),
                 );
               } else {
                 dataWidget = const SizedBox();
@@ -203,28 +143,6 @@ class LeaderboardTab extends StatelessWidget {
             },
           );
         },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          // Get the current user's email
-          final currentUser = FirebaseAuth.instance.currentUser;
-          final email = currentUser?.email;
-
-          // Get the current user's moving time
-          final userDoc = await FirebaseFirestore.instance
-              .collection('Users')
-              .doc(email)
-              .get();
-          final userData = userDoc.data() as Map<String, dynamic>;
-          final movingTime = userData['moving_time'];
-          final distance = userData['distance'];
-          final elevation = userData['elevation_gain'];
-
-          // Update the leaderboard with the new entry
-          await updateLeaderboardWithNewEntry(
-              email!, movingTime, distance, elevation);
-        },
-        child: const Icon(Icons.add),
       ),
     );
   }
@@ -260,21 +178,12 @@ class LeaderboardTab extends StatelessWidget {
     return 0;
   }
 
-  Future<QuerySnapshot> fetchDataBasedOnTitle(String title) async {
-    // Fetch data based on the title (full name) of activities
-    final querySnapshot = await FirebaseFirestore.instance
-        .collection('activities')
-        .where('fullname', isEqualTo: title) // Adjust this condition as needed
-        .get();
-    return querySnapshot;
-  }
+  Map<String, List<Map<String, dynamic>>> groupAndAggregateData(
+      List<QueryDocumentSnapshot> activityDocs, String title) {
+    // Create a map to group and aggregate data by full name for the given title
+    final Map<String, Map<String, dynamic>> dataByTitle = {};
 
-  List<Map<String, dynamic>> groupAndAggregateData(
-      List<QueryDocumentSnapshot> activityDocs) {
-    // Create a map to group and aggregate data by full name
-    final Map<String, Map<String, dynamic>> aggregatedData = {};
-
-    // Iterate through activity documents and aggregate data
+    // Iterate through activity documents and aggregate data for the given title
     for (final doc in activityDocs) {
       final data = doc.data() as Map<String, dynamic>;
       final fullName = data['fullname'] as String;
@@ -284,29 +193,53 @@ class LeaderboardTab extends StatelessWidget {
           ? double.tryParse(data['elevation_gain'] ?? '') ?? 0.0
           : (data['elevation_gain'] ?? 0.0);
 
-      if (aggregatedData.containsKey(fullName)) {
-        // If full name already exists, update aggregated data
-        aggregatedData[fullName]!['total_moving_time'] += data['moving_time'];
-        aggregatedData[fullName]!['total_distance'] += data['distance'];
-        aggregatedData[fullName]!['total_elevation'] += elevationGain;
-      } else {
-        // If full name doesn't exist, create a new entry
-        aggregatedData[fullName] = {
-          'full_name': fullName,
-          'total_moving_time': data['moving_time'],
-          'total_distance': data['distance'],
-          'total_elevation': elevationGain,
-        };
+      // Check if full name exists for the given title and update accordingly
+      if (title == 'Moving Time') {
+        if (dataByTitle.containsKey(fullName)) {
+          dataByTitle[fullName]!['total_moving_time'] += data['moving_time'];
+        } else {
+          dataByTitle[fullName] = {
+            'full_name': fullName,
+            'total_moving_time': data['moving_time'],
+          };
+        }
+      } else if (title == 'Total Distance (km)') {
+        if (dataByTitle.containsKey(fullName)) {
+          dataByTitle[fullName]!['total_distance'] += data['distance'];
+        } else {
+          dataByTitle[fullName] = {
+            'full_name': fullName,
+            'total_distance': data['distance'],
+          };
+        }
+      } else if (title == 'Total Elevation') {
+        if (dataByTitle.containsKey(fullName)) {
+          dataByTitle[fullName]!['total_elevation'] += elevationGain;
+        } else {
+          dataByTitle[fullName] = {
+            'full_name': fullName,
+            'total_elevation': elevationGain,
+          };
+        }
       }
     }
 
     // Convert the map to a list
-    final aggregatedList = aggregatedData.values.toList();
+    final List<Map<String, dynamic>> dataList = dataByTitle.values.toList();
 
-    // Sort the list by a specific field, e.g., total moving time
-    aggregatedList.sort(
-        (a, b) => b['total_moving_time'].compareTo(a['total_moving_time']));
+    // Sort the list by the appropriate field based on the title
+    if (title == 'Moving Time') {
+      dataList.sort(
+          (a, b) => b['total_moving_time'].compareTo(a['total_moving_time']));
+    } else if (title == 'Total Distance (km)') {
+      dataList
+          .sort((a, b) => b['total_distance'].compareTo(a['total_distance']));
+    } else if (title == 'Total Elevation') {
+      dataList
+          .sort((a, b) => b['total_elevation'].compareTo(a['total_elevation']));
+    }
 
-    return aggregatedList;
+    // Return the sorted list for the given title
+    return {title: dataList};
   }
 }

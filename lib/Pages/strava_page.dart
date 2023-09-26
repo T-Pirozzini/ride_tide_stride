@@ -500,6 +500,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
       'city': athlete['city'],
       'state': athlete['state'],
       'submitted': true,
+      'user_email': currentUser!.email,
     };
 
     // Add the data to Firestore
