@@ -43,17 +43,24 @@ class _HomeState extends State<Home> {
           Builder(
             builder: (BuildContext context) => const Leaderboard(),
           ),
+          Builder(
+            builder: (BuildContext context) => const Leaderboard(),
+          ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Strava',
+            label: 'Dashboard',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.leaderboard),
             label: 'Leaderboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat_outlined),
+            label: 'Talk Smack',
           ),
         ],
         currentIndex: _selectedIndex,
