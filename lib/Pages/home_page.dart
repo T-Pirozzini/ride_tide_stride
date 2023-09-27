@@ -2,7 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ride_tide_stride/pages/leaderboard_page.dart';
+import 'package:ride_tide_stride/pages/results_page.dart';
 import 'package:ride_tide_stride/pages/strava_page.dart';
+import 'package:ride_tide_stride/pages/talk_smack.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -44,7 +46,7 @@ class _HomeState extends State<Home> {
             builder: (BuildContext context) => const Leaderboard(),
           ),
           Builder(
-            builder: (BuildContext context) => const Leaderboard(),
+            builder: (BuildContext context) => const TalkSmack(),
           ),
         ],
       ),

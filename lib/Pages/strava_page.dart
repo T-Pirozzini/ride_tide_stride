@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
@@ -23,6 +24,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
   Map<String, dynamic>? athleteData;
   Map<String, dynamic>? athleteActivityData;
   List<dynamic>? athleteActivities;
+  final currentUser = FirebaseAuth.instance.currentUser;
 
   bool isLoggedIn = false;
   TokenResponse? token;
@@ -141,6 +143,14 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
     return '$hours:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
+  Future<void> _signOut() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+    } catch (e) {
+      print("Error signing out: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -148,6 +158,13 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         toolbarHeight: 100,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.exit_to_app,
+            color: Color(0xFFA09A6A),
+          ),
+          onPressed: _signOut,
+        ),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -164,7 +181,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
           ),
           const SizedBox(
             width: 8,
-          )
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -294,7 +311,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                         Text('${activity['name']}'),
                                         const SizedBox(height: 10),
                                       ],
-                                    ),                                    
+                                    ),
                                     subtitle: Row(
                                       children: [
                                         if (activity['type'] == 'Run')
@@ -498,6 +515,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
       'city': athlete['city'],
       'state': athlete['state'],
       'submitted': true,
+      'user_email': currentUser!.email,
     };
 
     // Add the data to Firestore
