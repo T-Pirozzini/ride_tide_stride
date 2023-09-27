@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_countdown_timer/flutter_countdown_timer.dart';
+import 'package:intl/intl.dart';
 // import 'package:google_fonts/google_fonts.dart';
 
 class Leaderboard extends StatefulWidget {
@@ -171,9 +172,108 @@ class LeaderboardTab extends StatelessWidget {
     return SingleChildScrollView(
       child: Column(
         children: activities.map((activity) {
-          return ListTile(
-            title: Text(activity['name']),
-            // Add more fields as necessary
+          //calculation for pace
+          double speedMps =
+              activity['average_speed']; // Speed in meters per second
+          double speedKph = speedMps * 3.6; // Convert to km/h
+          double pace = 60 / speedKph;
+          int minutes = pace.floor();
+          int seconds = ((pace - minutes) * 60).round();
+          // Helper function to format duration
+          String formatDuration(int seconds) {
+            final Duration duration = Duration(seconds: seconds);
+            final int hours = duration.inHours;
+            final int minutes = (duration.inMinutes % 60);
+            final int remainingSeconds = (duration.inSeconds % 60);
+            return '$hours:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+          }
+
+          // Helper function to format the date
+          String formatDate(String startDate) {
+            final DateTime date = DateTime.parse(startDate);
+            return DateFormat.yMMMd().format(date); // e.g., Sep 26, 2023
+          }
+
+          return Card(
+            margin: const EdgeInsets.all(2),
+            elevation: 1,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0)),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: const Color(0xFF283d3b),
+                foregroundColor: Colors.white,
+                child: getIconForActivityType(activity['type']),
+              ),
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    formatDate(activity['start_date']),
+                    style: const TextStyle(
+                        fontSize: 8.0,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.w400),
+                  ),
+                  const SizedBox(height: 2.0),
+                  Text(
+                    activity['name'],
+                    style: const TextStyle(
+                        fontSize: 14.0, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+              subtitle: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    formatDuration(activity['moving_time']),
+                    style: const TextStyle(fontSize: 12.0),
+                  ),
+                  Text(
+                    '${(activity['distance'] / 1000).toStringAsFixed(2)} km',
+                    style: const TextStyle(fontSize: 12.0),
+                  ),
+                  Text(
+                    '${activity['elevation_gain']} m',
+                    style: const TextStyle(fontSize: 12.0),
+                  ),
+                ],
+              ),
+              trailing: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.flash_on,
+                          color: Colors.yellow[600], size: 20.0),
+                      const SizedBox(width: 4.0),
+                      Text(
+                        '${activity['average_watts'].toString()} W',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4.0),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.speed_outlined,
+                          color: Colors.red[600], size: 20.0),
+                      const SizedBox(width: 4.0),
+                      Text(
+                        '$minutes:${seconds.toString().padLeft(2, '0')} /km',
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              isThreeLine: true,
+            ),
           );
         }).toList(),
       ),
@@ -247,7 +347,8 @@ class LeaderboardTab extends StatelessWidget {
                       builder: (context) => AlertDialog(
                         title: Text('${entry['full_name']}\'s Activities'),
                         content: SizedBox(
-                            height: 200,
+                            height: 300,
+                            width: 300,
                             child: buildActivitiesList(activities)),
                         actions: [
                           TextButton(
@@ -394,6 +495,75 @@ class LeaderboardTab extends StatelessWidget {
         .where('start_date',
             isLessThanOrEqualTo: lastDayOfMonth.toUtc().toIso8601String())
         .snapshots();
+  }
+
+  Widget getIconForActivityType(String type) {
+    switch (type) {
+      case 'Run':
+        return const Icon(Icons.directions_run_outlined);
+      case 'Ride':
+        return const Icon(Icons.directions_bike_outlined);
+      case 'Swim':
+        return const Icon(Icons.pool_outlined);
+      case 'Walk':
+        return const Icon(Icons.directions_walk_outlined);
+      case 'Hike':
+        return const Icon(Icons.terrain_outlined);
+      case 'AlpineSki':
+        return const Icon(Icons.snowboarding_outlined);
+      case 'BackcountrySki':
+        return const Icon(Icons.snowboarding_outlined);
+      case 'Canoeing':
+        return const Icon(Icons.kayaking_outlined);
+      case 'Crossfit':
+        return const Icon(Icons.fitness_center_outlined);
+      case 'EBikeRide':
+        return const Icon(Icons.electric_bike_outlined);
+      case 'Elliptical':
+        return const Icon(Icons.fitness_center_outlined);
+      case 'Handcycle':
+        return const Icon(Icons.directions_bike_outlined);
+      case 'IceSkate':
+        return const Icon(Icons.ice_skating_outlined);
+      case 'InlineSkate':
+        return const Icon(Icons.roller_skating_outlined);
+      case 'Kayaking':
+        return const Icon(Icons.kayaking_outlined);
+      case 'Kitesurf':
+        return const Icon(Icons.kitesurfing_outlined);
+      case 'NordicSki':
+        return const Icon(Icons.snowboarding_outlined);
+      case 'RockClimbing':
+        return const Icon(Icons.terrain_outlined);
+      case 'RollerSki':
+        return const Icon(Icons.directions_bike_outlined);
+      case 'Rowing':
+        return const Icon(Icons.kayaking_outlined);
+      case 'Snowboard':
+        return const Icon(Icons.snowboarding_outlined);
+      case 'Snowshoe':
+        return const Icon(Icons.snowshoeing_outlined);
+      case 'StairStepper':
+        return const Icon(Icons.fitness_center_outlined);
+      case 'StandUpPaddling':
+        return const Icon(Icons.kayaking_outlined);
+      case 'Surfing':
+        return const Icon(Icons.surfing_outlined);
+      case 'VirtualRide':
+        return const Icon(Icons.directions_bike_outlined);
+      case 'VirtualRun':
+        return const Icon(Icons.directions_run_outlined);
+      case 'WeightTraining':
+        return const Icon(Icons.fitness_center_outlined);
+      case 'Windsurf':
+        return const Icon(Icons.surfing_outlined);
+      case 'Workout':
+        return const Icon(Icons.fitness_center_outlined);
+      case 'Yoga':
+        return const Icon(Icons.fitness_center_outlined);
+      default:
+        return Text(type);
+    }
   }
 }
 
