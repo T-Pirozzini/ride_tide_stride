@@ -169,6 +169,10 @@ class LeaderboardTab extends StatelessWidget {
 
   // Function to build activities list
   Widget buildActivitiesList(List<Map<String, dynamic>> activities) {
+    // Sort the activities list by 'start_date' in descending order (most recent first).
+    activities.sort((a, b) => DateTime.parse(b['start_date'])
+        .compareTo(DateTime.parse(a['start_date'])));
+
     return SingleChildScrollView(
       child: Column(
         children: activities.map((activity) {
@@ -355,7 +359,7 @@ class LeaderboardTab extends StatelessWidget {
                             onPressed: () {
                               Navigator.of(context).pop();
                             },
-                            child: Text('Close'),
+                            child: const Text('Close'),
                           )
                         ],
                       ),
@@ -510,9 +514,9 @@ class LeaderboardTab extends StatelessWidget {
       case 'Hike':
         return const Icon(Icons.terrain_outlined);
       case 'AlpineSki':
-        return const Icon(Icons.snowboarding_outlined);
+        return const Icon(Icons.downhill_skiing_outlined);
       case 'BackcountrySki':
-        return const Icon(Icons.snowboarding_outlined);
+        return const Icon(Icons.downhill_skiing_outlined);
       case 'Canoeing':
         return const Icon(Icons.kayaking_outlined);
       case 'Crossfit':
