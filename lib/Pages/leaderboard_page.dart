@@ -16,6 +16,38 @@ class _LeaderboardState extends State<Leaderboard> {
 
   // Create a variable to represent the current date
   DateTime currentDate = DateTime.now();
+  // Define a flag to track whether the user is an admin
+  bool isAdmin = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Check the user's role when the widget is initialized
+    checkUserRole();
+  }
+
+  // Function to check the user's role
+  void checkUserRole() async {
+    if (currentUser != null) {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('Users')
+          .doc(currentUser?.email)
+          .get();
+
+      if (userDoc.exists) {
+        final userData = userDoc.data() as Map<String, dynamic>;
+        final userRole = userData['role'];
+
+        // Check if the user's role is 'admin'
+        if (userRole == 'admin') {
+          setState(() {
+            isAdmin = true;
+          });
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +72,9 @@ class _LeaderboardState extends State<Leaderboard> {
             ],
           ),
           actions: [
-            CountdownTimerWidget(endTime: endTime),
+            CountdownTimerWidget(
+              endTime: endTime,
+            ),
           ],
         ),
         body: const TabBarView(
@@ -50,9 +84,58 @@ class _LeaderboardState extends State<Leaderboard> {
             LeaderboardTab(title: 'Total Elevation'),
           ],
         ),
+        floatingActionButton: isAdmin
+            ? FloatingActionButton(
+                onPressed: () {
+                  // Only show the button and handle the action if the user is an admin
+                  _saveResultsToFirestore();
+                },
+                child: const Icon(Icons.save),
+              )
+            : null, // Set to null if the user is not an admin
       ),
     );
   }
+}
+
+// Function to save results to Firestore
+void _saveResultsToFirestore() async {
+  final currentMonth = DateTime.now().month;
+  final currentYear = DateTime.now().year;
+  final firstDayOfMonth = DateTime(currentYear, currentMonth, 1);
+  final lastDayOfMonth = DateTime(currentYear, currentMonth + 1, 0);
+
+  // Fetch data for the current month
+  final snapshot = await FirebaseFirestore.instance
+      .collection('activities')
+      .where('start_date',
+          isGreaterThanOrEqualTo: firstDayOfMonth.toUtc().toIso8601String())
+      .where('start_date',
+          isLessThanOrEqualTo: lastDayOfMonth.toUtc().toIso8601String())
+      .get();
+
+  // Extract the relevant data (e.g., fullname and totals) and save it to the Results collection
+  final resultsData = snapshot.docs.map((doc) {
+    final data = doc.data() as Map<String, dynamic>;
+
+    // Create a results object with the desired structure
+    final results = {
+      'moving_time': data['moving_time'],
+      'distance': data['distance'],
+      'elevation_gain': data['elevation_gain'],
+    };
+
+    return {
+      'fullname': data['fullname'],
+      'totals': results,
+    };
+  }).toList();
+
+  // Save the data to the Results collection
+  await FirebaseFirestore.instance.collection('Results').add({
+    'timestamp': Timestamp.now(),
+    'data': resultsData,
+  });
 }
 
 class LeaderboardTab extends StatelessWidget {
