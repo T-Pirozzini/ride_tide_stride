@@ -15,6 +15,7 @@ class _TalkSmackState extends State<TalkSmack> {
   final TextEditingController _messageController = TextEditingController();
   final List<String> _messages = [];
   final currentUser = FirebaseAuth.instance.currentUser;
+  final ScrollController _scrollController = ScrollController();
 
   void _sendMessage() async {
     String message = _messageController.text.trim();
@@ -25,6 +26,13 @@ class _TalkSmackState extends State<TalkSmack> {
         'user': currentUser?.email,
       });
       _messageController.clear();
+
+      // Scroll to the bottom of the ListView
+      _scrollController.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+      );
     }
   }
 
@@ -51,7 +59,7 @@ class _TalkSmackState extends State<TalkSmack> {
       backgroundColor: const Color(0xFFDFD3C3),
       appBar: AppBar(
         title: const Text(
-          'Talk Smack Chat Room',
+          'Chat Room: Talk Smack',
           style: TextStyle(
               fontSize: 24, fontWeight: FontWeight.w300, letterSpacing: 1.2),
         ),
@@ -72,38 +80,61 @@ class _TalkSmackState extends State<TalkSmack> {
                 var messages = snapshot.data?.docs;
 
                 return ListView.builder(
+                  reverse: true,
+                  controller: _scrollController,
                   itemCount: messages?.length,
                   itemBuilder: (context, index) {
                     var messageData = messages?[index].data();
                     var message = messageData?['message'];
-                    var user = messageData?['user'];
+                    var user = messageData?['user'].split('@')[0];
                     var timestamp = messageData?['timestamp'] as Timestamp?;
 
                     // Calculate how many minutes ago
                     var timeAgo = _formatTimestamp(timestamp);
 
-                    return Container(
-                      margin: const EdgeInsets.symmetric(
-                          horizontal: 10.0, vertical: 5.0),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                      child: ListTile(
-                        title: Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('$user',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 14)),
-                            SizedBox(height: 5.0),
-                            Text('$message',
-                                style: const TextStyle(fontSize: 18)),
-                            SizedBox(height: 5.0),
-                          ],
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 4.0, vertical: 2.0),
+                      child: Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
                         ),
-                        subtitle: Text(timeAgo),
+                        child: Padding(
+                          padding: const EdgeInsets.all(2.0),
+                          child: ListTile(
+                            title: Padding(
+                              padding: const EdgeInsets.only(bottom: 4.0),
+                              child: Text(
+                                '$user',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blueGrey,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '$message',
+                                  style: const TextStyle(
+                                      fontSize: 14, color: Colors.black87),
+                                ),
+                                const SizedBox(height: 5.0),
+                                Text(
+                                  timeAgo,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontStyle: FontStyle.italic,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
                     );
                   },

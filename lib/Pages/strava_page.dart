@@ -277,6 +277,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                   Column(
                     children: [
                       ListView.builder(
+                        physics: const NeverScrollableScrollPhysics(),
                         shrinkWrap: true,
                         itemCount: athleteActivities!.length,
                         itemBuilder: (context, index) {
@@ -516,6 +517,9 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
       'state': athlete['state'],
       'submitted': true,
       'user_email': currentUser!.email,
+      'average_speed': activity['average_speed'],
+      'average_watts': activity['average_watts'],  
+      'acheivement_count': activity['achievement_count'],    
     };
 
     // Add the data to Firestore
