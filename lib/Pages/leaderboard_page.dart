@@ -48,40 +48,6 @@ class LeaderboardTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
 
-    // Define a function to calculate current totals
-    Future<void> updateCurrentTotals(String email) async {
-      // Get all activities for the user
-      final userActivitiesQuery = await FirebaseFirestore.instance
-          .collection('activities')
-          .where('user_email', isEqualTo: email)
-          .get();
-
-      double totalMovingTime = 0;
-      double totalDistance = 0;
-      double totalElevation = 0;
-
-// Calculate totals from user activities
-      for (final activity in userActivitiesQuery.docs) {
-        final activityData = activity.data() as Map<String, dynamic>;
-        totalMovingTime += activityData['moving_time'];
-        totalDistance += activityData['distance'];
-
-        // Convert elevation_gain to a number (if it's stored as a string)
-        final elevationGain = activityData['elevation_gain'] is String
-            ? double.tryParse(activityData['elevation_gain'] ?? '')?.toInt() ??
-                0
-            : (activityData['elevation_gain'] ?? 0);
-        totalElevation += elevationGain;
-      }
-
-// Update the currentTotals in the user's document
-      await FirebaseFirestore.instance.collection('Users').doc(email).update({
-        'currentTotals.time': totalMovingTime,
-        'currentTotals.distance': totalDistance,
-        'currentTotals.elevation': totalElevation,
-      });
-    }
-
     String formatDuration(int seconds) {
       final Duration duration = Duration(seconds: seconds);
       final int hours = duration.inHours;
@@ -116,24 +82,25 @@ class LeaderboardTab extends StatelessWidget {
               if (title == 'Moving Time') {
                 dataWidget = ListTile(
                   title: Text('${entry['full_name']}'),
-                  leading: Text('Place: $currentPlace'),
-                  subtitle: Text(
-                      'Moving Time: ${formatDuration(entry['total_moving_time'])}'),
+                  leading: customPlaceWidget('$currentPlace'),
+                  subtitle: const Text('Total Moving Time'),
+                  trailing: customTotalWidget(
+                      formatDuration(entry['total_moving_time'])),
                 );
               } else if (title == 'Total Distance (km)') {
                 dataWidget = ListTile(
                   title: Text('${entry['full_name']}'),
-                  leading: Text('Place: $currentPlace'),
-                  subtitle: Text(
-                    'Total Distance: ${(entry['total_distance'] / 1000).toStringAsFixed(2)} km',
-                  ),
+                  leading: customPlaceWidget('$currentPlace'),
+                  subtitle: const Text('Total Distance'),
+                  trailing: customTotalWidget(
+                      '${(entry['total_distance'] / 1000).toStringAsFixed(2)} km'),
                 );
               } else if (title == 'Total Elevation') {
                 dataWidget = ListTile(
                   title: Text('${entry['full_name']}'),
-                  leading: Text('Place: $currentPlace'),
-                  subtitle:
-                      Text('Total Elevation: ${entry['total_elevation']} m'),
+                  leading: customPlaceWidget('$currentPlace'),
+                  subtitle: const Text('Total Elevation'),
+                  trailing: customTotalWidget('${entry['total_elevation']} m'),
                 );
               } else {
                 dataWidget = const SizedBox();
@@ -145,37 +112,6 @@ class LeaderboardTab extends StatelessWidget {
         },
       ),
     );
-  }
-
-  Widget buildListTile(Map<String, dynamic> entry, String field, String unit) {
-    final currentPlace = calculateCurrentPlace(entry, field);
-    final arrowIcon =
-        currentPlace > 0 ? Icons.arrow_upward : Icons.arrow_downward;
-
-    return ListTile(
-      leading: Text('Place: ${currentPlace.abs()}'),
-      title: Text('Full Name: ${entry['full_name']}'),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('$title: ${entry[field]} $unit'),
-          Icon(
-            arrowIcon,
-            color: currentPlace > 0 ? Colors.green : Colors.red,
-          ),
-        ],
-      ),
-    );
-  }
-
-  int calculateCurrentPlace(Map<String, dynamic> entry, String field) {
-    // Implement your logic to calculate the current place based on the field.
-    // Compare the entry with others and return the difference in places.
-    // For example:
-    // return entry['current_place'] - entry['previous_place'];
-
-    // Replace the placeholder with your actual logic
-    return 0;
   }
 
   Map<String, List<Map<String, dynamic>>> groupAndAggregateData(
@@ -241,5 +177,41 @@ class LeaderboardTab extends StatelessWidget {
 
     // Return the sorted list for the given title
     return {title: dataList};
+  }
+
+  Widget customPlaceWidget(String place) {
+    final color = const Color(0xFFA09A6A); // Customize the color as needed
+
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: color, width: 2.0),
+      ),
+      padding: const EdgeInsets.all(10.0), // Adjust padding as needed
+      child: Text(
+        place,
+        style: TextStyle(
+          fontSize: 24, // Adjust font size as needed
+          color: color, // Text color
+          fontWeight: FontWeight.bold, // Bold text
+        ),
+      ),
+    );
+  }
+
+  Widget customTotalWidget(String total) {
+    final color = const Color(0xFF283D3B); // Customize the color as needed
+
+    return Container(
+      padding: const EdgeInsets.all(10.0), // Adjust padding as needed
+      child: Text(
+        total,
+        style: TextStyle(
+          fontSize: 20, // Adjust font size as needed
+          color: color, // Text color
+          fontWeight: FontWeight.bold, // Bold text
+        ),
+      ),
+    );
   }
 }
