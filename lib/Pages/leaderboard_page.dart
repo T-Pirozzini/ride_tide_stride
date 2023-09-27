@@ -257,7 +257,7 @@ class LeaderboardTab extends StatelessWidget {
                       const SizedBox(width: 4.0),
                       Text(
                         '${activity['average_watts'].toString()} W',
-                        style: TextStyle(fontWeight: FontWeight.w500),
+                        style: const TextStyle(fontWeight: FontWeight.w500),
                       ),
                     ],
                   ),
@@ -351,7 +351,7 @@ class LeaderboardTab extends StatelessWidget {
                       builder: (context) => AlertDialog(
                         title: Text('${entry['full_name']}\'s Activities'),
                         content: SizedBox(
-                            height: 300,
+                            height: 400,
                             width: 300,
                             child: buildActivitiesList(activities)),
                         actions: [
