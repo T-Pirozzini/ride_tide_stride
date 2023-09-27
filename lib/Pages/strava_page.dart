@@ -277,6 +277,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                   Column(
                     children: [
                       ListView.builder(
+                        physics: const NeverScrollableScrollPhysics(),
                         shrinkWrap: true,
                         itemCount: athleteActivities!.length,
                         itemBuilder: (context, index) {

@@ -144,6 +144,42 @@ class LeaderboardTab extends StatelessWidget {
 
   const LeaderboardTab({Key? key, required this.title}) : super(key: key);
 
+  // Function to fetch user activities
+  Future<List<Map<String, dynamic>>> fetchUserActivities(
+      String fullName) async {
+    final currentMonth = DateTime.now().month;
+    final currentYear = DateTime.now().year;
+    final firstDayOfMonth = DateTime(currentYear, currentMonth, 1);
+    final lastDayOfMonth = DateTime(currentYear, currentMonth + 1, 0);
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('activities')
+        .where('fullname', isEqualTo: fullName)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => doc.data() as Map<String, dynamic>)
+        .where((data) {
+      final startDate = DateTime.parse(data['start_date']);
+      return startDate.isAfter(firstDayOfMonth) &&
+          startDate.isBefore(lastDayOfMonth);
+    }).toList();
+  }
+
+  // Function to build activities list
+  Widget buildActivitiesList(List<Map<String, dynamic>> activities) {
+    return SingleChildScrollView(
+      child: Column(
+        children: activities.map((activity) {
+          return ListTile(
+            title: Text(activity['name']),
+            // Add more fields as necessary
+          );
+        }).toList(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
@@ -201,15 +237,41 @@ class LeaderboardTab extends StatelessWidget {
               dataWidget = const SizedBox();
             }
 
-            return Column(
-              children: [
-                dataWidget,
-                const Divider(
-                  color: Colors.grey,
-                  thickness: 1.0,
-                  height: 0.0,
-                ),
-              ],
+            return GestureDetector(
+              onTap: () {
+                final localContext = context;
+                fetchUserActivities(entry['full_name']).then(
+                  (activities) {
+                    showDialog(
+                      context: localContext,
+                      builder: (context) => AlertDialog(
+                        title: Text('${entry['full_name']}\'s Activities'),
+                        content: SizedBox(
+                            height: 200,
+                            child: buildActivitiesList(activities)),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: Text('Close'),
+                          )
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+              child: Column(
+                children: [
+                  dataWidget,
+                  const Divider(
+                    color: Colors.grey,
+                    thickness: 1.0,
+                    height: 0.0,
+                  ),
+                ],
+              ),
             );
           },
         );
