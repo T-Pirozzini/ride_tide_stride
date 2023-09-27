@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_countdown_timer/flutter_countdown_timer.dart';
-import 'package:google_fonts/google_fonts.dart';
+// import 'package:google_fonts/google_fonts.dart';
 
 class Leaderboard extends StatefulWidget {
   const Leaderboard({Key? key}) : super(key: key);
@@ -58,6 +58,7 @@ class _LeaderboardState extends State<Leaderboard> {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
+        backgroundColor: const Color(0xFFDFD3C3),
         appBar: AppBar(
           title: const Text('Leaderboard',
               style: TextStyle(
@@ -116,7 +117,7 @@ void _saveResultsToFirestore() async {
 
   // Extract the relevant data (e.g., fullname and totals) and save it to the Results collection
   final resultsData = snapshot.docs.map((doc) {
-    final data = doc.data() as Map<String, dynamic>;
+    final data = doc.data();
 
     // Create a results object with the desired structure
     final results = {
@@ -177,6 +178,7 @@ class LeaderboardTab extends StatelessWidget {
             // Helper function to build list tile
             Widget buildListTile(String title, String trailingText) {
               return ListTile(
+                tileColor: Colors.white,
                 title: Text('${entry['full_name']}'),
                 leading: customPlaceWidget('$currentPlace'),
                 subtitle: Text(title),
