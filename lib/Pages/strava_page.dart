@@ -143,6 +143,14 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
     return '$hours:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
+  Future<void> _signOut() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+    } catch (e) {
+      print("Error signing out: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -150,6 +158,13 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         toolbarHeight: 100,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.exit_to_app,
+            color: Color(0xFFA09A6A),
+          ),
+          onPressed: _signOut,
+        ),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -166,7 +181,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
           ),
           const SizedBox(
             width: 8,
-          )
+          ),
         ],
       ),
       body: SingleChildScrollView(
