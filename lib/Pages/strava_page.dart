@@ -210,66 +210,69 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                   height: 15,
                 ),
                 if (athleteData != null)
-                  Card(
-                    elevation: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF283D3B).withOpacity(0.8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                athleteData!['firstname'] +
-                                    ' ' +
-                                    athleteData!['lastname'],
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              const Text(
-                                'ID: ',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              Text('${athleteData!['id']}',
+                  Center(
+                    child: Card(
+                      elevation: 8,
+                      child: Container(
+                        width: 300,
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF283D3B).withOpacity(0.8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  athleteData!['firstname'] +
+                                      ' ' +
+                                      athleteData!['lastname'],
                                   style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
                                     color: Colors.white,
-                                    fontSize: 14,
-                                  )),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              const Text('HQ: ',
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                const Text(
+                                  'ID: ',
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
-                                  )),
-                              Text(
-                                  '${athleteData!['city']}, ${athleteData!['state']}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                  )),
-                            ],
-                          ),
-                        ],
+                                  ),
+                                ),
+                                Text('${athleteData!['id']}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                    )),
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                const Text('HQ: ',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    )),
+                                Text(
+                                    '${athleteData!['city']}, ${athleteData!['state']}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                    )),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -292,7 +295,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                             child: Card(
                               elevation: 2,
                               margin: const EdgeInsets.symmetric(
-                                  vertical: 8, horizontal: 16),
+                                  vertical: 8, horizontal: 0),
                               child: Column(
                                 children: [
                                   ListTile(
@@ -518,8 +521,8 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
       'submitted': true,
       'user_email': currentUser!.email,
       'average_speed': activity['average_speed'],
-      'average_watts': activity['average_watts'],  
-      'acheivement_count': activity['achievement_count'],    
+      'average_watts': activity['average_watts'],
+      'acheivement_count': activity['achievement_count'],
     };
 
     // Add the data to Firestore
