@@ -1,3 +1,8 @@
+# Firebase
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+lib/services/gemini-firebase-adminsdk.json
+
 # Miscellaneous
 *.class
 *.log
@@ -43,3 +48,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+key.properties
+app/upload-keystore.jks

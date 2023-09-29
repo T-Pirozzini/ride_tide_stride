@@ -2,7 +2,7 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <application
-        android:label="ride_tide_stride"
+        android:label="R.T.S"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 
