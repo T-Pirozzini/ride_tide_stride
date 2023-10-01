@@ -37,7 +37,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
     if (token != null) {
       _textEditingController.text = token!.accessToken;
     }
-    testAuthentication();
+    // testAuthentication();
   }
 
   FutureOr<Null> showErrorMessage(dynamic error, dynamic stackTrace) {
@@ -46,9 +46,9 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
           context: context,
           builder: (context) {
             return AlertDialog(
-              title: const Text("Did Receive Fault"),
+              title: const Text("Sorry, we could not authenticate you"),
               content: Text(
-                  "Message: ${error.message}\n-----------------\nErrors:\n${(error.errors ?? []).map((e) => "Code: ${e.code}\nResource: ${e.resource}\nField: ${e.field}\n").toList().join("\n----------\n")}"),
+                  "Message: User is not logged in \n-----------------\nErrors:\n${(error.errors ?? []).map((e) => "Code: ${e.code}\nResource: ${e.resource}\nField: ${e.field}\n").toList().join("\n----------\n")}"),
             );
           });
     }
@@ -192,20 +192,71 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    const Text(
-                      'Access ID: ',
-                      style:
-                          TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      _textEditingController.text,
-                      style: const TextStyle(
-                          fontSize: 12, fontStyle: FontStyle.italic),
-                    ),
-                  ],
-                ),
+                !isLoggedIn
+                    ? Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Welcome to R.T.S!',
+                              style: TextStyle(
+                                  color: Color(0xFF283D3B),
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(
+                              height: 15,
+                            ),
+                            Text(
+                              'Click the button below to display your most recent activities.',
+                              style: TextStyle(
+                                  color: Color(0xFF283D3B),
+                                  fontSize: 16,
+                                  fontStyle: FontStyle.italic),
+                            ),
+                            const SizedBox(
+                              height: 15,
+                            ),
+                            ElevatedButton.icon(
+                              onPressed: testAuthentication,
+                              icon: Icon(Icons
+                                  .link), // This represents a link icon, but you can choose any other icon from the Flutter icons set.
+                              label: Text(
+                                "Get my Activities",
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                primary: Color(0xFF283D3B), // Background color
+                                onPrimary: Colors.white, // Text color
+                              ),
+                            ),
+                            SizedBox(
+                              height: 15,
+                            ),
+                            Text(
+                                'Would you like to view the leaderboards or chat with other athletes?'),
+                            const SizedBox(
+                              height: 15,
+                            ),
+                            Text(
+                                'You don\'t need a Strava account to view the Leaderboards or chat with other athletes. Navigate to the other pages using the tabs at the bottom of this page')
+                          ],
+                        ),
+                      )
+                    : Row(
+                        children: [
+                          const Text(
+                            'Access ID: ',
+                            style: TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            _textEditingController.text,
+                            style: const TextStyle(
+                                fontSize: 12, fontStyle: FontStyle.italic),
+                          ),
+                        ],
+                      ),
                 const SizedBox(
                   height: 15,
                 ),
