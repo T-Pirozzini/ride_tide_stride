@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:ride_tide_stride/auth/auth_page.dart';
 import 'package:ride_tide_stride/auth/authentication.dart';
 import 'package:ride_tide_stride/secret.dart';
 import 'package:strava_client/strava_client.dart';
@@ -28,6 +30,9 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
 
   bool isLoggedIn = false;
   TokenResponse? token;
+
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
 
   @override
   void initState() {
@@ -151,20 +156,129 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
     }
   }
 
+  Future<bool> reauthenticateUser(String email, String password) async {
+    try {
+      // Get reference to the user
+      User? user = FirebaseAuth.instance.currentUser;
+
+      // Re-authenticate
+      AuthCredential credential =
+          EmailAuthProvider.credential(email: email, password: password);
+      await user?.reauthenticateWithCredential(credential);
+
+      return true;
+    } catch (e) {
+      print(e);
+      return false;
+    }
+  }
+
+  Future<void> deleteUser() async {
+    try {
+      await FirebaseAuth.instance.currentUser?.delete();
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  Future<bool> _showDeleteConfirmationDialog(BuildContext context) async {
+    bool? result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false, // user must tap button to close
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Confirm Account Deletion'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('Are you sure you want to delete your account?',
+                    style: TextStyle(fontSize: 14)),
+                SizedBox(
+                  height: 10,
+                ),
+                Text('This action is permanent and cannot be undone.',
+                    style:
+                        TextStyle(fontSize: 14, fontStyle: FontStyle.italic)),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop(false); // return false
+              },
+            ),
+            TextButton(
+              child: Text('Confirm'),
+              onPressed: () {
+                Navigator.of(context).pop(true); // return true
+              },
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? false; // if result is null, return false
+  }
+
+  Future<bool> _showReauthenticationDialog(BuildContext context) async {
+    bool? result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Re-authenticate'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('Please enter your email and password to confirm.'),
+                TextField(
+                  controller: emailController,
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                  ),
+                ),
+                TextField(
+                  controller: passwordController,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                  ),
+                  obscureText: true, // Hide the password input
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+            TextButton(
+              child: Text('Confirm'),
+              onPressed: () async {
+                bool success = await reauthenticateUser(
+                    emailController.text, passwordController.text);
+                Navigator.of(context).pop(success);
+              },
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFDFD3C3),
       appBar: AppBar(
         backgroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Colors.black),
         toolbarHeight: 100,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.exit_to_app,
-            color: Color(0xFFA09A6A),
-          ),
-          onPressed: _signOut,
-        ),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -183,6 +297,69 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
             width: 8,
           ),
         ],
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            Container(
+              height: 100,
+              child: DrawerHeader(
+                margin: EdgeInsets.zero, // Remove default margin
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Color(0xFFA09A6A),
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black12, spreadRadius: 3, blurRadius: 5)
+                  ],
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Heading out?',
+                      style: GoogleFonts.specialElite(
+                        fontSize: 20,
+                        letterSpacing: 1.5,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            ListTile(
+              title: Text('Sign Out'),
+              leading: Icon(Icons.exit_to_app),
+              onTap: () async {
+                await _signOut();
+                Navigator.of(context).pop();
+              },
+            ),
+            ListTile(
+              title: Text('Delete Account'),
+              leading: Icon(Icons.delete_outline),
+              onTap: () async {
+                bool shouldProceed =
+                    await _showDeleteConfirmationDialog(context);
+
+                if (shouldProceed) {
+                  bool reauthenticated =
+                      await _showReauthenticationDialog(context);
+                  if (reauthenticated) {
+                    await deleteUser();
+                    Navigator.pushReplacement(context,
+                        MaterialPageRoute(builder: (context) => AuthPage()));
+                  } else {
+                    // Handle re-authentication failure
+                  }
+                }
+              },
+            )
+          ],
+        ),
       ),
       body: SingleChildScrollView(
         child: Container(
@@ -226,8 +403,9 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                 "Get my Activities",
                               ),
                               style: ElevatedButton.styleFrom(
-                                primary: Color(0xFF283D3B), // Background color
-                                onPrimary: Colors.white, // Text color
+                                foregroundColor: Colors.white,
+                                backgroundColor:
+                                    Color(0xFF283D3B), // Text color
                               ),
                             ),
                             SizedBox(
