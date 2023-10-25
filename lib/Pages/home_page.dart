@@ -51,22 +51,31 @@ class _HomeState extends State<Home> {
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: const Color(0xFF283D3B),
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
+            icon: Icon(Icons.home, color: Colors.white60),
+            activeIcon: Icon(Icons.home,
+                color: Colors
+                    .white), // activeIcon will ensure that the icon is always white, even when selected
             label: 'Dashboard',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.leaderboard),
+            icon: Icon(Icons.leaderboard, color: Colors.white60),
+            activeIcon: Icon(Icons.leaderboard, color: Colors.white),
             label: 'Leaderboard',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.chat_outlined),
+            icon: Icon(Icons.chat_outlined, color: Colors.white60),
+            activeIcon: Icon(Icons.chat_outlined, color: Colors.white),
             label: 'Talk Smack',
           ),
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
+        selectedItemColor: Colors
+            .white, // This ensures the text for the selected item is also white
+        unselectedItemColor: Colors.white.withOpacity(0.6),
       ),
     );
   }
