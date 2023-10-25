@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:ride_tide_stride/auth/auth_page.dart';
 import 'package:ride_tide_stride/auth/authentication.dart';
+import 'package:ride_tide_stride/components/feedback.dart';
 import 'package:ride_tide_stride/secret.dart';
 import 'package:strava_client/strava_client.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -252,6 +253,20 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
     }
   }
 
+  Future<Map<String, String>> getUserInfo() async {
+    final DocumentSnapshot docSnapshot = await FirebaseFirestore.instance
+        .collection('Users')
+        .doc(currentUser!.email)
+        .get();
+
+    Map<String, dynamic>? data = docSnapshot.data() as Map<String, dynamic>?;
+
+    String username = data?['username'] as String? ?? '';
+    String email = data?['email'] as String? ?? '';
+
+    return {'username': username, 'email': email};
+  }
+
   Future<bool> _showDeleteConfirmationDialog(BuildContext context) async {
     bool? result = await showDialog<bool>(
       context: context,
@@ -404,16 +419,52 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
               ),
             ),
             ListTile(
-              title: Text('Sign Out'),
-              leading: Icon(Icons.exit_to_app),
+              title: Text('Sign Out', style: TextStyle(fontSize: 16)),
+              leading: Icon(
+                Icons.exit_to_app,
+                color: Color.fromARGB(255, 79, 122, 118),
+                size: 32,
+              ),
+              subtitle: Text('See you next time!'),
               onTap: () async {
                 await _signOut();
                 Navigator.of(context).pop();
               },
             ),
+            Divider(),
+            FutureBuilder<Map<String, String>>(
+              future: getUserInfo(),
+              builder: (BuildContext context,
+                  AsyncSnapshot<Map<String, String>> snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return CircularProgressIndicator(); // Show a loader while waiting
+                } else if (snapshot.hasError) {
+                  return Text('Error: ${snapshot.error}');
+                } else {
+                  return UserFeedback(
+                      userName: snapshot.data?['username'] ?? '',
+                      userEmail: snapshot.data?['email'] ?? '');
+                }
+              },
+            ),
+            Divider(),
             ListTile(
-              title: Text('Delete Account'),
-              leading: Icon(Icons.delete_outline),
+              title: Text('My Website', style: TextStyle(fontSize: 16)),
+              leading: Icon(
+                Icons.code,
+                color: Color.fromARGB(255, 79, 122, 118),
+                size: 32,
+              ),
+              subtitle: Text('Check out my other apps!'),
+              onTap: () =>
+                  launchUrl(Uri.parse('https://portfolio-2023-1a61.fly.dev/')),
+            ),
+            Divider(),
+            ListTile(
+              title: Text('Delete Account', style: TextStyle(fontSize: 16)),
+              leading: Icon(Icons.delete_outline,
+                  color: Colors.red.shade300, size: 32),
+              subtitle: Text('Warning: This action is permanent'),
               onTap: () async {
                 bool shouldProceed =
                     await _showDeleteConfirmationDialog(context);
