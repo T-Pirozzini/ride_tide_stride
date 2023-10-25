@@ -168,19 +168,39 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Open Strava Activity'),
-        content: Text('Do you want to view this activity on Strava?'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(20.0)),
+        ),
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/images/strava.png',
+              height: 24.0, // Adjust the size as required
+              width: 24.0,
+            ),
+            SizedBox(width: 10),
+            Text('View Activity on Strava?'),
+          ],
+        ),
+        content: Text('Please Note: You will be leaving R.T.S'),
         actions: [
-          TextButton(
-            child: Text('Cancel'),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          TextButton(
-            child: Text('Open'),
-            onPressed: () {
-              _openStravaActivity(activityId);
-              Navigator.of(context).pop();
-            },
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton(
+                child: Text('Cancel', style: TextStyle(fontSize: 18)),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              SizedBox(width: 10),
+              TextButton(
+                child: Text('Open',
+                    style: TextStyle(color: Colors.deepOrange, fontSize: 18)),
+                onPressed: () {
+                  _openStravaActivity(activityId);
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
           ),
         ],
       ),
@@ -188,17 +208,16 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
   }
 
   Future<void> _openStravaActivity(int activityId) async {
-  final Uri url = Uri.https('www.strava.com', '/activities/$activityId');
+    final Uri url = Uri.https('www.strava.com', '/activities/$activityId');
 
-  bool canOpen = await canLaunchUrl(url);
-  if (canOpen) {
-    await launchUrl(url, mode: LaunchMode.externalApplication);
-  } else {
-    // Handle the inability to launch the URL.
-    print('Could not launch $url');
+    bool canOpen = await canLaunchUrl(url);
+    if (canOpen) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      // Handle the inability to launch the URL.
+      print('Could not launch $url');
+    }
   }
-}
-
 
   Future<void> _signOut() async {
     try {
@@ -426,53 +445,95 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                 !isLoggedIn
                     ? Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Welcome to R.T.S!',
-                              style: TextStyle(
-                                  color: Color(0xFF283D3B),
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold),
+                        child: Card(
+                          elevation: 5.0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.check_circle_outline,
+                                      color: Color(0xFF283D3B),
+                                    ),
+                                    const SizedBox(width: 8.0),
+                                    const Text(
+                                      'Welcome to R.T.S!',
+                                      style: TextStyle(
+                                        color: Color(0xFF283D3B),
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 15),
+                                Text(
+                                  'Click the button below to display your most recent activities.',
+                                  style: TextStyle(
+                                    color: Color(0xFF283D3B),
+                                    fontSize: 16,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                                const SizedBox(height: 25),
+                                Center(
+                                  child: ElevatedButton.icon(
+                                    onPressed: testAuthentication,
+                                    icon: Icon(
+                                      Icons.link,
+                                      color: Colors
+                                          .white, // Adjust the color to fit your design
+                                    ),
+                                    label: Text(
+                                      "Get my Activities",
+                                      style: TextStyle(fontSize: 18),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      primary: Color(
+                                          0xFF283D3B), // Button background color
+                                      onPrimary:
+                                          Colors.white, // Text and Icon color
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(10.0),
+                                      ),
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 20, vertical: 12),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 25),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.info_outline,
+                                      color: Color(0xFF283D3B),
+                                    ),
+                                    SizedBox(width: 8.0),
+                                    Expanded(
+                                      child: Text('No Strava account required!',
+                                          style: TextStyle(
+                                              color: Color(0xFF283D3B),
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold)),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'View the Leaderboards or Talk Smack using the tabs below.',
+                                  style: TextStyle(
+                                      color: Color(0xFF283D3B), fontSize: 15),
+                                ),
+                              ],
                             ),
-                            const SizedBox(
-                              height: 15,
-                            ),
-                            Text(
-                              'Click the button below to display your most recent activities.',
-                              style: TextStyle(
-                                  color: Color(0xFF283D3B),
-                                  fontSize: 16,
-                                  fontStyle: FontStyle.italic),
-                            ),
-                            const SizedBox(
-                              height: 15,
-                            ),
-                            ElevatedButton.icon(
-                              onPressed: testAuthentication,
-                              icon: Icon(Icons
-                                  .link), // This represents a link icon, but you can choose any other icon from the Flutter icons set.
-                              label: Text(
-                                "Get my Activities",
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                backgroundColor:
-                                    Color(0xFF283D3B), // Text color
-                              ),
-                            ),
-                            SizedBox(
-                              height: 15,
-                            ),
-                            Text(
-                                'Would you like to view the leaderboards or chat with other athletes?'),
-                            const SizedBox(
-                              height: 15,
-                            ),
-                            Text(
-                                'You don\'t need a Strava account to view the Leaderboards or chat with other athletes. Navigate to the other pages using the tabs at the bottom of this page')
-                          ],
+                          ),
                         ),
                       )
                     : Row(
