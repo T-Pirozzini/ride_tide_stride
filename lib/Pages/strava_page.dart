@@ -10,6 +10,7 @@ import 'package:ride_tide_stride/auth/auth_page.dart';
 import 'package:ride_tide_stride/auth/authentication.dart';
 import 'package:ride_tide_stride/secret.dart';
 import 'package:strava_client/strava_client.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class StravaFlutterPage extends StatefulWidget {
   const StravaFlutterPage({super.key});
@@ -162,6 +163,42 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
         snapshot.docs.map((doc) => doc.get('activity_id').toString()).toList();
     return submittedIDs;
   }
+
+  void _showStravaDialog(BuildContext context, int activityId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Open Strava Activity'),
+        content: Text('Do you want to view this activity on Strava?'),
+        actions: [
+          TextButton(
+            child: Text('Cancel'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          TextButton(
+            child: Text('Open'),
+            onPressed: () {
+              _openStravaActivity(activityId);
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openStravaActivity(int activityId) async {
+  final Uri url = Uri.https('www.strava.com', '/activities/$activityId');
+
+  bool canOpen = await canLaunchUrl(url);
+  if (canOpen) {
+    await launchUrl(url, mode: LaunchMode.externalApplication);
+  } else {
+    // Handle the inability to launch the URL.
+    print('Could not launch $url');
+  }
+}
+
 
   Future<void> _signOut() async {
     try {
@@ -549,7 +586,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                             child: GestureDetector(
                               behavior: HitTestBehavior.translucent,
                               onTap: () {
-                                // Action on card tap
+                                _showStravaDialog(context, activity['id']);
                               },
                               child: Card(
                                 elevation: 2,
