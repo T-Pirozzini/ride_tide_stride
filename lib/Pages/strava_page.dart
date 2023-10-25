@@ -10,6 +10,7 @@ import 'package:ride_tide_stride/auth/auth_page.dart';
 import 'package:ride_tide_stride/auth/authentication.dart';
 import 'package:ride_tide_stride/secret.dart';
 import 'package:strava_client/strava_client.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class StravaFlutterPage extends StatefulWidget {
   const StravaFlutterPage({super.key});
@@ -31,8 +32,12 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
   bool isLoggedIn = false;
   TokenResponse? token;
 
+  bool autoSubmit = false;
+
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+
+  String currentMonth = DateFormat('MMMM').format(DateTime.now());
 
   @override
   void initState() {
@@ -146,6 +151,72 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
     final int minutes = (duration.inMinutes % 60);
     final int remainingSeconds = (duration.inSeconds % 60);
     return '$hours:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
+
+  Future<List<String>> getSubmittedActivityIDs() async {
+    QuerySnapshot snapshot = await FirebaseFirestore.instance
+        .collection('activities')
+        .where('submitted', isEqualTo: true)
+        .get();
+
+    List<String> submittedIDs =
+        snapshot.docs.map((doc) => doc.get('activity_id').toString()).toList();
+    return submittedIDs;
+  }
+
+  void _showStravaDialog(BuildContext context, int activityId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(20.0)),
+        ),
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/images/strava.png',
+              height: 24.0, // Adjust the size as required
+              width: 24.0,
+            ),
+            SizedBox(width: 10),
+            Text('View Activity on Strava?'),
+          ],
+        ),
+        content: Text('Please Note: You will be leaving R.T.S'),
+        actions: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton(
+                child: Text('Cancel', style: TextStyle(fontSize: 18)),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              SizedBox(width: 10),
+              TextButton(
+                child: Text('Open',
+                    style: TextStyle(color: Colors.deepOrange, fontSize: 18)),
+                onPressed: () {
+                  _openStravaActivity(activityId);
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openStravaActivity(int activityId) async {
+    final Uri url = Uri.https('www.strava.com', '/activities/$activityId');
+
+    bool canOpen = await canLaunchUrl(url);
+    if (canOpen) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      // Handle the inability to launch the URL.
+      print('Could not launch $url');
+    }
   }
 
   Future<void> _signOut() async {
@@ -273,6 +344,8 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
 
   @override
   Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       backgroundColor: const Color(0xFFDFD3C3),
       appBar: AppBar(
@@ -372,61 +445,103 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                 !isLoggedIn
                     ? Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Welcome to R.T.S!',
-                              style: TextStyle(
-                                  color: Color(0xFF283D3B),
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold),
+                        child: Card(
+                          elevation: 5.0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.check_circle_outline,
+                                      color: Color(0xFF283D3B),
+                                    ),
+                                    const SizedBox(width: 8.0),
+                                    const Text(
+                                      'Welcome to R.T.S!',
+                                      style: TextStyle(
+                                        color: Color(0xFF283D3B),
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 15),
+                                Text(
+                                  'Click the button below to display your most recent activities.',
+                                  style: TextStyle(
+                                    color: Color(0xFF283D3B),
+                                    fontSize: 16,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                                const SizedBox(height: 25),
+                                Center(
+                                  child: ElevatedButton.icon(
+                                    onPressed: testAuthentication,
+                                    icon: Icon(
+                                      Icons.link,
+                                      color: Colors
+                                          .white, // Adjust the color to fit your design
+                                    ),
+                                    label: Text(
+                                      "Get my Activities",
+                                      style: TextStyle(fontSize: 18),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      primary: Color(
+                                          0xFF283D3B), // Button background color
+                                      onPrimary:
+                                          Colors.white, // Text and Icon color
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(10.0),
+                                      ),
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 20, vertical: 12),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 25),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.info_outline,
+                                      color: Color(0xFF283D3B),
+                                    ),
+                                    SizedBox(width: 8.0),
+                                    Expanded(
+                                      child: Text('No Strava account required!',
+                                          style: TextStyle(
+                                              color: Color(0xFF283D3B),
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold)),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'View the Leaderboards or Talk Smack using the tabs below.',
+                                  style: TextStyle(
+                                      color: Color(0xFF283D3B), fontSize: 15),
+                                ),
+                              ],
                             ),
-                            const SizedBox(
-                              height: 15,
-                            ),
-                            Text(
-                              'Click the button below to display your most recent activities.',
-                              style: TextStyle(
-                                  color: Color(0xFF283D3B),
-                                  fontSize: 16,
-                                  fontStyle: FontStyle.italic),
-                            ),
-                            const SizedBox(
-                              height: 15,
-                            ),
-                            ElevatedButton.icon(
-                              onPressed: testAuthentication,
-                              icon: Icon(Icons
-                                  .link), // This represents a link icon, but you can choose any other icon from the Flutter icons set.
-                              label: Text(
-                                "Get my Activities",
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                backgroundColor:
-                                    Color(0xFF283D3B), // Text color
-                              ),
-                            ),
-                            SizedBox(
-                              height: 15,
-                            ),
-                            Text(
-                                'Would you like to view the leaderboards or chat with other athletes?'),
-                            const SizedBox(
-                              height: 15,
-                            ),
-                            Text(
-                                'You don\'t need a Strava account to view the Leaderboards or chat with other athletes. Navigate to the other pages using the tabs at the bottom of this page')
-                          ],
+                          ),
                         ),
                       )
                     : Row(
                         children: [
                           const Text(
-                            'Access ID: ',
+                            'Strava Access ID: ',
                             style: TextStyle(
-                                fontSize: 12, fontWeight: FontWeight.bold),
+                                fontSize: 10, fontWeight: FontWeight.bold),
                           ),
                           Text(
                             _textEditingController.text,
@@ -436,17 +551,22 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                         ],
                       ),
                 const SizedBox(
-                  height: 15,
+                  height: 5,
                 ),
                 if (athleteData != null)
                   Center(
                     child: Card(
-                      elevation: 8,
+                      elevation: 10,
+                      margin: const EdgeInsets.only(bottom: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       child: Container(
-                        width: 300,
-                        padding: const EdgeInsets.all(8),
+                        width: screenWidth * 0.9,
+                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF283D3B).withOpacity(0.8),
+                          color: const Color(0xFF283D3B).withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -454,52 +574,56 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
+                                Icon(Icons.person,
+                                    color: Colors.white, size: 24),
+                                SizedBox(width: 8),
                                 Text(
-                                  athleteData!['firstname'] +
-                                      ' ' +
-                                      athleteData!['lastname'],
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                const Text(
-                                  'ID: ',
+                                  '${athleteData!['firstname']} ${athleteData!['lastname']}',
                                   style: TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 20,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
                                   ),
                                 ),
-                                Text('${athleteData!['id']}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                    )),
                               ],
                             ),
-                            Row(
-                              children: [
-                                const Text('HQ: ',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    )),
-                                Text(
-                                    '${athleteData!['city']}, ${athleteData!['state']}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                    )),
-                              ],
+                            SizedBox(height: 20),
+                            SwitchListTile(
+                              activeColor: Colors.tealAccent,
+                              title: Text(
+                                'Submit $currentMonth activities',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              value: autoSubmit,
+                              onChanged: (bool value) async {
+                                setState(() {
+                                  autoSubmit = value;
+                                });
+                                // If turned ON, auto-submit all activities
+                                if (autoSubmit) {
+                                  getSubmittedActivityIDs()
+                                      .then((submittedIDs) {
+                                    for (var activity in athleteActivities!) {
+                                      if (!submittedIDs.contains(
+                                          activity['id'].toString())) {
+                                        // Activity hasn't been submitted yet
+                                        submitActivityToFirestore(
+                                            activity, athleteData!);
+                                        Future.delayed(
+                                            Duration(milliseconds: 100));
+                                      }
+                                    }
+                                  });
+                                }
+                              },
                             ),
+                            Divider(color: Colors.tealAccent),
+                            SizedBox(height: 10),
+                            _infoRow(
+                                Icons.badge, 'ID', '${athleteData!['id']}'),
+                            SizedBox(height: 10),
+                            _infoRow(Icons.location_city, 'HQ',
+                                '${athleteData!['city']}, ${athleteData!['state']}'),
                           ],
                         ),
                       ),
@@ -516,194 +640,139 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                           final activity = athleteActivities![index];
                           final int movingTimeSeconds = activity['moving_time'];
 
-                          return GestureDetector(
-                            behavior: HitTestBehavior.translucent,
-                            onTap: () {
-                              // Add any action you want when the card is tapped
-                            },
-                            child: Card(
-                              elevation: 2,
-                              margin: const EdgeInsets.symmetric(
-                                  vertical: 8, horizontal: 0),
-                              child: Column(
-                                children: [
-                                  ListTile(
-                                    title: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          DateFormat('EEE, MMM d, yyyy h:mm a')
-                                              .format(DateTime.parse(activity[
-                                                  'start_date_local'])),
-                                          style: const TextStyle(
-                                            fontSize: 10,
+                          return Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal:
+                                    screenWidth * 0.01), // 5% of screen width
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.translucent,
+                              onTap: () {
+                                _showStravaDialog(context, activity['id']);
+                              },
+                              child: Card(
+                                elevation: 2,
+                                margin: const EdgeInsets.symmetric(vertical: 8),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(10.0),
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                        '${activity['name']}',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 20),
+                                      ),
+                                      // Date and activity type
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceAround,
+                                        children: [
+                                          Text(
+                                            DateFormat('MMM d, yyyy (EEE)')
+                                                .format(DateTime.parse(activity[
+                                                    'start_date_local'])),
+                                            style: TextStyle(
+                                              fontSize:
+                                                  14, // Adjusted font size
+                                              color: Colors.grey
+                                                  .shade700, // Made it a bit darker
+                                            ),
                                           ),
-                                        ),
-                                        const SizedBox(height: 10),
-                                        Text('${activity['name']}'),
-                                        const SizedBox(height: 10),
-                                      ],
-                                    ),
-                                    subtitle: Row(
-                                      children: [
-                                        if (activity['type'] == 'Run')
-                                          const Icon(
-                                              Icons.directions_run_outlined),
-                                        if (activity['type'] == 'Ride')
-                                          const Icon(
-                                              Icons.directions_bike_outlined),
-                                        if (activity['type'] == 'Swim')
-                                          const Icon(Icons.pool_outlined),
-                                        if (activity['type'] == 'Walk')
-                                          const Icon(
-                                              Icons.directions_walk_outlined),
-                                        if (activity['type'] == 'Hike')
-                                          const Icon(Icons.terrain_outlined),
-                                        if (activity['type'] == 'AlpineSki')
-                                          const Icon(
-                                              Icons.snowboarding_outlined),
-                                        if (activity['type'] ==
-                                            'BackcountrySki')
-                                          const Icon(
-                                              Icons.snowboarding_outlined),
-                                        if (activity['type'] == 'Canoeing')
-                                          const Icon(Icons.kayaking_outlined),
-                                        if (activity['type'] == 'Crossfit')
-                                          const Icon(
-                                              Icons.fitness_center_outlined),
-                                        if (activity['type'] == 'EBikeRide')
-                                          const Icon(
-                                              Icons.electric_bike_outlined),
-                                        if (activity['type'] == 'Elliptical')
-                                          const Icon(
-                                              Icons.fitness_center_outlined),
-                                        if (activity['type'] == 'Handcycle')
-                                          const Icon(
-                                              Icons.directions_bike_outlined),
-                                        if (activity['type'] == 'IceSkate')
-                                          const Icon(
-                                              Icons.ice_skating_outlined),
-                                        if (activity['type'] == 'InlineSkate')
-                                          const Icon(
-                                              Icons.ice_skating_outlined),
-                                        if (activity['type'] == 'Kayaking')
-                                          const Icon(Icons.kayaking_outlined),
-                                        if (activity['type'] == 'Kitesurf')
-                                          const Icon(
-                                              Icons.kitesurfing_outlined),
-                                        if (activity['type'] == 'NordicSki')
-                                          const Icon(
-                                              Icons.snowboarding_outlined),
-                                        if (activity['type'] == 'RockClimbing')
-                                          const Icon(Icons.terrain_outlined),
-                                        if (activity['type'] == 'RollerSki')
-                                          const Icon(
-                                              Icons.directions_bike_outlined),
-                                        if (activity['type'] == 'Rowing')
-                                          const Icon(Icons.kayaking_outlined),
-                                        if (activity['type'] == 'Snowboard')
-                                          const Icon(
-                                              Icons.snowboarding_outlined),
-                                        if (activity['type'] == 'Snowshoe')
-                                          const Icon(
-                                              Icons.snowshoeing_outlined),
-                                        if (activity['type'] == 'StairStepper')
-                                          const Icon(
-                                              Icons.fitness_center_outlined),
-                                        if (activity['type'] ==
-                                            'StandUpPaddling')
-                                          const Icon(Icons.kayaking_outlined),
-                                        if (activity['type'] == 'Surfing')
-                                          const Icon(Icons.surfing_outlined),
-                                        if (activity['type'] == 'VirtualRide')
-                                          const Icon(
-                                              Icons.directions_bike_outlined),
-                                        if (activity['type'] == 'VirtualRun')
-                                          const Icon(
-                                              Icons.directions_run_outlined),
-                                        if (activity['type'] ==
-                                            'WeightTraining')
-                                          const Icon(
-                                              Icons.fitness_center_outlined),
-                                        if (activity['type'] == 'Windsurf')
-                                          const Icon(Icons.surfing_outlined),
-                                        if (activity['type'] == 'Workout')
-                                          const Icon(
-                                              Icons.fitness_center_outlined),
-                                        if (activity['type'] == 'Yoga')
-                                          const Icon(
-                                              Icons.fitness_center_outlined),
-                                        Text('${activity['type']}'),
-                                      ],
-                                    ),
-                                    trailing: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Moving Time: ${formatDuration(movingTimeSeconds)}',
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          'Distance: ${(activity['distance'] / 1000).toStringAsFixed(2)} km',
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          'Elevation Gain: ${activity['total_elevation_gain']} m',
-                                        ),
-                                      ],
-                                    ),
+                                          // Activity type with icon
+                                          _activityIcon(activity['type']),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 10),
+                                      // Metrics with icons
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceAround,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Icon(Icons.timer_outlined,
+                                                  size: 20,
+                                                  color: Colors.teal.shade500),
+                                              SizedBox(width: 5),
+                                              Text(
+                                                  '${formatDuration(movingTimeSeconds)}'),
+                                            ],
+                                          ),
+                                          Row(
+                                            children: [
+                                              Icon(Icons.straighten_outlined,
+                                                  size: 20,
+                                                  color: Colors.teal.shade500),
+                                              SizedBox(width: 5),
+                                              Text(
+                                                  '${(activity['distance'] / 1000).toStringAsFixed(2)} km'),
+                                            ],
+                                          ),
+                                          Row(
+                                            children: [
+                                              Icon(Icons.landscape_outlined,
+                                                  size: 20,
+                                                  color: Colors.teal.shade500),
+                                              SizedBox(width: 5),
+                                              Text(
+                                                  '${activity['total_elevation_gain']} m'),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+
+                                      const SizedBox(height: 10),
+                                      StreamBuilder<QuerySnapshot>(
+                                        stream: FirebaseFirestore.instance
+                                            .collection('activities')
+                                            .where('activity_id',
+                                                isEqualTo: activity['id'])
+                                            .snapshots(),
+                                        builder: (context, snapshot) {
+                                          if (snapshot.hasError) {
+                                            return Text(
+                                                "Error: ${snapshot.error}");
+                                          }
+
+                                          if (snapshot.connectionState ==
+                                              ConnectionState.waiting) {
+                                            return const CircularProgressIndicator();
+                                          }
+
+                                          final List<DocumentSnapshot>
+                                              documents = snapshot.data!.docs;
+                                          bool isSubmitted = false;
+
+                                          if (documents.isNotEmpty) {
+                                            final DocumentSnapshot document =
+                                                documents.first;
+                                            isSubmitted =
+                                                document.get('submitted') ??
+                                                    false;
+                                          }
+
+                                          return ElevatedButton(
+                                            onPressed: isSubmitted || autoSubmit
+                                                ? null
+                                                : () {
+                                                    // Call the function to submit activity data to Firestore
+                                                    submitActivityToFirestore(
+                                                        activity, athleteData!);
+                                                  },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: isSubmitted
+                                                  ? Colors.grey
+                                                  : const Color(
+                                                      0xFF283D3B), // Change color when submitted
+                                            ),
+                                            child: const Text(
+                                                "Submit to Leaderboard"),
+                                          );
+                                        },
+                                      ),
+                                    ],
                                   ),
-                                  StreamBuilder<QuerySnapshot>(
-                                    stream: FirebaseFirestore.instance
-                                        .collection('activities')
-                                        .where('activity_id',
-                                            isEqualTo: activity['id'])
-                                        .snapshots(),
-                                    builder: (context, snapshot) {
-                                      if (snapshot.hasError) {
-                                        return Text("Error: ${snapshot.error}");
-                                      }
-
-                                      if (snapshot.connectionState ==
-                                          ConnectionState.waiting) {
-                                        return const CircularProgressIndicator();
-                                      }
-
-                                      final List<DocumentSnapshot> documents =
-                                          snapshot.data!.docs;
-                                      bool isSubmitted = false;
-
-                                      if (documents.isNotEmpty) {
-                                        final DocumentSnapshot document =
-                                            documents.first;
-                                        isSubmitted =
-                                            document.get('submitted') ?? false;
-                                      }
-
-                                      return ElevatedButton(
-                                        onPressed: isSubmitted
-                                            ? null
-                                            : () {
-                                                // Call the function to submit activity data to Firestore
-                                                submitActivityToFirestore(
-                                                    activity, athleteData!);
-                                              },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: isSubmitted
-                                              ? Colors.grey
-                                              : const Color(
-                                                  0xFF283D3B), // Change color when submitted
-                                        ),
-                                        child:
-                                            const Text("Submit to Leaderboard"),
-                                      );
-                                    },
-                                  ),
-                                ],
+                                ),
                               ),
                             ),
                           );
@@ -761,4 +830,75 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
       print("Error submitting activity data to Firestore: $error");
     });
   }
+}
+
+// This function is to avoid repetition and make the code cleaner
+Widget _infoRow(IconData icon, String title, String value) {
+  return Row(
+    children: [
+      Icon(icon, color: Colors.tealAccent, size: 20),
+      SizedBox(width: 8),
+      Text(
+        '$title: ',
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+      Expanded(
+        child: Text(
+          value,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+final activityIcons = {
+  'Run': Icons.directions_run_outlined,
+  'Ride': Icons.directions_bike_outlined,
+  'Swim': Icons.pool_outlined,
+  'Walk': Icons.directions_walk_outlined,
+  'Hike': Icons.terrain_outlined,
+  'AlpineSki': Icons.snowboarding_outlined,
+  'BackcountrySki': Icons.snowboarding_outlined,
+  'Canoeing': Icons.kayaking_outlined,
+  'Crossfit': Icons.fitness_center_outlined,
+  'EBikeRide': Icons.electric_bike_outlined,
+  'Elliptical': Icons.fitness_center_outlined,
+  'Handcycle': Icons.directions_bike_outlined,
+  'IceSkate': Icons.ice_skating_outlined,
+  'InlineSkate': Icons.ice_skating_outlined,
+  'Kayaking': Icons.kayaking_outlined,
+  'Kitesurf': Icons.kitesurfing_outlined,
+  'NordicSki': Icons.snowboarding_outlined,
+  'RockClimbing': Icons.terrain_outlined,
+  'RollerSki': Icons.directions_bike_outlined,
+  'Rowing': Icons.kayaking_outlined,
+  'Snowboard': Icons.snowboarding_outlined,
+  'Snowshoe': Icons.snowshoeing_outlined,
+  'StairStepper': Icons.fitness_center_outlined,
+  'StandUpPaddling': Icons.kayaking_outlined,
+  'Surfing': Icons.surfing_outlined,
+  'VirtualRide': Icons.directions_bike_outlined,
+  'VirtualRun': Icons.directions_run_outlined,
+  'WeightTraining': Icons.fitness_center_outlined,
+  'Windsurf': Icons.surfing_outlined,
+  'Workout': Icons.fitness_center_outlined,
+  'Yoga': Icons.fitness_center_outlined,
+};
+
+Widget _activityIcon(String activityType) {
+  var iconData = activityIcons[activityType] ??
+      Icons.help_outline; // Default icon if not found
+  return Row(
+    children: [
+      Icon(iconData, color: Colors.teal.shade100, size: 48),
+    ],
+  );
 }
