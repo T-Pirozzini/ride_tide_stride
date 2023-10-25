@@ -31,8 +31,12 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
   bool isLoggedIn = false;
   TokenResponse? token;
 
+  bool autoSubmit = false;
+
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+
+  String currentMonth = DateFormat('MMMM').format(DateTime.now());
 
   @override
   void initState() {
@@ -146,6 +150,17 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
     final int minutes = (duration.inMinutes % 60);
     final int remainingSeconds = (duration.inSeconds % 60);
     return '$hours:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
+
+  Future<List<String>> getSubmittedActivityIDs() async {
+    QuerySnapshot snapshot = await FirebaseFirestore.instance
+        .collection('activities')
+        .where('submitted', isEqualTo: true)
+        .get();
+
+    List<String> submittedIDs =
+        snapshot.docs.map((doc) => doc.get('activity_id').toString()).toList();
+    return submittedIDs;
   }
 
   Future<void> _signOut() async {
@@ -466,6 +481,32 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                 ),
                               ],
                             ),
+                            SwitchListTile(
+                              title:
+                                  Text('Submit all $currentMonth activities'),
+                              value: autoSubmit,
+                              onChanged: (bool value) async {
+                                setState(() {
+                                  autoSubmit = value;
+                                });
+                                // If turned ON, auto-submit all activities
+                                if (autoSubmit) {
+                                  getSubmittedActivityIDs()
+                                      .then((submittedIDs) {
+                                    for (var activity in athleteActivities!) {
+                                      if (!submittedIDs.contains(
+                                          activity['id'].toString())) {
+                                        // Activity hasn't been submitted yet
+                                        submitActivityToFirestore(
+                                            activity, athleteData!);
+                                        Future.delayed(
+                                            Duration(milliseconds: 100));
+                                      }
+                                    }
+                                  });
+                                }
+                              },
+                            ),
                             const SizedBox(height: 10),
                             Row(
                               children: [
@@ -685,7 +726,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                       }
 
                                       return ElevatedButton(
-                                        onPressed: isSubmitted
+                                        onPressed: isSubmitted || autoSubmit
                                             ? null
                                             : () {
                                                 // Call the function to submit activity data to Firestore
