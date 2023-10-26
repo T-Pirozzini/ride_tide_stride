@@ -56,7 +56,8 @@ class _ResultsPageState extends State<ResultsPage> {
   Widget _buildMonthResults(QueryDocumentSnapshot doc) {
     List<Result> distanceResults =
         _mapToResultsList(doc['rankings_by_distance']);
-    // Add other categories as needed.
+    List<Result> timeResults = _mapToResultsList(doc['rankings_by_elevation']);
+    List<Result> elevationResults = _mapToResultsList(doc['rankings_by_time']);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,6 +67,7 @@ class _ResultsPageState extends State<ResultsPage> {
           child: Text(doc.id,
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         ),
+        const Divider(),
         GridView.builder(
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
@@ -81,7 +83,38 @@ class _ResultsPageState extends State<ResultsPage> {
                 'distance', distanceResults[index], index + 1);
           },
         ),
-        // Add other categories grids as needed.
+        const Divider(),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 3, // Adjust for the desired width-to-height ratio
+            crossAxisSpacing: 0,
+            mainAxisSpacing: 0,
+          ),
+          itemCount: timeResults.length,
+          itemBuilder: (context, index) {
+            return _buildResultGridItem(
+                'distance', timeResults[index], index + 1);
+          },
+        ),
+        const Divider(),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 3, // Adjust for the desired width-to-height ratio
+            crossAxisSpacing: 0,
+            mainAxisSpacing: 0,
+          ),
+          itemCount: elevationResults.length,
+          itemBuilder: (context, index) {
+            return _buildResultGridItem(
+                'distance', elevationResults[index], index + 1);
+          },
+        ),
       ],
     );
   }
@@ -97,7 +130,7 @@ class _ResultsPageState extends State<ResultsPage> {
   Widget _buildResultGridItem(String category, Result result, int rank) {
     IconData iconData;
     switch (category) {
-      case 'Distance':
+      case 'distance':
         iconData = Icons.directions_run;
         break;
       // Add other categories and respective icons here.
@@ -108,7 +141,7 @@ class _ResultsPageState extends State<ResultsPage> {
     return Card(
       elevation: 2,
       child: ListTile(
-        contentPadding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+        contentPadding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 0.0),
         leading: CircleAvatar(
           backgroundColor: _getCircleColor(
               rank), // this function returns the appropriate color
