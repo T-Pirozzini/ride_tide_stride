@@ -108,6 +108,8 @@ void _saveResultsToFirestore() async {
   final currentYear = DateTime.now().year;
   final firstDayOfMonth = DateTime(currentYear, currentMonth, 1);
   final lastDayOfMonth = DateTime(currentYear, currentMonth + 1, 0);
+  String formattedDate =
+      DateFormat('MMMM yyyy').format(DateTime(currentYear, currentMonth));
 
   // Fetch data for the current month
   final snapshot = await FirebaseFirestore.instance
@@ -118,11 +120,11 @@ void _saveResultsToFirestore() async {
           isLessThanOrEqualTo: lastDayOfMonth.toUtc().toIso8601String())
       .get();
 
-  // Use a map to aggregate the totals for each user
   Map<String, Map<String, dynamic>> aggregatedData = {};
 
   for (var doc in snapshot.docs) {
-    final data = doc.data();
+    final data =
+        doc.data() as Map<String, dynamic>; // Cast to Map<String, dynamic>
     final fullname = data['fullname'];
 
     if (!aggregatedData.containsKey(fullname)) {
@@ -140,6 +142,47 @@ void _saveResultsToFirestore() async {
     aggregatedData[fullname]?['totals']['distance'] += data['distance'];
     aggregatedData[fullname]?['totals']['elevation_gain'] +=
         data['elevation_gain'];
+  }
+
+  for (var user in aggregatedData.keys) {
+    final userData = aggregatedData[user];
+
+    DocumentReference userRef =
+        FirebaseFirestore.instance.collection('UserTopStats').doc(user);
+    DocumentSnapshot userSnapshot = await userRef.get();
+    Map<String, dynamic> userDoc;
+
+    if (userSnapshot.data() is Map) {
+      userDoc = Map<String, dynamic>.from(userSnapshot.data() as Map);
+    } else {
+      userDoc = {};
+    }
+
+    bool shouldUpdate = false;
+
+    if (userData?['totals']['distance'] > (userDoc['top_distance'] ?? 0.0)) {
+      userDoc['top_distance'] = userData?['totals']['distance'];
+      userDoc['top_distance_month'] = formattedDate;
+      shouldUpdate = true;
+    }
+
+    if (userData?['totals']['moving_time'] >
+        (userDoc['top_moving_time'] ?? 0.0)) {
+      userDoc['top_moving_time'] = userData?['totals']['moving_time'];
+      userDoc['top_moving_time_month'] = formattedDate;
+      shouldUpdate = true;
+    }
+
+    if (userData?['totals']['elevation_gain'] >
+        (userDoc['top_elevation'] ?? 0.0)) {
+      userDoc['top_elevation'] = userData?['totals']['elevation_gain'];
+      userDoc['top_elevation_month'] = formattedDate;
+      shouldUpdate = true;
+    }
+
+    if (shouldUpdate) {
+      await userRef.set(userDoc, SetOptions(merge: true));
+    }
   }
 
   // Convert the map into a list

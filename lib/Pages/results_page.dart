@@ -23,9 +23,129 @@ class ResultsPage extends StatefulWidget {
 class _ResultsPageState extends State<ResultsPage> {
   final _firestore = FirebaseFirestore.instance;
 
+  void showUserStatsDialog(
+      BuildContext context, Result result, String category) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return FutureBuilder<DocumentSnapshot>(
+          future: FirebaseFirestore.instance
+              .collection('UserTopStats')
+              .doc(result.fullname)
+              .get(),
+          builder:
+              (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
+            String statValue;
+            String label;
+
+            if (snapshot.connectionState == ConnectionState.done) {
+              Map<String, dynamic> userTopStats =
+                  snapshot.data!.data() as Map<String, dynamic>;
+
+              switch (category) {
+                case 'distance':
+                  statValue =
+                      '${(result.totals[category] as double).toStringAsFixed(2)}km';
+                  label = 'Total Distance';
+                  break;
+                case 'moving_time':
+                  final int seconds = (result.totals[category] as num).toInt();
+                  final Duration duration = Duration(seconds: seconds);
+                  final int hours = duration.inHours;
+                  final int minutes = (duration.inMinutes % 60);
+                  statValue = '$hours:${minutes.toString().padLeft(2, '0')}';
+                  label = 'Moving Time';
+                  break;
+                case 'elevation_gain':
+                  statValue =
+                      '${(result.totals[category] as double).toStringAsFixed(1)}m';
+                  label = 'Elevation Gain';
+                  break;
+                default:
+                  statValue = result.totals[category].toString();
+                  label = 'Other Stat';
+              }
+
+              List<Widget> children = [
+                ListTile(
+                  leading: Icon(Icons.timer_outlined),
+                  title: Text('Top Time'),
+                  subtitle: Text(userTopStats['top_moving_time_month'] ?? ''),
+                  trailing: Text(statValue + " hrs"),
+                ),
+                ListTile(
+                    leading: Icon(Icons.straighten_outlined),
+                    title: Text('Top Distance'),
+                    subtitle: Text(userTopStats['top_distance_month'] ?? ''),
+                    trailing: Text(
+                        '${((userTopStats['top_distance'] ?? 0) / 1000.0).toStringAsFixed(2)} km')),
+                ListTile(
+                  leading: Icon(Icons.landscape_outlined),
+                  title: Text('Top Elevation'),
+                  subtitle: Text(userTopStats['top_elevation_month'] ?? ''),
+                  trailing: Text('${userTopStats['top_elevation'] ?? 0.0} m'),
+                ),
+              ];
+
+              return AlertDialog(
+                titlePadding: EdgeInsets.all(16.0),
+                title: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    result.fullname,
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                content: Container(
+                  width: MediaQuery.of(context).size.width *
+                      0.8, // 70% of screen width
+                  height: MediaQuery.of(context).size.height *
+                      0.4, // 50% of screen height
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: children,
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    child: Text(
+                      'Close',
+                      style: TextStyle(color: Theme.of(context).primaryColor),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              );
+            } else if (snapshot.connectionState == ConnectionState.waiting) {
+              return AlertDialog(
+                title: Text('Loading...'),
+              );
+            } else {
+              return AlertDialog(
+                title: Text('Error!'),
+                content: Text('There was an error fetching the stats.'),
+                actions: [
+                  TextButton(
+                    child: Text('Close'),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              );
+            }
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFDFD3C3),
       appBar: AppBar(
         title: const Text('Past Results',
             style: TextStyle(
@@ -65,25 +185,13 @@ class _ResultsPageState extends State<ResultsPage> {
         Padding(
           padding: const EdgeInsets.all(2.0),
           child: Text(doc.id,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         ),
         const Divider(),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 3, // Adjust for the desired width-to-height ratio
-            crossAxisSpacing: 0,
-            mainAxisSpacing: 0,
-          ),
-          itemCount: distanceResults.length,
-          itemBuilder: (context, index) {
-            return _buildResultGridItem(
-                'distance', distanceResults[index], index + 1);
-          },
+        Text(
+          'Total Moving Time:',
+          style: TextStyle(fontSize: 18),
         ),
-        const Divider(),
         GridView.builder(
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
@@ -96,10 +204,34 @@ class _ResultsPageState extends State<ResultsPage> {
           itemCount: timeResults.length,
           itemBuilder: (context, index) {
             return _buildResultGridItem(
-                'distance', timeResults[index], index + 1);
+                'moving_time', timeResults[index], index + 1);
           },
         ),
         const Divider(),
+        Text(
+          'Total Distance:',
+          style: TextStyle(fontSize: 18),
+        ),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 3,
+            crossAxisSpacing: 0,
+            mainAxisSpacing: 0,
+          ),
+          itemCount: distanceResults.length,
+          itemBuilder: (context, index) {
+            return _buildResultGridItem(
+                'distance', distanceResults[index], index + 1);
+          },
+        ),
+        const Divider(),
+        Text(
+          'Total Elevation:',
+          style: TextStyle(fontSize: 18),
+        ),
         GridView.builder(
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
@@ -112,7 +244,7 @@ class _ResultsPageState extends State<ResultsPage> {
           itemCount: elevationResults.length,
           itemBuilder: (context, index) {
             return _buildResultGridItem(
-                'distance', elevationResults[index], index + 1);
+                'elevation_gain', elevationResults[index], index + 1);
           },
         ),
       ],
@@ -129,56 +261,89 @@ class _ResultsPageState extends State<ResultsPage> {
 
   Widget _buildResultGridItem(String category, Result result, int rank) {
     IconData iconData;
-    switch (category) {
-      case 'distance':
-        iconData = Icons.directions_run;
-        break;
-      // Add other categories and respective icons here.
-      default:
-        iconData = Icons.directions_run; // Default icon
+    String displayValue;
+    String formatDuration(int seconds) {
+      final Duration duration = Duration(seconds: seconds);
+      final int hours = duration.inHours;
+      final int minutes = (duration.inMinutes % 60);
+      final int remainingSeconds = (duration.inSeconds % 60);
+      return '$hours:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
     }
 
-    return Card(
-      elevation: 2,
-      child: ListTile(
-        contentPadding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 0.0),
-        leading: CircleAvatar(
-          backgroundColor: _getCircleColor(
-              rank), // this function returns the appropriate color
-          child: Text(
-            '#${rank}',
-            style: TextStyle(
-                fontSize: 14,
-                color: _getTextColor(
-                    rank)), // this function returns the text color
+    switch (category) {
+      case 'distance':
+        iconData = Icons.straighten;
+        displayValue =
+            '${((result.totals[category] as double) / 1000).toStringAsFixed(2)} km';
+
+        break;
+      case 'moving_time':
+        iconData = Icons.timer_outlined;
+        displayValue = formatDuration((result.totals[category] as num).toInt());
+        break;
+      case 'elevation_gain':
+        iconData = Icons.landscape_outlined;
+        displayValue =
+            '${(result.totals[category] as double).toStringAsFixed(1)} m';
+        break;
+      default:
+        iconData = Icons.directions_run;
+        displayValue = result.totals[category].toString();
+    }
+
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: () {
+            showUserStatsDialog(context, result, category);
+          },
+          child: Card(
+            elevation: 2,
+            child: ListTile(
+              contentPadding:
+                  EdgeInsets.symmetric(horizontal: 4.0, vertical: 0.0),
+              leading: customPlaceWidget(rank.toString()),
+              title: Text(result.fullname, style: TextStyle(fontSize: 12)),
+              trailing: Text(displayValue,
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+              // subtitle: Icon(iconData),
+            ),
           ),
         ),
-        title: Text(result.fullname, style: TextStyle(fontSize: 12)),
-        subtitle:
-            Text('${result.totals[category]}', style: TextStyle(fontSize: 10)),
-      ),
+      ],
     );
   }
 
-  Color _getCircleColor(int rank) {
-    switch (rank) {
-      case 1:
-        return Colors.yellow[700]!;
-      case 2:
-        return Colors.grey[400]!;
-      case 3:
-        return Color.fromARGB(255, 180, 119,
-            97); // You may need to define a bronze color if not available
+  Widget customPlaceWidget(String place) {
+    Color color = Color(0xFFA09A6A);
+    switch (place) {
+      case "1":
+        color = Colors.yellow[700]!;
+        break;
+      case "2":
+        color = Colors.grey[400]!;
+        break;
+      case "3":
+        color = Color.fromARGB(255, 180, 119, 97);
+        break;
       default:
-        return Colors.blueGrey; // No color for other ranks
+        Colors.blueGrey; // No color for other ranks
     }
-  }
 
-  Color _getTextColor(int rank) {
-    if (rank <= 3) {
-      return Colors
-          .black; // or another color that contrasts well with gold/silver/bronze
-    }
-    return Colors.grey; // Default text color for other ranks
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: color, width: 2.0),
+      ),
+      padding: const EdgeInsets.all(10.0), // Adjust padding as needed
+      child: Text(
+        place,
+        style: TextStyle(
+          fontSize: 24, // Adjust font size as needed
+          color: color, // Text color
+          fontWeight: FontWeight.bold, // Bold text
+        ),
+      ),
+    );
   }
 }
