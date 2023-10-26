@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ride_tide_stride/components/timer.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class Leaderboard extends StatefulWidget {
   const Leaderboard({Key? key}) : super(key: key);
@@ -220,6 +221,63 @@ class LeaderboardTab extends StatelessWidget {
 
   const LeaderboardTab({Key? key, required this.title}) : super(key: key);
 
+  // strava dialog
+  void _showStravaDialog(BuildContext context, int activityId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(20.0)),
+        ),
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/images/strava.png',
+              height: 24.0, // Adjust the size as required
+              width: 24.0,
+            ),
+            SizedBox(width: 10),
+            Text('View Activity on Strava?'),
+          ],
+        ),
+        content: Text('Please Note: You will be leaving R.T.S'),
+        actions: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton(
+                child: Text('Cancel', style: TextStyle(fontSize: 18)),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              SizedBox(width: 10),
+              TextButton(
+                child: Text('Open',
+                    style: TextStyle(color: Colors.deepOrange, fontSize: 18)),
+                onPressed: () {
+                  _openStravaActivity(activityId);
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // redirect to Strava
+  Future<void> _openStravaActivity(int activityId) async {
+    final Uri url = Uri.https('www.strava.com', '/activities/$activityId');
+
+    bool canOpen = await canLaunchUrl(url);
+    if (canOpen) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      // Handle the inability to launch the URL.
+      print('Could not launch $url');
+    }
+  }
+
   // Function to fetch user activities
   Future<List<Map<String, dynamic>>> fetchUserActivities(
       String fullName) async {
@@ -248,114 +306,140 @@ class LeaderboardTab extends StatelessWidget {
     activities.sort((a, b) => DateTime.parse(b['start_date'])
         .compareTo(DateTime.parse(a['start_date'])));
 
-    return SingleChildScrollView(
-      child: Column(
-        children: activities.map((activity) {
-          //calculation for pace
-          double speedMps =
-              activity['average_speed']; // Speed in meters per second
-          double speedKph = speedMps * 3.6; // Convert to km/h
-          double pace = 60 / speedKph;
-          int minutes = pace.floor();
-          int seconds = ((pace - minutes) * 60).round();
-          // Helper function to format duration
-          String formatDuration(int seconds) {
-            final Duration duration = Duration(seconds: seconds);
-            final int hours = duration.inHours;
-            final int minutes = (duration.inMinutes % 60);
-            final int remainingSeconds = (duration.inSeconds % 60);
-            return '$hours:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
-          }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        double deviceHeight = constraints.maxHeight;
+        double deviceWidth = constraints.maxWidth;
+        double topPadding = MediaQuery.of(context).padding.top;
+        double bottomPadding = MediaQuery.of(context).padding.bottom;
+        double usableHeight = deviceHeight - topPadding - bottomPadding;
 
-          // Helper function to format the date
-          String formatDate(String startDate) {
-            final DateTime date = DateTime.parse(startDate);
-            return DateFormat.yMMMd().format(date); // e.g., Sep 26, 2023
-          }
+        double fontSizeForDate = usableHeight * 0.015;
+        double fontSizeForName = usableHeight * 0.02;
 
-          return Card(
-            margin: const EdgeInsets.all(2),
-            elevation: 1,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0)),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: const Color(0xFF283d3b),
-                foregroundColor: Colors.white,
-                child: getIconForActivityType(activity['type']),
-              ),
-              title: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    formatDate(activity['start_date']),
-                    style: const TextStyle(
-                        fontSize: 8.0,
-                        color: Colors.grey,
-                        fontWeight: FontWeight.w400),
+        return SingleChildScrollView(
+          child: Column(
+            children: activities.map((activity) {
+              //calculation for pace
+              double speedMps =
+                  activity['average_speed']; // Speed in meters per second
+              double speedKph = speedMps * 3.6; // Convert to km/h
+              double pace = 60 / speedKph;
+              int minutes = pace.floor();
+              int seconds = ((pace - minutes) * 60).round();
+              // Helper function to format duration
+              String formatDuration(int seconds) {
+                final Duration duration = Duration(seconds: seconds);
+                final int hours = duration.inHours;
+                final int minutes = (duration.inMinutes % 60);
+                final int remainingSeconds = (duration.inSeconds % 60);
+                return '$hours:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+              }
+
+              // Helper function to format the date
+              String formatDate(String startDate) {
+                final DateTime date = DateTime.parse(startDate);
+                return DateFormat.yMMMd().format(date); // e.g., Sep 26, 2023
+              }
+
+              return GestureDetector(
+                onTap: () {
+                  if (activity['activity_id'] != null) {
+                    _showStravaDialog(context, activity['activity_id']!);
+                  } else {
+                    print('Activity does not have an ID.');
+                  }
+                },
+                child: Card(
+                  elevation: 1,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0)),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Color.fromARGB(167, 40, 61, 59),
+                      foregroundColor: Colors.white,
+                      child: getIconForActivityType(activity['type']),
+                    ),
+                    title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          formatDate(activity['start_date']),
+                          style: TextStyle(
+                              fontSize: fontSizeForDate,
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(height: 2.0),
+                        Text(
+                          activity['name'],
+                          style: TextStyle(
+                              fontSize: fontSizeForName,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                    subtitle: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          formatDuration(activity['moving_time']),
+                          style: const TextStyle(fontSize: 12.0),
+                        ),
+                        Text(
+                          '${(activity['distance'] / 1000).toStringAsFixed(2)} km',
+                          style: const TextStyle(fontSize: 12.0),
+                        ),
+                        Text(
+                          '${activity['elevation_gain']} m',
+                          style: const TextStyle(fontSize: 12.0),
+                        ),
+                      ],
+                    ),
+                    trailing: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.flash_on,
+                                color: Colors.yellow[600], size: 20.0),
+                            const SizedBox(width: 4.0),
+                            activity['average_watts'] != null
+                                ? Text(
+                                    '${activity['average_watts'].toString()} W',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w500),
+                                  )
+                                : Text('0 W'),
+                          ],
+                        ),
+                        const SizedBox(height: 4.0),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.speed_outlined,
+                                color: Colors.red[600], size: 20.0),
+                            const SizedBox(width: 4.0),
+                            Text(
+                              '$minutes:${seconds.toString().padLeft(2, '0')} /km',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    isThreeLine: true,
                   ),
-                  const SizedBox(height: 2.0),
-                  Text(
-                    activity['name'],
-                    style: const TextStyle(
-                        fontSize: 14.0, fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
-              subtitle: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    formatDuration(activity['moving_time']),
-                    style: const TextStyle(fontSize: 12.0),
-                  ),
-                  Text(
-                    '${(activity['distance'] / 1000).toStringAsFixed(2)} km',
-                    style: const TextStyle(fontSize: 12.0),
-                  ),
-                  Text(
-                    '${activity['elevation_gain']} m',
-                    style: const TextStyle(fontSize: 12.0),
-                  ),
-                ],
-              ),
-              trailing: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.flash_on,
-                          color: Colors.yellow[600], size: 20.0),
-                      const SizedBox(width: 4.0),
-                      Text(
-                        '${activity['average_watts'].toString()} W',
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4.0),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.speed_outlined,
-                          color: Colors.red[600], size: 20.0),
-                      const SizedBox(width: 4.0),
-                      Text(
-                        '$minutes:${seconds.toString().padLeft(2, '0')} /km',
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              isThreeLine: true,
-            ),
-          );
-        }).toList(),
-      ),
+                ),
+              );
+            }).toList(),
+          ),
+        );
+      },
     );
   }
 
@@ -419,6 +503,10 @@ class LeaderboardTab extends StatelessWidget {
             return GestureDetector(
               onTap: () {
                 final localContext = context;
+                double deviceHeight = MediaQuery.of(localContext).size.height;
+                double deviceWidth = MediaQuery.of(localContext).size.width;
+                double dialogHeight = deviceHeight * 0.6;
+                double dialogWidth = deviceWidth * 0.95;
                 fetchUserActivities(entry['full_name']).then(
                   (activities) {
                     showDialog(
@@ -426,8 +514,8 @@ class LeaderboardTab extends StatelessWidget {
                       builder: (context) => AlertDialog(
                         title: Text('${entry['full_name']}\'s Activities'),
                         content: SizedBox(
-                            height: 400,
-                            width: 300,
+                            height: dialogHeight,
+                            width: dialogWidth,
                             child: buildActivitiesList(activities)),
                         actions: [
                           TextButton(

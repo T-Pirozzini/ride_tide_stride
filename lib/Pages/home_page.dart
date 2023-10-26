@@ -59,24 +59,24 @@ class _HomeState extends State<Home> {
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.account_box_outlined, color: Colors.white60),
-            activeIcon: Icon(Icons.account_box_outlined,
+            activeIcon: Icon(Icons.account_box,
                 color: Colors
                     .white), // activeIcon will ensure that the icon is always white, even when selected
             label: 'Dashboard',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.leaderboard, color: Colors.white60),
+            icon: Icon(Icons.leaderboard_outlined, color: Colors.white60),
             activeIcon: Icon(Icons.leaderboard, color: Colors.white),
             label: 'Leaderboard',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.emoji_events_outlined, color: Colors.white60),
-            activeIcon: Icon(Icons.emoji_events_outlined, color: Colors.white),
+            activeIcon: Icon(Icons.emoji_events, color: Colors.white),
             label: 'Results',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.chat_outlined, color: Colors.white60),
-            activeIcon: Icon(Icons.chat_outlined, color: Colors.white),
+            activeIcon: Icon(Icons.chat, color: Colors.white),
             label: 'Talk Smack',
           ),
         ],

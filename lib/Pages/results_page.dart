@@ -100,7 +100,7 @@ class _ResultsPageState extends State<ResultsPage> {
                   width: MediaQuery.of(context).size.width *
                       0.8, // 70% of screen width
                   height: MediaQuery.of(context).size.height *
-                      0.4, // 50% of screen height
+                      0.25, // 50% of screen height
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: children,
