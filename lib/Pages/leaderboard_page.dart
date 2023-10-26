@@ -1,9 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_countdown_timer/flutter_countdown_timer.dart';
 import 'package:intl/intl.dart';
-// import 'package:google_fonts/google_fonts.dart';
+import 'package:ride_tide_stride/components/timer.dart';
 
 class Leaderboard extends StatefulWidget {
   const Leaderboard({Key? key}) : super(key: key);
@@ -56,6 +55,9 @@ class _LeaderboardState extends State<Leaderboard> {
     final endOfMonth = DateTime(now.year, now.month + 1, 0);
     final endTime = endOfMonth.millisecondsSinceEpoch;
 
+    // final testTime =
+    //     DateTime.now().millisecondsSinceEpoch + 15000; // 15 seconds from now
+
     return DefaultTabController(
       length: 3,
       child: Scaffold(
@@ -76,6 +78,7 @@ class _LeaderboardState extends State<Leaderboard> {
           actions: [
             CountdownTimerWidget(
               endTime: endTime,
+              onTimerEnd: _saveResultsToFirestore,
             ),
           ],
         ),
@@ -116,27 +119,53 @@ void _saveResultsToFirestore() async {
           isLessThanOrEqualTo: lastDayOfMonth.toUtc().toIso8601String())
       .get();
 
-  // Extract the relevant data (e.g., fullname and totals) and save it to the Results collection
-  final resultsData = snapshot.docs.map((doc) {
+  // Use a map to aggregate the totals for each user
+  Map<String, Map<String, dynamic>> aggregatedData = {};
+
+  for (var doc in snapshot.docs) {
     final data = doc.data();
+    final fullname = data['fullname'];
 
-    // Create a results object with the desired structure
-    final results = {
-      'moving_time': data['moving_time'],
-      'distance': data['distance'],
-      'elevation_gain': data['elevation_gain'],
-    };
+    if (!aggregatedData.containsKey(fullname)) {
+      aggregatedData[fullname] = {
+        'fullname': fullname,
+        'totals': {
+          'moving_time': 0.0,
+          'distance': 0.0,
+          'elevation_gain': 0.0,
+        }
+      };
+    }
 
-    return {
-      'fullname': data['fullname'],
-      'totals': results,
-    };
-  }).toList();
+    aggregatedData[fullname]?['totals']['moving_time'] += data['moving_time'];
+    aggregatedData[fullname]?['totals']['distance'] += data['distance'];
+    aggregatedData[fullname]?['totals']['elevation_gain'] +=
+        data['elevation_gain'];
+  }
 
-  // Save the data to the Results collection
+  // Convert the map into a list
+  final resultsData = aggregatedData.values.toList();
+
+  // Sort and extract rankings
+  final rankingsByTime = List.from(resultsData)
+    ..sort((a, b) =>
+        b['totals']['moving_time'].compareTo(a['totals']['moving_time']));
+
+  final rankingsByDistance = List.from(resultsData)
+    ..sort(
+        (a, b) => b['totals']['distance'].compareTo(a['totals']['distance']));
+
+  final rankingsByElevation = List.from(resultsData)
+    ..sort((a, b) =>
+        b['totals']['elevation_gain'].compareTo(a['totals']['elevation_gain']));
+
+  // Save the data and rankings to the Results collection
   await FirebaseFirestore.instance.collection('Results').add({
     'timestamp': Timestamp.now(),
     'data': resultsData,
+    'rankings_by_time': rankingsByTime,
+    'rankings_by_distance': rankingsByDistance,
+    'rankings_by_elevation': rankingsByElevation,
   });
 }
 
@@ -568,28 +597,5 @@ class LeaderboardTab extends StatelessWidget {
       default:
         return Text(type);
     }
-  }
-}
-
-class CountdownTimerWidget extends StatelessWidget {
-  final int endTime;
-  const CountdownTimerWidget({Key? key, required this.endTime})
-      : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.all(8),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          const Text('Competition ends in... '),
-          CountdownTimer(
-            endTime: endTime,
-            textStyle: const TextStyle(fontSize: 18),
-          ),
-        ],
-      ),
-    );
   }
 }
