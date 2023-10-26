@@ -54,9 +54,8 @@ class _LeaderboardState extends State<Leaderboard> {
     final now = DateTime.now();
     final endOfMonth = DateTime(now.year, now.month + 1, 0);
     final endTime = endOfMonth.millisecondsSinceEpoch;
-
     // final testTime =
-    //     DateTime.now().millisecondsSinceEpoch + 15000; // 15 seconds from now
+    //     DateTime.now().millisecondsSinceEpoch + 5000; // 5 seconds from now
 
     return DefaultTabController(
       length: 3,
@@ -159,8 +158,12 @@ void _saveResultsToFirestore() async {
     ..sort((a, b) =>
         b['totals']['elevation_gain'].compareTo(a['totals']['elevation_gain']));
 
+  final currentDate = DateTime.now();
+  final month = DateFormat('MMMM').format(currentDate);
+  final year = currentDate.year.toString();
+  final documentName = '$month $year';
   // Save the data and rankings to the Results collection
-  await FirebaseFirestore.instance.collection('Results').add({
+  await FirebaseFirestore.instance.collection('Results').doc(documentName).set({
     'timestamp': Timestamp.now(),
     'data': resultsData,
     'rankings_by_time': rankingsByTime,

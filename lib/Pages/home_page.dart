@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ride_tide_stride/pages/leaderboard_page.dart';
-// import 'package:ride_tide_stride/pages/results_page.dart';
+import 'package:ride_tide_stride/pages/results_page.dart';
 import 'package:ride_tide_stride/pages/strava_page.dart';
 import 'package:ride_tide_stride/pages/talk_smack.dart';
 
@@ -46,11 +46,15 @@ class _HomeState extends State<Home> {
             builder: (BuildContext context) => const Leaderboard(),
           ),
           Builder(
+            builder: (BuildContext context) => ResultsPage(),
+          ),
+          Builder(
             builder: (BuildContext context) => const TalkSmack(),
           ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
         backgroundColor: const Color(0xFF283D3B),
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
@@ -64,6 +68,11 @@ class _HomeState extends State<Home> {
             icon: Icon(Icons.leaderboard, color: Colors.white60),
             activeIcon: Icon(Icons.leaderboard, color: Colors.white),
             label: 'Leaderboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.leaderboard, color: Colors.white60),
+            activeIcon: Icon(Icons.leaderboard, color: Colors.white),
+            label: 'Results',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.chat_outlined, color: Colors.white60),
