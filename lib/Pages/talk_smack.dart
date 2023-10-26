@@ -15,6 +15,7 @@ class _TalkSmackState extends State<TalkSmack> {
   final TextEditingController _messageController = TextEditingController();
   final List<String> _messages = [];
   final currentUser = FirebaseAuth.instance.currentUser;
+  final currentUserEmail = FirebaseAuth.instance.currentUser?.email;
   final ScrollController _scrollController = ScrollController();
 
   void _sendMessage() async {
@@ -88,39 +89,69 @@ class _TalkSmackState extends State<TalkSmack> {
                     var message = messageData?['message'];
                     var user = messageData?['user'].split('@')[0];
                     var timestamp = messageData?['timestamp'] as Timestamp?;
+                    bool isCurrentUser = user ==
+                        currentUserEmail?.split(
+                            '@')[0]; // assuming you have current user's email
 
                     // Calculate how many minutes ago
                     var timeAgo = _formatTimestamp(timestamp);
 
                     return Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 4.0, vertical: 2.0),
-                      child: Card(
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(2.0),
-                          child: ListTile(
-                            title: Padding(
-                              padding: const EdgeInsets.only(bottom: 4.0),
-                              child: Text(
-                                '$user',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blueGrey,
-                                  fontSize: 16,
-                                ),
-                              ),
+                      padding: const EdgeInsets.only(
+                        left: 12.0,
+                        right: 12.0,
+                        top: 4.0,
+                        bottom: 4.0,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: isCurrentUser
+                            ? CrossAxisAlignment.end
+                            : CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: isCurrentUser
+                                  ? Color.fromARGB(255, 86, 141, 135)
+                                  : Colors.white,
+                              borderRadius: isCurrentUser
+                                  ? BorderRadius.only(
+                                      topLeft: Radius.circular(15),
+                                      bottomLeft: Radius.circular(15),
+                                      topRight: Radius.circular(15),
+                                    )
+                                  : BorderRadius.only(
+                                      topRight: Radius.circular(15),
+                                      bottomRight: Radius.circular(15),
+                                      topLeft: Radius.circular(15),
+                                    ),
                             ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10.0,
+                              horizontal: 16.0,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: isCurrentUser
+                                  ? CrossAxisAlignment.end
+                                  : CrossAxisAlignment.start,
                               children: [
+                                isCurrentUser
+                                    ? Text(user,
+                                        style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold))
+                                    : Text(user,
+                                        style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold)),
+                                SizedBox(height: 4),
                                 Text(
-                                  '$message',
-                                  style: const TextStyle(
-                                      fontSize: 14, color: Colors.black87),
+                                  message ?? '',
+                                  style: TextStyle(
+                                    color: isCurrentUser
+                                        ? Colors.white
+                                        : Colors.black87,
+                                  ),
                                 ),
                                 const SizedBox(height: 5.0),
                                 Text(
@@ -128,13 +159,15 @@ class _TalkSmackState extends State<TalkSmack> {
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontStyle: FontStyle.italic,
-                                    color: Colors.grey[600],
+                                    color: isCurrentUser
+                                        ? Colors.white.withOpacity(0.7)
+                                        : Colors.grey[600],
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        ),
+                        ],
                       ),
                     );
                   },
@@ -142,32 +175,33 @@ class _TalkSmackState extends State<TalkSmack> {
               },
             ),
           ),
-          Container(
-            margin: const EdgeInsets.all(5.0),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              border: Border(
-                top: BorderSide(color: Colors.grey[300]!),
-              ),
-            ),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: TextField(
-                      controller: _messageController,
-                      decoration: const InputDecoration(
-                        hintText: 'Enter a message',
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 5.0),
+            child: Material(
+              elevation: 2,
+              borderRadius: BorderRadius.circular(25.0),
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 16.0),
+                      child: TextField(
+                        controller: _messageController,
+                        decoration: InputDecoration(
+                          hintText: 'Enter a message',
+                          border: InputBorder.none,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: _sendMessage,
-                ),
-              ],
+                  FloatingActionButton(
+                    mini: true,
+                    backgroundColor: Colors.teal[400],
+                    onPressed: _sendMessage,
+                    child: Icon(Icons.send, color: Colors.white),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

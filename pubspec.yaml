@@ -49,6 +49,7 @@ dependencies:
   google_fonts: ^6.1.0
   flutter_countdown_timer: 
   url_launcher: ^6.2.0
+  mailto: ^2.0.0
 
 dev_dependencies:
   flutter_test:
