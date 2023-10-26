@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ride_tide_stride/components/timer.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class Leaderboard extends StatefulWidget {
   const Leaderboard({Key? key}) : super(key: key);
@@ -220,6 +221,63 @@ class LeaderboardTab extends StatelessWidget {
 
   const LeaderboardTab({Key? key, required this.title}) : super(key: key);
 
+  // strava dialog
+  void _showStravaDialog(BuildContext context, int activityId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(20.0)),
+        ),
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/images/strava.png',
+              height: 24.0, // Adjust the size as required
+              width: 24.0,
+            ),
+            SizedBox(width: 10),
+            Text('View Activity on Strava?'),
+          ],
+        ),
+        content: Text('Please Note: You will be leaving R.T.S'),
+        actions: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton(
+                child: Text('Cancel', style: TextStyle(fontSize: 18)),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              SizedBox(width: 10),
+              TextButton(
+                child: Text('Open',
+                    style: TextStyle(color: Colors.deepOrange, fontSize: 18)),
+                onPressed: () {
+                  _openStravaActivity(activityId);
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // redirect to Strava
+  Future<void> _openStravaActivity(int activityId) async {
+    final Uri url = Uri.https('www.strava.com', '/activities/$activityId');
+
+    bool canOpen = await canLaunchUrl(url);
+    if (canOpen) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      // Handle the inability to launch the URL.
+      print('Could not launch $url');
+    }
+  }
+
   // Function to fetch user activities
   Future<List<Map<String, dynamic>>> fetchUserActivities(
       String fullName) async {
@@ -284,88 +342,98 @@ class LeaderboardTab extends StatelessWidget {
                 return DateFormat.yMMMd().format(date); // e.g., Sep 26, 2023
               }
 
-              return Card(
-                elevation: 1,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0)),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Color.fromARGB(167, 40, 61, 59),
-                    foregroundColor: Colors.white,
-                    child: getIconForActivityType(activity['type']),
+              return GestureDetector(
+                onTap: () {
+                  if (activity['activity_id'] != null) {
+                    _showStravaDialog(context, activity['activity_id']!);
+                  } else {
+                    print('Activity does not have an ID.');
+                  }
+                },
+                child: Card(
+                  elevation: 1,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0)),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Color.fromARGB(167, 40, 61, 59),
+                      foregroundColor: Colors.white,
+                      child: getIconForActivityType(activity['type']),
+                    ),
+                    title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          formatDate(activity['start_date']),
+                          style: TextStyle(
+                              fontSize: fontSizeForDate,
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(height: 2.0),
+                        Text(
+                          activity['name'],
+                          style: TextStyle(
+                              fontSize: fontSizeForName,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                    subtitle: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          formatDuration(activity['moving_time']),
+                          style: const TextStyle(fontSize: 12.0),
+                        ),
+                        Text(
+                          '${(activity['distance'] / 1000).toStringAsFixed(2)} km',
+                          style: const TextStyle(fontSize: 12.0),
+                        ),
+                        Text(
+                          '${activity['elevation_gain']} m',
+                          style: const TextStyle(fontSize: 12.0),
+                        ),
+                      ],
+                    ),
+                    trailing: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.flash_on,
+                                color: Colors.yellow[600], size: 20.0),
+                            const SizedBox(width: 4.0),
+                            activity['average_watts'] != null
+                                ? Text(
+                                    '${activity['average_watts'].toString()} W',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w500),
+                                  )
+                                : Text('0 W'),
+                          ],
+                        ),
+                        const SizedBox(height: 4.0),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.speed_outlined,
+                                color: Colors.red[600], size: 20.0),
+                            const SizedBox(width: 4.0),
+                            Text(
+                              '$minutes:${seconds.toString().padLeft(2, '0')} /km',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    isThreeLine: true,
                   ),
-                  title: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        formatDate(activity['start_date']),
-                        style: TextStyle(
-                            fontSize: fontSizeForDate,
-                            color: Colors.grey,
-                            fontWeight: FontWeight.w400),
-                      ),
-                      const SizedBox(height: 2.0),
-                      Text(
-                        activity['name'],
-                        style: TextStyle(
-                            fontSize: fontSizeForName,
-                            fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                  subtitle: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        formatDuration(activity['moving_time']),
-                        style: const TextStyle(fontSize: 12.0),
-                      ),
-                      Text(
-                        '${(activity['distance'] / 1000).toStringAsFixed(2)} km',
-                        style: const TextStyle(fontSize: 12.0),
-                      ),
-                      Text(
-                        '${activity['elevation_gain']} m',
-                        style: const TextStyle(fontSize: 12.0),
-                      ),
-                    ],
-                  ),
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.flash_on,
-                              color: Colors.yellow[600], size: 20.0),
-                          const SizedBox(width: 4.0),
-                          activity['average_watts'] != null
-                              ? Text(
-                                  '${activity['average_watts'].toString()} W',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w500),
-                                )
-                              : Text('0 W'),
-                        ],
-                      ),
-                      const SizedBox(height: 4.0),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.speed_outlined,
-                              color: Colors.red[600], size: 20.0),
-                          const SizedBox(width: 4.0),
-                          Text(
-                            '$minutes:${seconds.toString().padLeft(2, '0')} /km',
-                            style: const TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  isThreeLine: true,
                 ),
               );
             }).toList(),
