@@ -68,12 +68,31 @@ class _ResultsPageState extends State<ResultsPage> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         ),
         const Divider(),
+        Text('Total Moving Time:'),
         GridView.builder(
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            childAspectRatio: 3, // Adjust for the desired width-to-height ratio
+            childAspectRatio:
+                2.5, // Adjust for the desired width-to-height ratio
+            crossAxisSpacing: 0,
+            mainAxisSpacing: 0,
+          ),
+          itemCount: timeResults.length,
+          itemBuilder: (context, index) {
+            return _buildResultGridItem(
+                'moving_time', timeResults[index], index + 1);
+          },
+        ),
+        const Divider(),
+        Text('Total Distance:'),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 2.5,
             crossAxisSpacing: 0,
             mainAxisSpacing: 0,
           ),
@@ -84,35 +103,21 @@ class _ResultsPageState extends State<ResultsPage> {
           },
         ),
         const Divider(),
+        Text('Total Elevation:'),
         GridView.builder(
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            childAspectRatio: 3, // Adjust for the desired width-to-height ratio
-            crossAxisSpacing: 0,
-            mainAxisSpacing: 0,
-          ),
-          itemCount: timeResults.length,
-          itemBuilder: (context, index) {
-            return _buildResultGridItem(
-                'distance', timeResults[index], index + 1);
-          },
-        ),
-        const Divider(),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 3, // Adjust for the desired width-to-height ratio
+            childAspectRatio:
+                2.5, // Adjust for the desired width-to-height ratio
             crossAxisSpacing: 0,
             mainAxisSpacing: 0,
           ),
           itemCount: elevationResults.length,
           itemBuilder: (context, index) {
             return _buildResultGridItem(
-                'distance', elevationResults[index], index + 1);
+                'elevation_gain', elevationResults[index], index + 1);
           },
         ),
       ],
@@ -131,31 +136,66 @@ class _ResultsPageState extends State<ResultsPage> {
     IconData iconData;
     switch (category) {
       case 'distance':
-        iconData = Icons.directions_run;
+        iconData = Icons.straighten;
         break;
-      // Add other categories and respective icons here.
+      case 'moving_time':
+        iconData = Icons.timer_outlined;
+        break;
+      case 'elevation_gain':
+        iconData = Icons.landscape_outlined;
+        break;
       default:
-        iconData = Icons.directions_run; // Default icon
+        iconData = Icons.directions_run;
     }
 
-    return Card(
-      elevation: 2,
-      child: ListTile(
-        contentPadding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 0.0),
-        leading: CircleAvatar(
-          backgroundColor: _getCircleColor(
-              rank), // this function returns the appropriate color
-          child: Text(
-            '#${rank}',
-            style: TextStyle(
-                fontSize: 14,
-                color: _getTextColor(
-                    rank)), // this function returns the text color
+    return Column(
+      children: [
+        // Text(leaderboardTitle),
+        Card(
+          elevation: 2,
+          child: ListTile(
+            contentPadding:
+                EdgeInsets.symmetric(horizontal: 4.0, vertical: 0.0),
+            leading: customPlaceWidget(rank.toString()),            
+            title: Text(result.fullname, style: TextStyle(fontSize: 12)),
+            subtitle: Text('${result.totals[category]}',
+                style: TextStyle(fontSize: 10)),
+            trailing: Icon(iconData),
           ),
         ),
-        title: Text(result.fullname, style: TextStyle(fontSize: 12)),
-        subtitle:
-            Text('${result.totals[category]}', style: TextStyle(fontSize: 10)),
+      ],
+    );
+  }
+
+  Widget customPlaceWidget(String place) {
+    Color color = Color(0xFFA09A6A);
+    switch (place) {
+      case "1":
+        color = Colors.yellow[700]!;
+        break;
+      case "2":
+        color = Colors.grey[400]!;
+        break;
+      case "3":
+        color = Color.fromARGB(255, 180, 119, 97);
+        break;
+      default:
+        Colors.blueGrey; // No color for other ranks
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: color, width: 2.0),
+      ),
+      padding: const EdgeInsets.all(10.0), // Adjust padding as needed
+      child: Text(
+        place,
+        style: TextStyle(
+          fontSize: 24, // Adjust font size as needed
+          color: color, // Text color
+          fontWeight: FontWeight.bold, // Bold text
+        ),
       ),
     );
   }
