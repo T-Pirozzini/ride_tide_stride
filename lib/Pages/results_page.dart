@@ -28,52 +28,115 @@ class _ResultsPageState extends State<ResultsPage> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        String statValue;
-        String label;
-        switch (category) {
-          case 'distance':
-            statValue =
-                '${(result.totals[category] as double).toStringAsFixed(2)}km';
-            label = 'Total Distance';
-            break;
-          case 'moving_time':
-            final int seconds = (result.totals[category] as num).toInt();
-            final Duration duration = Duration(seconds: seconds);
-            final int hours = duration.inHours;
-            final int minutes = (duration.inMinutes % 60);
-            statValue = '$hours:${minutes.toString().padLeft(2, '0')}';
-            label = 'Moving Time';
-            break;
-          case 'elevation_gain':
-            statValue =
-                '${(result.totals[category] as double).toStringAsFixed(1)}m';
-            label = 'Elevation Gain';
-            break;
-          default:
-            statValue = result.totals[category].toString();
-            label = 'Other Stat';
-        }
+        return FutureBuilder<DocumentSnapshot>(
+          future: FirebaseFirestore.instance
+              .collection('UserTopStats')
+              .doc(result.fullname)
+              .get(),
+          builder:
+              (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
+            String statValue;
+            String label;
 
-        return AlertDialog(
-          title: Text(result.fullname),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                title: Text(label),
-                subtitle: Text(statValue),
-              ),
-              // Add more stats as ListTile if needed
-            ],
-          ),
-          actions: [
-            TextButton(
-              child: Text('Close'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
+            if (snapshot.connectionState == ConnectionState.done) {
+              Map<String, dynamic> userTopStats =
+                  snapshot.data!.data() as Map<String, dynamic>;
+
+              switch (category) {
+                case 'distance':
+                  statValue =
+                      '${(result.totals[category] as double).toStringAsFixed(2)}km';
+                  label = 'Total Distance';
+                  break;
+                case 'moving_time':
+                  final int seconds = (result.totals[category] as num).toInt();
+                  final Duration duration = Duration(seconds: seconds);
+                  final int hours = duration.inHours;
+                  final int minutes = (duration.inMinutes % 60);
+                  statValue = '$hours:${minutes.toString().padLeft(2, '0')}';
+                  label = 'Moving Time';
+                  break;
+                case 'elevation_gain':
+                  statValue =
+                      '${(result.totals[category] as double).toStringAsFixed(1)}m';
+                  label = 'Elevation Gain';
+                  break;
+                default:
+                  statValue = result.totals[category].toString();
+                  label = 'Other Stat';
+              }
+
+              List<Widget> children = [
+                ListTile(
+                  leading: Icon(Icons.timer_outlined),
+                  title: Text('Top Time'),
+                  subtitle: Text(userTopStats['top_moving_time_month'] ?? ''),
+                  trailing: Text(statValue + " hrs"),
+                ),
+                ListTile(
+                    leading: Icon(Icons.straighten_outlined),
+                    title: Text('Top Distance'),
+                    subtitle: Text(userTopStats['top_distance_month'] ?? ''),
+                    trailing: Text(
+                        '${((userTopStats['top_distance'] ?? 0) / 1000.0).toStringAsFixed(2)} km')),
+                ListTile(
+                  leading: Icon(Icons.landscape_outlined),
+                  title: Text('Top Elevation'),
+                  subtitle: Text(userTopStats['top_elevation_month'] ?? ''),
+                  trailing: Text('${userTopStats['top_elevation'] ?? 0.0} m'),
+                ),
+              ];
+
+              return AlertDialog(
+                titlePadding: EdgeInsets.all(16.0),
+                title: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    result.fullname,
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                content: Container(
+                  width: MediaQuery.of(context).size.width *
+                      0.8, // 70% of screen width
+                  height: MediaQuery.of(context).size.height *
+                      0.4, // 50% of screen height
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: children,
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    child: Text(
+                      'Close',
+                      style: TextStyle(color: Theme.of(context).primaryColor),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              );
+            } else if (snapshot.connectionState == ConnectionState.waiting) {
+              return AlertDialog(
+                title: Text('Loading...'),
+              );
+            } else {
+              return AlertDialog(
+                title: Text('Error!'),
+                content: Text('There was an error fetching the stats.'),
+                actions: [
+                  TextButton(
+                    child: Text('Close'),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              );
+            }
+          },
         );
       },
     );
@@ -282,5 +345,5 @@ class _ResultsPageState extends State<ResultsPage> {
         ),
       ),
     );
-  }  
+  }
 }
