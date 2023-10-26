@@ -23,9 +23,66 @@ class ResultsPage extends StatefulWidget {
 class _ResultsPageState extends State<ResultsPage> {
   final _firestore = FirebaseFirestore.instance;
 
+  void showUserStatsDialog(
+      BuildContext context, Result result, String category) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        String statValue;
+        String label;
+        switch (category) {
+          case 'distance':
+            statValue =
+                '${(result.totals[category] as double).toStringAsFixed(2)}km';
+            label = 'Total Distance';
+            break;
+          case 'moving_time':
+            final int seconds = (result.totals[category] as num).toInt();
+            final Duration duration = Duration(seconds: seconds);
+            final int hours = duration.inHours;
+            final int minutes = (duration.inMinutes % 60);
+            statValue = '$hours:${minutes.toString().padLeft(2, '0')}';
+            label = 'Moving Time';
+            break;
+          case 'elevation_gain':
+            statValue =
+                '${(result.totals[category] as double).toStringAsFixed(1)}m';
+            label = 'Elevation Gain';
+            break;
+          default:
+            statValue = result.totals[category].toString();
+            label = 'Other Stat';
+        }
+
+        return AlertDialog(
+          title: Text(result.fullname),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: Text(label),
+                subtitle: Text(statValue),
+              ),
+              // Add more stats as ListTile if needed
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: Text('Close'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFDFD3C3),
       appBar: AppBar(
         title: const Text('Past Results',
             style: TextStyle(
@@ -65,17 +122,19 @@ class _ResultsPageState extends State<ResultsPage> {
         Padding(
           padding: const EdgeInsets.all(2.0),
           child: Text(doc.id,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         ),
         const Divider(),
-        Text('Total Moving Time:'),
+        Text(
+          'Total Moving Time:',
+          style: TextStyle(fontSize: 18),
+        ),
         GridView.builder(
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            childAspectRatio:
-                2.5, // Adjust for the desired width-to-height ratio
+            childAspectRatio: 3, // Adjust for the desired width-to-height ratio
             crossAxisSpacing: 0,
             mainAxisSpacing: 0,
           ),
@@ -86,13 +145,16 @@ class _ResultsPageState extends State<ResultsPage> {
           },
         ),
         const Divider(),
-        Text('Total Distance:'),
+        Text(
+          'Total Distance:',
+          style: TextStyle(fontSize: 18),
+        ),
         GridView.builder(
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            childAspectRatio: 2.5,
+            childAspectRatio: 3,
             crossAxisSpacing: 0,
             mainAxisSpacing: 0,
           ),
@@ -103,14 +165,16 @@ class _ResultsPageState extends State<ResultsPage> {
           },
         ),
         const Divider(),
-        Text('Total Elevation:'),
+        Text(
+          'Total Elevation:',
+          style: TextStyle(fontSize: 18),
+        ),
         GridView.builder(
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            childAspectRatio:
-                2.5, // Adjust for the desired width-to-height ratio
+            childAspectRatio: 3, // Adjust for the desired width-to-height ratio
             crossAxisSpacing: 0,
             mainAxisSpacing: 0,
           ),
@@ -134,33 +198,53 @@ class _ResultsPageState extends State<ResultsPage> {
 
   Widget _buildResultGridItem(String category, Result result, int rank) {
     IconData iconData;
+    String displayValue;
+    String formatDuration(int seconds) {
+      final Duration duration = Duration(seconds: seconds);
+      final int hours = duration.inHours;
+      final int minutes = (duration.inMinutes % 60);
+      final int remainingSeconds = (duration.inSeconds % 60);
+      return '$hours:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+    }
+
     switch (category) {
       case 'distance':
         iconData = Icons.straighten;
+        displayValue =
+            '${((result.totals[category] as double) / 1000).toStringAsFixed(2)} km';
+
         break;
       case 'moving_time':
         iconData = Icons.timer_outlined;
+        displayValue = formatDuration((result.totals[category] as num).toInt());
         break;
       case 'elevation_gain':
         iconData = Icons.landscape_outlined;
+        displayValue =
+            '${(result.totals[category] as double).toStringAsFixed(1)} m';
         break;
       default:
         iconData = Icons.directions_run;
+        displayValue = result.totals[category].toString();
     }
 
     return Column(
       children: [
-        // Text(leaderboardTitle),
-        Card(
-          elevation: 2,
-          child: ListTile(
-            contentPadding:
-                EdgeInsets.symmetric(horizontal: 4.0, vertical: 0.0),
-            leading: customPlaceWidget(rank.toString()),            
-            title: Text(result.fullname, style: TextStyle(fontSize: 12)),
-            subtitle: Text('${result.totals[category]}',
-                style: TextStyle(fontSize: 10)),
-            trailing: Icon(iconData),
+        GestureDetector(
+          onTap: () {
+            showUserStatsDialog(context, result, category);
+          },
+          child: Card(
+            elevation: 2,
+            child: ListTile(
+              contentPadding:
+                  EdgeInsets.symmetric(horizontal: 4.0, vertical: 0.0),
+              leading: customPlaceWidget(rank.toString()),
+              title: Text(result.fullname, style: TextStyle(fontSize: 12)),
+              trailing: Text(displayValue,
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+              // subtitle: Icon(iconData),
+            ),
           ),
         ),
       ],
@@ -198,27 +282,5 @@ class _ResultsPageState extends State<ResultsPage> {
         ),
       ),
     );
-  }
-
-  Color _getCircleColor(int rank) {
-    switch (rank) {
-      case 1:
-        return Colors.yellow[700]!;
-      case 2:
-        return Colors.grey[400]!;
-      case 3:
-        return Color.fromARGB(255, 180, 119,
-            97); // You may need to define a bronze color if not available
-      default:
-        return Colors.blueGrey; // No color for other ranks
-    }
-  }
-
-  Color _getTextColor(int rank) {
-    if (rank <= 3) {
-      return Colors
-          .black; // or another color that contrasts well with gold/silver/bronze
-    }
-    return Colors.grey; // Default text color for other ranks
-  }
+  }  
 }
