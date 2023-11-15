@@ -1,4 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class CompetitionPage extends StatefulWidget {
   final bool showTeamChoiceDialog;
@@ -9,6 +12,43 @@ class CompetitionPage extends StatefulWidget {
 }
 
 class _CompetitionPageState extends State<CompetitionPage> {
+  final currentUser = FirebaseAuth.instance.currentUser;
+
+  String getFormattedCurrentMonth() {
+    final DateTime currentDateTime = DateTime.now();
+    String formattedCurrentMonth =
+        DateFormat('MMMM yyyy').format(currentDateTime);
+    return formattedCurrentMonth;
+  }
+
+  Future<String?> getStravaUsername() async {
+    if (currentUser?.email == null) {
+      return null;
+    }
+
+    try {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('activities')
+          .where('user_email', isEqualTo: currentUser!.email)
+          .get();
+
+      if (querySnapshot.docs.isEmpty) {
+        print(
+            'No documents found for the user with email: ${currentUser!.email}');
+        return null;
+      }
+
+      final firstDocData = querySnapshot.docs.first.data();
+
+      final stravaFullName = firstDocData['fullname'] as String?;
+
+      return stravaFullName;
+    } catch (e) {
+      print('Error getting username: $e');
+      return null;
+    }
+  }
+
   void _showTeamChoiceDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -23,9 +63,25 @@ class _CompetitionPageState extends State<CompetitionPage> {
                 children: <Widget>[
                   const Text('Team 1'),
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
+                      String? stravaUsername = await getStravaUsername();
+                      print(stravaUsername);
+                      if (stravaUsername != null) {
+                        final competitionsCollection = FirebaseFirestore
+                            .instance
+                            .collection('Competitions');
+                        await competitionsCollection
+                            .doc(getFormattedCurrentMonth())
+                            .update({
+                          'team_1': FieldValue.arrayUnion([stravaUsername])
+                        });
+
+                        final snackBar = SnackBar(
+                          content: const Text('You joined Team 1'),
+                          duration: const Duration(seconds: 1),
+                        );
+                      }
                       Navigator.of(context).pop();
-                      // Add logic to handle team selection here
                     },
                     child: const Text('Join Team 1'),
                   ),
@@ -51,10 +107,45 @@ class _CompetitionPageState extends State<CompetitionPage> {
     );
   }
 
+  Stream<QuerySnapshot> getCompetitionsData() {
+    return FirebaseFirestore.instance.collection('Competitions').snapshots();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Text('Competition Page'),
+      body: StreamBuilder(
+          stream: getCompetitionsData(),
+          // Add stream builder here
+          builder: (BuildContext context, AsyncSnapshot snapshot) {
+            if (snapshot.hasError) {
+              return const Text('Something went wrong');
+            }
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Text('Loading');
+            }
+
+            final competitionDocs = snapshot.data.docs;
+
+            // Iterate through activity documents and aggregate data for the given title
+            for (final doc in competitionDocs) {
+              final data = doc.data() as Map<String, dynamic>;
+              final date = data['start_date'] as String;
+              final team1 = data['start_date'] as String;
+
+              return Column(
+                children: <Widget>[
+                  const Text('Competition Page'),
+                  Text('Date: $date'),
+                  Text('Team: ${snapshot.data}'),
+                  Text('${competitionDocs[0]['start_date']}'),
+                  Text('${competitionDocs[0]['team_1']}'),
+                  Text('formattedCurrentMonth: ${getFormattedCurrentMonth()}'),
+                ],
+              );
+            }
+            return const Text('No data found');
+          }),
       persistentFooterButtons: [
         ElevatedButton(
           onPressed: () {
