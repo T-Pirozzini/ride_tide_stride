@@ -82,6 +82,15 @@ class _LeaderboardState extends State<Leaderboard> {
             ),
           ],
         ),
+        persistentFooterButtons: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pushNamed('/resultsPage');
+            },
+            child: const Text('View Past Results'),
+          ),
+        ],
+
         body: const TabBarView(
           children: [
             LeaderboardTab(title: 'Moving Time'),
@@ -91,6 +100,7 @@ class _LeaderboardState extends State<Leaderboard> {
         ),
         floatingActionButton: isAdmin
             ? FloatingActionButton(
+                heroTag: null,
                 onPressed: () {
                   // Only show the button and handle the action if the user is an admin
                   _saveResultsToFirestore();
