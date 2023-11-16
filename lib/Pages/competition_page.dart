@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:percent_indicator/percent_indicator.dart';
 
 class CompetitionPage extends StatefulWidget {
   final bool showTeamChoiceDialog;
@@ -113,6 +114,9 @@ class _CompetitionPageState extends State<CompetitionPage> {
 
   @override
   Widget build(BuildContext context) {
+    double team1Elevation = 200;
+    double team2Elevation = 420;
+
     return Scaffold(
       body: StreamBuilder(
           stream: getCompetitionsData(),
@@ -127,24 +131,60 @@ class _CompetitionPageState extends State<CompetitionPage> {
 
             final competitionDocs = snapshot.data.docs;
 
-            // Iterate through activity documents and aggregate data for the given title
-            for (final doc in competitionDocs) {
-              final data = doc.data() as Map<String, dynamic>;
-              final date = data['start_date'] as String;
-              final team1 = data['start_date'] as String;
-
-              return Column(
-                children: <Widget>[
-                  const Text('Competition Page'),
-                  Text('Date: $date'),
-                  Text('Team: ${snapshot.data}'),
-                  Text('${competitionDocs[0]['start_date']}'),
-                  Text('${competitionDocs[0]['team_1']}'),
-                  Text('formattedCurrentMonth: ${getFormattedCurrentMonth()}'),
-                ],
-              );
-            }
-            return const Text('No data found');
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Center(
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Team 1's progress indicator (clockwise)
+                      CircularPercentIndicator(
+                        radius: 160.0,
+                        lineWidth: 10.0,
+                        percent: team1Elevation /
+                            5000, // Calculate team 1's percentage
+                        backgroundColor: Colors.grey.shade200,
+                        progressColor: Colors.blue,
+                        startAngle: 180,
+                        reverse: false, // Clockwise
+                      ),
+                      // Team 2's progress indicator (counterclockwise)
+                      CircularPercentIndicator(
+                        radius: 160.0,
+                        lineWidth: 10.0,
+                        percent: team2Elevation /
+                            5000, // Calculate team 2's percentage
+                        backgroundColor: Colors.transparent,
+                        progressColor: Colors.red,
+                        startAngle: 180,
+                        reverse: true, // Counterclockwise
+                      ),
+                      // The mountain image in the center
+                      Container(
+                        width: 250,
+                        height: 250,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          image: DecorationImage(
+                            image: AssetImage('assets/images/mtn.png'),
+                            fit: BoxFit.fill,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  children: <Widget>[
+                    Text('Team 1: ${competitionDocs[0]['team_1']}'),
+                    Text('Team 2: ${competitionDocs[0]['team_2']}'),
+                  ],
+                ),
+                Text('formattedCurrentMonth: ${getFormattedCurrentMonth()}'),
+                Text('Team 1: ${competitionDocs[0]['team_1']}'),
+              ],
+            );
           }),
       persistentFooterButtons: [
         ElevatedButton(
