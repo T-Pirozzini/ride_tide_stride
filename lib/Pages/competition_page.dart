@@ -114,8 +114,56 @@ class _CompetitionPageState extends State<CompetitionPage> {
 
   @override
   Widget build(BuildContext context) {
-    double team1Elevation = 200;
-    double team2Elevation = 420;
+    List<dynamic> team1Members = [
+      {'name': 'John', 'elevation': 1500.0, 'shade': 600},
+      {'name': 'Jane', 'elevation': 500.0, 'shade': 400},
+      {'name': 'Joe', 'elevation': 2000.0, 'shade': 600},
+    ];
+
+    List<dynamic> team2Members = [
+      {'name': 'Jim', 'elevation': 2000.0, 'shade': 400},
+      {'name': 'George', 'elevation': 2000.0, 'shade': 600},
+      {'name': 'Sarah', 'elevation': 500.0, 'shade': 200},
+    ];
+
+    // Calculate the total elevation for each team
+    double team1TotalElevation = team1Members.fold(
+        0.0, (sum, member) => sum + (member['elevation'] as double));
+    double team2TotalElevation = team2Members.fold(
+        0.0, (sum, member) => sum + (member['elevation'] as double));
+
+// Team 1 cumulative percent calculation
+    List<Widget> team1Indicators = team1Members.map((member) {
+      double membersPercentTeam1 = team1TotalElevation / 5000;
+      print(membersPercentTeam1);
+      print(team1TotalElevation);
+
+      return CircularPercentIndicator(
+        radius: 175.0,
+        lineWidth: 10.0,
+        percent: membersPercentTeam1 >= 1.0 ? 1.0 : membersPercentTeam1,
+        backgroundColor: Colors.grey.shade200,
+        progressColor: Colors.blue[(member['shade'] as int)],
+        startAngle: 180,
+        circularStrokeCap: CircularStrokeCap.butt,
+        reverse: false,
+      );
+    }).toList();
+
+// Team 2 cumulative percent calculation
+    List<Widget> team2Indicators = team2Members.map((member) {
+      double membersPercentTeam2 = team2TotalElevation / 5000;
+      return CircularPercentIndicator(
+        radius: 160.0,
+        lineWidth: 10.0,
+        percent: membersPercentTeam2 >= 1.0 ? 1.0 : membersPercentTeam2,
+        backgroundColor: Colors.grey.shade200,
+        progressColor: Colors.red[(member['shade'] as int)],
+        startAngle: 180,
+        circularStrokeCap: CircularStrokeCap.butt,
+        reverse: true,
+      );
+    }).toList();
 
     return Scaffold(
       body: StreamBuilder(
@@ -138,28 +186,8 @@ class _CompetitionPageState extends State<CompetitionPage> {
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      // Team 1's progress indicator (clockwise)
-                      CircularPercentIndicator(
-                        radius: 160.0,
-                        lineWidth: 10.0,
-                        percent: team1Elevation /
-                            5000, // Calculate team 1's percentage
-                        backgroundColor: Colors.grey.shade200,
-                        progressColor: Colors.blue,
-                        startAngle: 180,
-                        reverse: false, // Clockwise
-                      ),
-                      // Team 2's progress indicator (counterclockwise)
-                      CircularPercentIndicator(
-                        radius: 160.0,
-                        lineWidth: 10.0,
-                        percent: team2Elevation /
-                            5000, // Calculate team 2's percentage
-                        backgroundColor: Colors.transparent,
-                        progressColor: Colors.red,
-                        startAngle: 180,
-                        reverse: true, // Counterclockwise
-                      ),
+                      ...team1Indicators,
+                      ...team2Indicators,
                       // The mountain image in the center
                       Container(
                         width: 250,
