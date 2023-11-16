@@ -23,38 +23,32 @@ class _CompetitionPageState extends State<CompetitionPage> {
   }
 
   Future<Map<String, dynamic>?> getStravaUserDetails() async {
-    final currentMonth = DateTime.now().month;
-    final currentYear = DateTime.now().year;
-    final firstDayOfMonth = DateTime(currentYear, currentMonth, 1);
-    final lastDayOfMonth = DateTime(currentYear, currentMonth + 1, 0);
-
     if (currentUser?.email == null) {
       return null;
     }
 
     try {
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection('activities')
-          .where('start_date',
-              isGreaterThanOrEqualTo: firstDayOfMonth.toUtc().toIso8601String())
-          .where('start_date',
-              isLessThanOrEqualTo: lastDayOfMonth.toUtc().toIso8601String())
-          // .where('user_email', isEqualTo: currentUser!.email)
-          .get();
+      final userActivities = await getFilteredActivities();
 
-      if (querySnapshot.docs.isEmpty) {
+      if (userActivities.isEmpty) {
         print(
             'No documents found for the user with email: ${currentUser!.email}');
         return null;
       }
 
-      // Aggregate user data here...
+      double totalElevation = 0.0;
+      for (var doc in userActivities) {
+        var data = doc.data() as Map<String, dynamic>;
+        // Ensure that elevation_gain is treated as a double.
+        var elevationGain = (data['elevation_gain'] ?? 0).toDouble();
+        totalElevation += elevationGain;
+      }
+
       final userData = {
-        'fullname': querySnapshot.docs.first.data()['fullname'] as String,
-        'total_elevation': querySnapshot.docs.fold<double>(
-          0.0,
-          (sum, doc) => sum + (doc.data()['elevation_gain'] ?? 0.0),
-        ),
+        'fullname': (userActivities.first.data()
+                as Map<String, dynamic>)['fullname'] as String? ??
+            '',
+        'total_elevation': totalElevation,
       };
 
       return userData;
@@ -167,25 +161,94 @@ class _CompetitionPageState extends State<CompetitionPage> {
     return FirebaseFirestore.instance.collection('Competitions').snapshots();
   }
 
+  Stream<Map<String, double>> getMonthlyElevationStream() {
+    // Calculate the first and last day of the current month
+    final now = DateTime.now();
+    final firstDayOfMonth = DateTime(now.year, now.month, 1);
+    final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
+
+    return FirebaseFirestore.instance
+        .collection('activities')
+        .where('start_date',
+            isGreaterThanOrEqualTo: firstDayOfMonth.toUtc().toIso8601String())
+        .where('start_date',
+            isLessThanOrEqualTo: lastDayOfMonth.toUtc().toIso8601String())
+        .snapshots()
+        .map((snapshot) {
+      // Aggregate the data
+      Map<String, double> elevationGains = {};
+      for (var doc in snapshot.docs) {
+        var data = doc.data();
+        var fullname = data['fullname'];
+        var elevationGain = data['elevation_gain'] ?? 0.0;
+        elevationGains.update(fullname, (value) => value + elevationGain,
+            ifAbsent: () => elevationGain);
+      }
+      return elevationGains;
+    });
+  }
+
+  List<dynamic> team1Members = [];
+  List<dynamic> team2Members = [];
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Fetch and set the competition document for the current month
+    final competitionDocId = getFormattedCurrentMonth();
+    FirebaseFirestore.instance
+        .collection('Competitions')
+        .doc(competitionDocId)
+        .snapshots()
+        .listen((docSnapshot) {
+      if (docSnapshot.exists) {
+        setState(() {
+          team1Members = List.from(docSnapshot.data()?['team_1'] ?? []);
+          team2Members = List.from(docSnapshot.data()?['team_2'] ?? []);
+          print('Team 1: $team1Members');
+          print('Team 2: $team2Members');
+        });
+      }
+    });
+
+    getMonthlyElevationStream().listen((elevationGains) {
+      // Use the elevation gains to update the Competitions collection
+      var competitionDocId = getFormattedCurrentMonth();
+      FirebaseFirestore.instance
+          .collection('Competitions')
+          .doc(competitionDocId)
+          .update({
+        'team_1_elevation': elevationGains['Team 1'] ?? 0,
+        'team_2_elevation': elevationGains['Team 2'] ?? 0,
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    List<dynamic> team1Members = [
-      {'name': 'John', 'elevation': 2500.0, 'shade': 200},
-      {'name': 'Jane', 'elevation': 500.0, 'shade': 400},
-      {'name': 'Joe', 'elevation': 500.0, 'shade': 800},
-    ];
+    // List<dynamic> team1Members = [
+    //   {'name': 'John', 'elevation': 2500.0, 'shade': 200},
+    //   {'name': 'Jane', 'elevation': 500.0, 'shade': 400},
+    //   {'name': 'Joe', 'elevation': 500.0, 'shade': 800},
+    // ];
 
-    List<dynamic> team2Members = [
-      {'name': 'Jim', 'elevation': 2000.0, 'shade': 400},
-      {'name': 'George', 'elevation': 2000.0, 'shade': 600},
-      {'name': 'Sarah', 'elevation': 500.0, 'shade': 200},
-    ];
+    // List<dynamic> team2Members = [
+    //   {'name': 'Jim', 'elevation': 2000.0, 'shade': 400},
+    //   {'name': 'George', 'elevation': 2000.0, 'shade': 600},
+    //   {'name': 'Sarah', 'elevation': 500.0, 'shade': 200},
+    // ];
 
     // Calculate the total elevation for each team
     double team1TotalElevation = team1Members.fold(
-        0.0, (sum, member) => sum + (member['elevation'] as double));
+      0.0,
+      (sum, member) => sum + (member['total_elevation'] as double? ?? 0.0),
+    );
+
     double team2TotalElevation = team2Members.fold(
-        0.0, (sum, member) => sum + (member['elevation'] as double));
+      0.0,
+      (sum, member) => sum + (member['total_elevation'] as double? ?? 0.0),
+    );
 
 // Team 1 cumulative percent calculation
     List<Widget> team1Indicators = team1Members.map((member) {
@@ -196,7 +259,7 @@ class _CompetitionPageState extends State<CompetitionPage> {
         lineWidth: 10.0,
         percent: membersPercentTeam1 >= 1.0 ? 1.0 : membersPercentTeam1,
         backgroundColor: Colors.grey.shade200,
-        progressColor: Colors.blue[(member['shade'] as int)],
+        progressColor: Colors.blue[member['shade'] as int? ?? 200],
         startAngle: 180,
         circularStrokeCap: CircularStrokeCap.butt,
         reverse: false,
@@ -211,7 +274,7 @@ class _CompetitionPageState extends State<CompetitionPage> {
         lineWidth: 10.0,
         percent: membersPercentTeam2 >= 1.0 ? 1.0 : membersPercentTeam2,
         backgroundColor: Colors.grey.shade200,
-        progressColor: Colors.red[(member['shade'] as int)],
+        progressColor: Colors.red[member['shade'] as int? ?? 200],
         startAngle: 180,
         circularStrokeCap: CircularStrokeCap.butt,
         reverse: true,
@@ -219,52 +282,28 @@ class _CompetitionPageState extends State<CompetitionPage> {
     }).toList();
 
     List<Widget> team1MemberLineIndicators = team1Members.map((member) {
-      double memberContributionPercent =
-          ((member['elevation'] as double) / team1TotalElevation)
-              .clamp(0.0, 1.0);
+      // Safe casting with a default value
+      double elevation = member['total_elevation'] as double? ?? 0.0;
+
+      double memberContributionPercent = elevation / team1TotalElevation;
+      // Ensuring the percent is within the range of 0.0 to 1.0
+      memberContributionPercent = memberContributionPercent.clamp(0.0, 1.0);
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 5),
         child: Row(
           children: [
-            Text('${member['name']}'),
+            Text('${member['fullname']}'),
             LinearPercentIndicator(
               width: MediaQuery.of(context).size.width * 0.3,
               lineHeight: 6.0,
               percent: memberContributionPercent,
               backgroundColor: Colors.grey.shade200,
-              progressColor: Colors.blue[(member['shade'] as int)],
+              progressColor: Colors.blue[(member['shade'] as int? ?? 200)],
             ),
           ],
         ),
       );
     }).toList();
-
-    Stream<Map<String, double>> getMonthlyElevationStream() {
-      // Calculate the first and last day of the current month
-      final now = DateTime.now();
-      final firstDayOfMonth = DateTime(now.year, now.month, 1);
-      final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
-
-      return FirebaseFirestore.instance
-          .collection('activities')
-          .where('start_date',
-              isGreaterThanOrEqualTo: firstDayOfMonth.toUtc().toIso8601String())
-          .where('start_date',
-              isLessThanOrEqualTo: lastDayOfMonth.toUtc().toIso8601String())
-          .snapshots()
-          .map((snapshot) {
-        // Aggregate the data
-        Map<String, double> elevationGains = {};
-        for (var doc in snapshot.docs) {
-          var data = doc.data();
-          var fullname = data['fullname'];
-          var elevationGain = data['elevation_gain'] ?? 0.0;
-          elevationGains.update(fullname, (value) => value + elevationGain,
-              ifAbsent: () => elevationGain);
-        }
-        return elevationGains;
-      });
-    }
 
     Stream<List<Map<String, dynamic>>> getTeamMemberElevations() {
       // Calculate the first and last day of the current month
@@ -299,25 +338,6 @@ class _CompetitionPageState extends State<CompetitionPage> {
 
         // Convert to a list of maps for easier use in the UI
         return aggregatedData.values.toList();
-      });
-    }
-
-    @override
-    void initState() {
-      super.initState();
-
-      getMonthlyElevationStream().listen((elevationGains) {
-        // Use the elevation gains to update the Competitions collection
-        // This assumes you have a way to determine the current competition document ID
-        var competitionDocId = getFormattedCurrentMonth();
-        FirebaseFirestore.instance
-            .collection('Competitions')
-            .doc(competitionDocId)
-            .update({
-          'team_1_elevation': elevationGains['Team 1'] ??
-              0, // Example of how you might structure the update
-          'team_2_elevation': elevationGains['Team 2'] ?? 0,
-        });
       });
     }
 
