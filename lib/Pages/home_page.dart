@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:ride_tide_stride/pages/competition_page.dart';
 import 'package:ride_tide_stride/pages/leaderboard_page.dart';
 import 'package:ride_tide_stride/pages/results_page.dart';
 import 'package:ride_tide_stride/pages/strava_page.dart';
@@ -46,7 +47,7 @@ class _HomeState extends State<Home> {
             builder: (BuildContext context) => const Leaderboard(),
           ),
           Builder(
-            builder: (BuildContext context) => ResultsPage(),
+            builder: (BuildContext context) => CompetitionPage(),
           ),
           Builder(
             builder: (BuildContext context) => const TalkSmack(),
@@ -72,7 +73,7 @@ class _HomeState extends State<Home> {
           BottomNavigationBarItem(
             icon: Icon(Icons.emoji_events_outlined, color: Colors.white60),
             activeIcon: Icon(Icons.emoji_events, color: Colors.white),
-            label: 'Results',
+            label: 'Challenge',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.chat_outlined, color: Colors.white60),

@@ -50,6 +50,7 @@ dependencies:
   flutter_countdown_timer: 
   url_launcher: ^6.2.0
   mailto: ^2.0.0
+  percent_indicator: ^4.2.3
 
 dev_dependencies:
   flutter_test:
