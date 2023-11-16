@@ -39,8 +39,10 @@ class _CompetitionPageState extends State<CompetitionPage> {
       double totalElevation = 0.0;
       for (var doc in userActivities) {
         var data = doc.data() as Map<String, dynamic>;
-        // Ensure that elevation_gain is treated as a double.
-        var elevationGain = (data['elevation_gain'] ?? 0).toDouble();
+        // Convert elevation_gain to double no matter what type it is stored as
+        var elevationGain = data['elevation_gain'] is int
+            ? (data['elevation_gain'] as int).toDouble()
+            : (data['elevation_gain'] as double? ?? 0.0);
         totalElevation += elevationGain;
       }
 
@@ -48,6 +50,7 @@ class _CompetitionPageState extends State<CompetitionPage> {
         'fullname': (userActivities.first.data()
                 as Map<String, dynamic>)['fullname'] as String? ??
             '',
+        // Force total_elevation to be a double
         'total_elevation': totalElevation,
       };
 
@@ -106,13 +109,10 @@ class _CompetitionPageState extends State<CompetitionPage> {
                         await competitionsCollection
                             .doc(getFormattedCurrentMonth())
                             .update({
-                          'team_1': FieldValue.arrayUnion([stravaUsername])
+                          'team_1': FieldValue.arrayUnion([stravaUsername]),
+                          'total_elevation':
+                              stravaUsername['total_elevation'].toDouble(),
                         });
-
-                        final snackBar = SnackBar(
-                          content: const Text('You joined Team 1'),
-                          duration: const Duration(seconds: 1),
-                        );
                       }
                       Navigator.of(context).pop();
                     },
@@ -136,13 +136,10 @@ class _CompetitionPageState extends State<CompetitionPage> {
                         await competitionsCollection
                             .doc(getFormattedCurrentMonth())
                             .update({
-                          'team_2': FieldValue.arrayUnion([stravaUsername])
+                          'team_2': FieldValue.arrayUnion([stravaUsername]),
+                          'total_elevation':
+                              stravaUsername['total_elevation'].toDouble(),
                         });
-
-                        final snackBar = SnackBar(
-                          content: const Text('You joined Team 2'),
-                          duration: const Duration(seconds: 1),
-                        );
                       }
                       Navigator.of(context).pop();
                     },
@@ -159,33 +156,6 @@ class _CompetitionPageState extends State<CompetitionPage> {
 
   Stream<QuerySnapshot> getCompetitionsData() {
     return FirebaseFirestore.instance.collection('Competitions').snapshots();
-  }
-
-  Stream<Map<String, double>> getMonthlyElevationStream() {
-    // Calculate the first and last day of the current month
-    final now = DateTime.now();
-    final firstDayOfMonth = DateTime(now.year, now.month, 1);
-    final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
-
-    return FirebaseFirestore.instance
-        .collection('activities')
-        .where('start_date',
-            isGreaterThanOrEqualTo: firstDayOfMonth.toUtc().toIso8601String())
-        .where('start_date',
-            isLessThanOrEqualTo: lastDayOfMonth.toUtc().toIso8601String())
-        .snapshots()
-        .map((snapshot) {
-      // Aggregate the data
-      Map<String, double> elevationGains = {};
-      for (var doc in snapshot.docs) {
-        var data = doc.data();
-        var fullname = data['fullname'];
-        var elevationGain = data['elevation_gain'] ?? 0.0;
-        elevationGains.update(fullname, (value) => value + elevationGain,
-            ifAbsent: () => elevationGain);
-      }
-      return elevationGains;
-    });
   }
 
   List<dynamic> team1Members = [];
@@ -211,34 +181,10 @@ class _CompetitionPageState extends State<CompetitionPage> {
         });
       }
     });
-
-    getMonthlyElevationStream().listen((elevationGains) {
-      // Use the elevation gains to update the Competitions collection
-      var competitionDocId = getFormattedCurrentMonth();
-      FirebaseFirestore.instance
-          .collection('Competitions')
-          .doc(competitionDocId)
-          .update({
-        'team_1_elevation': elevationGains['Team 1'] ?? 0,
-        'team_2_elevation': elevationGains['Team 2'] ?? 0,
-      });
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    // List<dynamic> team1Members = [
-    //   {'name': 'John', 'elevation': 2500.0, 'shade': 200},
-    //   {'name': 'Jane', 'elevation': 500.0, 'shade': 400},
-    //   {'name': 'Joe', 'elevation': 500.0, 'shade': 800},
-    // ];
-
-    // List<dynamic> team2Members = [
-    //   {'name': 'Jim', 'elevation': 2000.0, 'shade': 400},
-    //   {'name': 'George', 'elevation': 2000.0, 'shade': 600},
-    //   {'name': 'Sarah', 'elevation': 500.0, 'shade': 200},
-    // ];
-
     // Calculate the total elevation for each team
     double team1TotalElevation = team1Members.fold(
       0.0,
@@ -250,10 +196,17 @@ class _CompetitionPageState extends State<CompetitionPage> {
       (sum, member) => sum + (member['total_elevation'] as double? ?? 0.0),
     );
 
+    Color getShadeForTeamMember(int baseColorValue, int memberIndex) {
+      // This function assumes that baseColorValue is a valid color value like Colors.blue.value or Colors.red.value.
+      // The shadeOffset ensures that the color stays within a reasonable range and does not overflow valid color values.
+      int shadeOffset = 100 * (memberIndex + 1);
+      int newColorValue = (baseColorValue + shadeOffset) % 0xFFFFFF;
+      return Color(newColorValue).withOpacity(1.0);
+    }
+
 // Team 1 cumulative percent calculation
     List<Widget> team1Indicators = team1Members.map((member) {
       double membersPercentTeam1 = team1TotalElevation / 5000;
-
       return CircularPercentIndicator(
         radius: 175.0,
         lineWidth: 10.0,
@@ -281,13 +234,22 @@ class _CompetitionPageState extends State<CompetitionPage> {
       );
     }).toList();
 
-    List<Widget> team1MemberLineIndicators = team1Members.map((member) {
-      // Safe casting with a default value
-      double elevation = member['total_elevation'] as double? ?? 0.0;
+    List<Widget> team1MemberLineIndicators =
+        team1Members.asMap().entries.map((entry) {
+      int index = entry.key;
+      Map<String, dynamic> member = entry.value;
 
+      double elevation = member['total_elevation'] as double? ?? 0.0;
       double memberContributionPercent = elevation / team1TotalElevation;
-      // Ensuring the percent is within the range of 0.0 to 1.0
       memberContributionPercent = memberContributionPercent.clamp(0.0, 1.0);
+
+      int shadeIndex = 100 * (index + 1); // Generate 100, 200, ..., 900
+      shadeIndex =
+          shadeIndex <= 900 ? shadeIndex : 900; // Cap shadeIndex at 900
+
+      // Ensure a non-null color is always assigned
+      Color progressColor = Colors.blue[shadeIndex] ?? Colors.blue[400]!;
+
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 5),
         child: Row(
@@ -298,48 +260,45 @@ class _CompetitionPageState extends State<CompetitionPage> {
               lineHeight: 6.0,
               percent: memberContributionPercent,
               backgroundColor: Colors.grey.shade200,
-              progressColor: Colors.blue[(member['shade'] as int? ?? 200)],
+              progressColor: progressColor, // Use the computed progress color
             ),
           ],
         ),
       );
     }).toList();
 
-    Stream<List<Map<String, dynamic>>> getTeamMemberElevations() {
-      // Calculate the first and last day of the current month
-      final now = DateTime.now();
-      final firstDayOfMonth = DateTime(now.year, now.month, 1);
-      final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
+    List<Widget> team2MemberLineIndicators =
+        team2Members.asMap().entries.map((entry) {
+      int index = entry.key;
+      Map<String, dynamic> member = entry.value;
 
-      return FirebaseFirestore.instance
-          .collection('activities')
-          .where('start_date',
-              isGreaterThanOrEqualTo: firstDayOfMonth.toUtc().toIso8601String())
-          .where('start_date',
-              isLessThanOrEqualTo: lastDayOfMonth.toUtc().toIso8601String())
-          .snapshots()
-          .map((snapshot) {
-        // Aggregate the data for each team member
-        Map<String, Map<String, dynamic>> aggregatedData = {};
-        for (var doc in snapshot.docs) {
-          final data = doc.data() as Map<String, dynamic>;
-          final fullname = data['fullname'] as String;
-          final elevationGain = data['elevation_gain'] as double? ?? 0.0;
+      double elevation = member['total_elevation'] as double? ?? 0.0;
+      double memberContributionPercent = elevation / team2TotalElevation;
+      memberContributionPercent = memberContributionPercent.clamp(0.0, 1.0);
 
-          if (!aggregatedData.containsKey(fullname)) {
-            aggregatedData[fullname] = {
-              'fullname': fullname,
-              'elevation_gain': 0.0,
-            };
-          }
+      int shadeIndex = 100 * (index + 1); // Generate 100, 200, ..., 900
+      shadeIndex =
+          shadeIndex <= 900 ? shadeIndex : 900; // Cap shadeIndex at 900
 
-          aggregatedData[fullname]!['elevation_gain'] += elevationGain;
-        }
+      // Ensure a non-null color is always assigned
+      Color progressColor = Colors.red[shadeIndex] ?? Colors.red[400]!;
 
-        // Convert to a list of maps for easier use in the UI
-        return aggregatedData.values.toList();
-      });
-    }
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 5),
+        child: Row(
+          children: [
+            Text('${member['fullname']}'),
+            LinearPercentIndicator(
+              width: MediaQuery.of(context).size.width * 0.3,
+              lineHeight: 6.0,
+              percent: memberContributionPercent,
+              backgroundColor: Colors.grey.shade200,
+              progressColor: progressColor, // Use the computed progress color
+            ),
+          ],
+        ),
+      );
+    }).toList();
 
     return Scaffold(
       body: StreamBuilder(
@@ -352,8 +311,6 @@ class _CompetitionPageState extends State<CompetitionPage> {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Text('Loading');
             }
-
-            final competitionDocs = snapshot.data.docs;
 
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -398,33 +355,10 @@ class _CompetitionPageState extends State<CompetitionPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text('Team 2'),
-                        ...team1MemberLineIndicators,
+                        ...team2MemberLineIndicators,
                       ],
                     ),
                   ],
-                ),
-                Expanded(
-                  child: StreamBuilder<List<Map<String, dynamic>>>(
-                    stream: getTeamMemberElevations(),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-                        return Text('Error: ${snapshot.error}');
-                      }
-                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                        return Text('No data found for the current month.');
-                      }
-
-                      List<Widget> memberWidgets =
-                          snapshot.data!.map((memberData) {
-                        return Text(
-                            '${memberData['fullname']}: ${memberData['elevation_gain'].toInt()}m');
-                      }).toList();
-
-                      return ListView(
-                        children: memberWidgets,
-                      );
-                    },
-                  ),
                 ),
               ],
             );
