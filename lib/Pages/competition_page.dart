@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -171,7 +172,7 @@ class CompetitionPageState extends State<CompetitionPage>
     return FirebaseFirestore.instance.collection('Competitions').snapshots();
   }
 
-  Stream<QuerySnapshot> getCurrentMonthData() {
+  Stream<QuerySnapshot> listenToActivityChanges() {
     final currentMonth = DateTime.now().month;
     final currentYear = DateTime.now().year;
 
@@ -187,6 +188,19 @@ class CompetitionPageState extends State<CompetitionPage>
         .snapshots();
   }
 
+  void processActivityChange(DocumentSnapshot activityDoc) async {
+    // Extract user email and elevation gain
+    var activityData = activityDoc.data() as Map<String, dynamic>?;
+
+    String userEmail = activityData?['user_email'] as String? ?? '';
+    double elevationGain =
+        (activityData?['elevation_gain'] as num?)?.toDouble() ?? 0.0;
+    print('elevationGain: $elevationGain');
+
+    // Fetch the user's current total elevation and update it
+    updateTeamMemberElevation(userEmail);
+  }
+
   late final AnimationController _winningAnimationController;
   bool _hasCheckedWinner = false;
   bool hasJoinedTeam = false;
@@ -194,25 +208,12 @@ class CompetitionPageState extends State<CompetitionPage>
   List<dynamic> team1Members = [];
   List<dynamic> team2Members = [];
 
+  late StreamSubscription<QuerySnapshot> _activitySubscription;
+
   @override
   void initState() {
     super.initState();
     _winningAnimationController = AnimationController(vsync: this);
-    getCurrentMonthData().listen((querySnapshot) {
-      // Reset total elevations
-      double team1TotalElevation = 0.0;
-      double team2TotalElevation = 0.0;
-
-      // Process each activity document
-      for (var doc in querySnapshot.docs) {
-        var data = doc.data() as Map<String, dynamic>;
-        double elevationGain = data['elevation_gain'] as double? ?? 0.0;
-        String userEmail = data['user_email'];
-
-        // Determine which team the user belongs to and update their elevation
-        updateTeamMemberElevation(userEmail, elevationGain);
-      }
-    });
     // Fetch and set the competition document for the current month
     final competitionDocId = getFormattedCurrentMonth();
     FirebaseFirestore.instance
@@ -237,36 +238,61 @@ class CompetitionPageState extends State<CompetitionPage>
       checkForWinner();
       _hasCheckedWinner = true;
     }
+
+    _activitySubscription =
+        listenToActivityChanges().listen((QuerySnapshot snapshot) {
+      snapshot.docChanges.forEach((change) {
+        if (change.type == DocumentChangeType.added ||
+            change.type == DocumentChangeType.modified) {
+          // Process the change
+          processActivityChange(change.doc);
+        }
+      });
+    });
   }
 
   @override
   void dispose() {
     _winningAnimationController.dispose();
     _hasCheckedWinner = false;
+    _activitySubscription.cancel();
     super.dispose();
   }
 
-  void updateTeamMemberElevation(String userEmail, double elevationGain) async {
+  void updateTeamMemberElevation(String userEmail) async {
     final competitionDocId = getFormattedCurrentMonth();
     var competitionDoc = FirebaseFirestore.instance
         .collection('Competitions')
         .doc(competitionDocId);
+
     var snapshot = await competitionDoc.get();
 
     if (!snapshot.exists) {
-      print('Competition document does not exist');
+      print('Competition document does not exist for $competitionDocId');
       return;
     }
 
-    var data = snapshot.data();
-    List<dynamic> team1 = data?['team_1'] ?? [];
-    List<dynamic> team2 = data?['team_2'] ?? [];
+    var userActivities = await getFilteredActivities();
+
+    double totalElevation = 0.0;
+    for (var doc in userActivities) {
+      var data = doc.data() as Map<String, dynamic>;
+      double elevationGain =
+          (data['elevation_gain'] as num?)?.toDouble() ?? 0.0;
+      totalElevation += elevationGain;
+    }
+
+    // Update the total elevation in the Competitions collection
+    var data = snapshot.data() as Map<String, dynamic>;
+    List<dynamic> team1 = data['team_1'] ?? [];
+    List<dynamic> team2 = data['team_2'] ?? [];
 
     bool updated = false;
+
     // Update elevation in team 1
-    for (var member in team1) {
-      if (member['email'] == userEmail) {
-        member['total_elevation'] += elevationGain;
+    for (var i = 0; i < team1.length; i++) {
+      if (team1[i]['email'] == userEmail) {
+        team1[i]['total_elevation'] = totalElevation; // Set the total elevation
         updated = true;
         break;
       }
@@ -274,9 +300,10 @@ class CompetitionPageState extends State<CompetitionPage>
 
     // Update elevation in team 2 if not updated in team 1
     if (!updated) {
-      for (var member in team2) {
-        if (member['email'] == userEmail) {
-          member['total_elevation'] += elevationGain;
+      for (var i = 0; i < team2.length; i++) {
+        if (team2[i]['email'] == userEmail) {
+          team2[i]['total_elevation'] =
+              totalElevation; // Set the total elevation
           break;
         }
       }
@@ -500,7 +527,7 @@ class CompetitionPageState extends State<CompetitionPage>
     return Scaffold(
       backgroundColor: const Color(0xFFDFD3C3),
       body: StreamBuilder(
-          stream: getCurrentMonthData(),
+          stream: getCompetitionsData(),
           // Add stream builder here
           builder: (BuildContext context, AsyncSnapshot snapshot) {
             if (snapshot.hasError) {

@@ -511,8 +511,8 @@ class LeaderboardTab extends StatelessWidget {
               dataWidget = buildListTile('Total Distance',
                   '${(entry['total_distance'] / 1000).toStringAsFixed(2)} km');
             } else if (title == 'Total Elevation') {
-              dataWidget = buildListTile(
-                  'Total Elevation', '${entry['total_elevation']} m');
+              dataWidget = buildListTile('Total Elevation',
+                  '${entry['total_elevation'].toStringAsFixed(1)} m');
             } else {
               dataWidget = const SizedBox();
             }
