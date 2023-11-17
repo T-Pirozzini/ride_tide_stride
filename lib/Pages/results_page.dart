@@ -35,55 +35,44 @@ class _ResultsPageState extends State<ResultsPage> {
               .get(),
           builder:
               (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
-            String statValue;
-            String label;
-
             if (snapshot.connectionState == ConnectionState.done) {
               Map<String, dynamic> userTopStats =
                   snapshot.data!.data() as Map<String, dynamic>;
 
-              switch (category) {
-                case 'distance':
-                  statValue =
-                      '${(result.totals[category] as double).toStringAsFixed(2)}km';
-                  label = 'Total Distance';
-                  break;
-                case 'moving_time':
-                  final int seconds = (result.totals[category] as num).toInt();
-                  final Duration duration = Duration(seconds: seconds);
-                  final int hours = duration.inHours;
-                  final int minutes = (duration.inMinutes % 60);
-                  statValue = '$hours:${minutes.toString().padLeft(2, '0')}';
-                  label = 'Moving Time';
-                  break;
-                case 'elevation_gain':
-                  statValue =
-                      '${(result.totals[category] as double).toStringAsFixed(1)}m';
-                  label = 'Elevation Gain';
-                  break;
-                default:
-                  statValue = result.totals[category].toString();
-                  label = 'Other Stat';
-              }
+              // Format moving time
+              final int seconds = (result.totals['moving_time'] as num).toInt();
+              final Duration duration = Duration(seconds: seconds);
+              final String movingTime =
+                  '${duration.inHours}:${(duration.inMinutes % 60).toString().padLeft(2, '0')} hrs';
+
+              // Format distance
+              final double distanceKm =
+                  (result.totals['distance'] as double) / 1000.0;
+              final String distance = '${distanceKm.toStringAsFixed(2)} km';
+
+              // Format elevation gain
+              final double elevationM =
+                  (result.totals['elevation_gain'] as double);
+              final String elevation = '${elevationM.toStringAsFixed(1)} m';
 
               List<Widget> children = [
                 ListTile(
                   leading: Icon(Icons.timer_outlined),
                   title: Text('Top Time'),
                   subtitle: Text(userTopStats['top_moving_time_month'] ?? ''),
-                  trailing: Text(statValue + " hrs"),
+                  trailing: Text(movingTime),
                 ),
                 ListTile(
-                    leading: Icon(Icons.straighten_outlined),
-                    title: Text('Top Distance'),
-                    subtitle: Text(userTopStats['top_distance_month'] ?? ''),
-                    trailing: Text(
-                        '${((userTopStats['top_distance'] ?? 0) / 1000.0).toStringAsFixed(2)} km')),
+                  leading: Icon(Icons.straighten_outlined),
+                  title: Text('Top Distance'),
+                  subtitle: Text(userTopStats['top_distance_month'] ?? ''),
+                  trailing: Text(distance),
+                ),
                 ListTile(
                   leading: Icon(Icons.landscape_outlined),
                   title: Text('Top Elevation'),
                   subtitle: Text(userTopStats['top_elevation_month'] ?? ''),
-                  trailing: Text('${userTopStats['top_elevation'] ?? 0.0} m'),
+                  trailing: Text(elevation),
                 ),
               ];
 
@@ -97,10 +86,8 @@ class _ResultsPageState extends State<ResultsPage> {
                   ),
                 ),
                 content: Container(
-                  width: MediaQuery.of(context).size.width *
-                      0.8, // 70% of screen width
-                  height: MediaQuery.of(context).size.height *
-                      0.25, // 50% of screen height
+                  width: MediaQuery.of(context).size.width * 0.8,
+                  height: MediaQuery.of(context).size.height * 0.25,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: children,
@@ -306,7 +293,6 @@ class _ResultsPageState extends State<ResultsPage> {
               title: Text(result.fullname, style: TextStyle(fontSize: 12)),
               trailing: Text(displayValue,
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-              // subtitle: Icon(iconData),
             ),
           ),
         ),

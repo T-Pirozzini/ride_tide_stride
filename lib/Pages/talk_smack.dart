@@ -112,6 +112,14 @@ class _TalkSmackState extends State<TalkSmack> {
                               color: isCurrentUser
                                   ? Color.fromARGB(255, 86, 141, 135)
                                   : Colors.white,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.5),
+                                  spreadRadius: 1,
+                                  blurRadius: 5,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
                               borderRadius: isCurrentUser
                                   ? BorderRadius.only(
                                       topLeft: Radius.circular(15),
