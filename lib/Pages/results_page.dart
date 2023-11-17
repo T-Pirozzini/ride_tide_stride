@@ -171,8 +171,10 @@ class _ResultsPageState extends State<ResultsPage> {
       children: [
         Padding(
           padding: const EdgeInsets.all(2.0),
-          child: Text(doc.id,
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          child: Center(
+            child: Text(doc.id,
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          ),
         ),
         const Divider(),
         Text(
