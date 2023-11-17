@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:percent_indicator/percent_indicator.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class CompetitionPage extends StatefulWidget {
   final bool showTeamChoiceDialog;
@@ -212,7 +213,7 @@ class _CompetitionPageState extends State<CompetitionPage> {
         lineWidth: 10.0,
         percent: membersPercentTeam1 >= 1.0 ? 1.0 : membersPercentTeam1,
         backgroundColor: Colors.grey.shade200,
-        progressColor: Colors.blue[member['shade'] as int? ?? 200],
+        progressColor: Colors.lightBlueAccent[member['shade'] as int? ?? 100],
         startAngle: 180,
         circularStrokeCap: CircularStrokeCap.butt,
         reverse: false,
@@ -227,7 +228,7 @@ class _CompetitionPageState extends State<CompetitionPage> {
         lineWidth: 10.0,
         percent: membersPercentTeam2 >= 1.0 ? 1.0 : membersPercentTeam2,
         backgroundColor: Colors.grey.shade200,
-        progressColor: Colors.red[member['shade'] as int? ?? 200],
+        progressColor: Colors.lightGreenAccent[member['shade'] as int? ?? 100],
         startAngle: 180,
         circularStrokeCap: CircularStrokeCap.butt,
         reverse: true,
@@ -248,13 +249,15 @@ class _CompetitionPageState extends State<CompetitionPage> {
           shadeIndex <= 900 ? shadeIndex : 900; // Cap shadeIndex at 900
 
       // Ensure a non-null color is always assigned
-      Color progressColor = Colors.blue[shadeIndex] ?? Colors.blue[400]!;
+      Color progressColor =
+          Colors.lightBlueAccent[shadeIndex] ?? Colors.blue[400]!;
 
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 5),
         child: Row(
           children: [
-            Text('${member['fullname']}'),
+            Text('${member['fullname']}',
+                style: GoogleFonts.syne(textStyle: TextStyle(fontSize: 12))),
             LinearPercentIndicator(
               width: MediaQuery.of(context).size.width * 0.3,
               lineHeight: 6.0,
@@ -281,13 +284,15 @@ class _CompetitionPageState extends State<CompetitionPage> {
           shadeIndex <= 900 ? shadeIndex : 900; // Cap shadeIndex at 900
 
       // Ensure a non-null color is always assigned
-      Color progressColor = Colors.red[shadeIndex] ?? Colors.red[400]!;
+      Color progressColor =
+          Colors.lightGreenAccent[shadeIndex] ?? Colors.lightGreenAccent[400]!;
 
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 5),
         child: Row(
           children: [
-            Text('${member['fullname']}'),
+            Text('${member['fullname']}',
+                style: GoogleFonts.syne(textStyle: TextStyle(fontSize: 12))),
             LinearPercentIndicator(
               width: MediaQuery.of(context).size.width * 0.3,
               lineHeight: 6.0,
@@ -301,6 +306,7 @@ class _CompetitionPageState extends State<CompetitionPage> {
     }).toList();
 
     return Scaffold(
+      backgroundColor: const Color(0xFFDFD3C3),
       body: StreamBuilder(
           stream: getCompetitionsData(),
           // Add stream builder here
@@ -315,10 +321,17 @@ class _CompetitionPageState extends State<CompetitionPage> {
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                Text('${getFormattedCurrentMonth()}'),
-                const SizedBox(height: 20.0),
-                Text('Elevation Challenge'),
-                const SizedBox(height: 20.0),
+                Text('${getFormattedCurrentMonth()}',
+                    style:
+                        GoogleFonts.syne(textStyle: TextStyle(fontSize: 18))),
+                const SizedBox(height: 15.0),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text('Elevation Challenge',
+                      style: GoogleFonts.sriracha(
+                          textStyle: TextStyle(
+                              fontSize: 28, fontWeight: FontWeight.bold))),
+                ),
                 Center(
                   child: Stack(
                     alignment: Alignment.center,
@@ -343,19 +356,38 @@ class _CompetitionPageState extends State<CompetitionPage> {
                 SizedBox(height: 20.0),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Text('Team 1'),
-                        ...team1MemberLineIndicators,
+                        Text('Team 1',
+                            style: GoogleFonts.syne(
+                                textStyle: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600))),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            ...team1MemberLineIndicators,
+                          ],
+                        ),
                       ],
                     ),
                     Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Text('Team 2'),
-                        ...team2MemberLineIndicators,
+                        Text('Team 2',
+                            style: GoogleFonts.syne(
+                                textStyle: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600))),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            ...team2MemberLineIndicators,
+                          ],
+                        ),
                       ],
                     ),
                   ],
@@ -363,14 +395,22 @@ class _CompetitionPageState extends State<CompetitionPage> {
               ],
             );
           }),
-      persistentFooterButtons: [
-        ElevatedButton(
-          onPressed: () {
-            _showTeamChoiceDialog(context);
-          },
-          child: const Text('Join a Team'),
+      bottomNavigationBar: BottomAppBar(
+        color:
+            Colors.white, // This sets the background color of the BottomAppBar
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: <Widget>[
+            // Place your buttons here
+            ElevatedButton(
+              onPressed: () {
+                _showTeamChoiceDialog(context);
+              },
+              child: const Text('Join a Team'),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
