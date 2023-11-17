@@ -7,14 +7,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 
 class CompetitionPage extends StatefulWidget {
-  final bool showTeamChoiceDialog;
-  const CompetitionPage({super.key, this.showTeamChoiceDialog = false});
+  const CompetitionPage({super.key});
 
   @override
-  State<CompetitionPage> createState() => _CompetitionPageState();
+  State<CompetitionPage> createState() => CompetitionPageState();
 }
 
-class _CompetitionPageState extends State<CompetitionPage>
+class CompetitionPageState extends State<CompetitionPage>
     with TickerProviderStateMixin {
   final currentUser = FirebaseAuth.instance.currentUser;
 
@@ -92,29 +91,34 @@ class _CompetitionPageState extends State<CompetitionPage>
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Join a Team'),
+          title: Center(child: const Text('Choose a team!')),
           content: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: <Widget>[
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  const Text('Team 1'),
                   ElevatedButton(
                     onPressed: () async {
                       Map<String, dynamic>? stravaUsername =
                           await getStravaUserDetails();
-                      print(stravaUsername);
                       if (stravaUsername != null) {
                         final competitionsCollection = FirebaseFirestore
                             .instance
                             .collection('Competitions');
+                        double updatedElevation =
+                            (stravaUsername['total_elevation'] as double? ??
+                                    0.0) +
+                                0.2;
+
+                        // Update the user's total elevation
+                        stravaUsername['total_elevation'] = updatedElevation;
+
+                        // Only update the team array
                         await competitionsCollection
                             .doc(getFormattedCurrentMonth())
                             .update({
                           'team_1': FieldValue.arrayUnion([stravaUsername]),
-                          'total_elevation':
-                              stravaUsername['total_elevation'].toDouble(),
                         });
                       }
                       Navigator.of(context).pop();
@@ -126,22 +130,27 @@ class _CompetitionPageState extends State<CompetitionPage>
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  const Text('Team 2'),
                   ElevatedButton(
                     onPressed: () async {
                       Map<String, dynamic>? stravaUsername =
                           await getStravaUserDetails();
-                      print(stravaUsername);
                       if (stravaUsername != null) {
                         final competitionsCollection = FirebaseFirestore
                             .instance
                             .collection('Competitions');
+                        double updatedElevation =
+                            (stravaUsername['total_elevation'] as double? ??
+                                    0.0) +
+                                0.2;
+
+                        // Update the user's total elevation
+                        stravaUsername['total_elevation'] = updatedElevation;
+
+                        // Only update the team array
                         await competitionsCollection
                             .doc(getFormattedCurrentMonth())
                             .update({
                           'team_2': FieldValue.arrayUnion([stravaUsername]),
-                          'total_elevation':
-                              stravaUsername['total_elevation'].toDouble(),
                         });
                       }
                       Navigator.of(context).pop();
@@ -162,6 +171,8 @@ class _CompetitionPageState extends State<CompetitionPage>
   }
 
   late final AnimationController _winningAnimationController;
+  bool _hasCheckedWinner = false;
+  bool hasJoinedTeam = false;
 
   List<dynamic> team1Members = [];
   List<dynamic> team2Members = [];
@@ -169,6 +180,7 @@ class _CompetitionPageState extends State<CompetitionPage>
   @override
   void initState() {
     super.initState();
+    _winningAnimationController = AnimationController(vsync: this);
 
     // Fetch and set the competition document for the current month
     final competitionDocId = getFormattedCurrentMonth();
@@ -186,17 +198,44 @@ class _CompetitionPageState extends State<CompetitionPage>
         });
       }
     });
-
-    _winningAnimationController = AnimationController(vsync: this);
+    if (!_hasCheckedWinner) {
+      checkForWinner();
+      _hasCheckedWinner = true;
+    }
   }
 
   @override
   void dispose() {
     _winningAnimationController.dispose();
+    _hasCheckedWinner = false;
     super.dispose();
   }
 
-  void playWinningAnimation() {
+  void checkForWinner() {
+    double team1TotalElevation = team1Members.fold(
+      0.0,
+      (sum, member) => sum + (member['total_elevation'] as double? ?? 0.0),
+    );
+
+    double team2TotalElevation = team2Members.fold(
+      0.0,
+      (sum, member) => sum + (member['total_elevation'] as double? ?? 0.0),
+    );
+
+    print('Checking for winner...');
+    print('Team 1 Elevation: $team1TotalElevation');
+    print('Team 2 Elevation: $team2TotalElevation');
+
+    if (team1TotalElevation >= 5000) {
+      print('Team 1 Wins!');
+      playWinningAnimation('Team 1');
+    } else if (team2TotalElevation >= 5000) {
+      print('Team 2 Wins!');
+      playWinningAnimation('Team 2');
+    }
+  }
+
+  void playWinningAnimation(String winningTeam) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -213,7 +252,7 @@ class _CompetitionPageState extends State<CompetitionPage>
           fit: BoxFit.contain, // Make sure the entire animation is visible
         ),
         title: Center(
-          child: Text('Team 1 Wins!',
+          child: Text('$winningTeam Wins!',
               style: GoogleFonts.syne(textStyle: TextStyle(fontSize: 32))),
         ),
         actions: <Widget>[
@@ -241,13 +280,13 @@ class _CompetitionPageState extends State<CompetitionPage>
     double team2TotalElevation = team2Members.fold(
       0.0,
       (sum, member) => sum + (member['total_elevation'] as double? ?? 0.0),
-    );   
+    );
 
 // Team 1 cumulative percent calculation
     List<Widget> team1Indicators = team1Members.map((member) {
       double membersPercentTeam1 = team1TotalElevation / 5000;
       return CircularPercentIndicator(
-        radius: 175.0,
+        radius: 180.0,
         lineWidth: 10.0,
         percent: membersPercentTeam1 >= 1.0 ? 1.0 : membersPercentTeam1,
         backgroundColor: Colors.grey.shade200,
@@ -255,6 +294,9 @@ class _CompetitionPageState extends State<CompetitionPage>
         startAngle: 180,
         circularStrokeCap: CircularStrokeCap.butt,
         reverse: false,
+        animation: true,
+        animationDuration: 1500,
+        footer: Text(team1TotalElevation.toStringAsFixed(0) + ' m'),
       );
     }).toList();
 
@@ -262,7 +304,7 @@ class _CompetitionPageState extends State<CompetitionPage>
     List<Widget> team2Indicators = team2Members.map((member) {
       double membersPercentTeam2 = team2TotalElevation / 5000;
       return CircularPercentIndicator(
-        radius: 160.0,
+        radius: 150.0,
         lineWidth: 10.0,
         percent: membersPercentTeam2 >= 1.0 ? 1.0 : membersPercentTeam2,
         backgroundColor: Colors.grey.shade200,
@@ -270,6 +312,9 @@ class _CompetitionPageState extends State<CompetitionPage>
         startAngle: 180,
         circularStrokeCap: CircularStrokeCap.butt,
         reverse: true,
+        animation: true,
+        animationDuration: 1500,
+        footer: Text(team2TotalElevation.toStringAsFixed(0) + ' m'),
       );
     }).toList();
 
@@ -296,12 +341,32 @@ class _CompetitionPageState extends State<CompetitionPage>
           children: [
             Text('${member['fullname']}',
                 style: GoogleFonts.syne(textStyle: TextStyle(fontSize: 12))),
-            LinearPercentIndicator(
-              width: MediaQuery.of(context).size.width * 0.3,
-              lineHeight: 6.0,
-              percent: memberContributionPercent,
-              backgroundColor: Colors.grey.shade200,
-              progressColor: progressColor, // Use the computed progress color
+            Stack(
+              children: [
+                LinearPercentIndicator(
+                  width: MediaQuery.of(context).size.width * 0.3,
+                  lineHeight: 10.0,
+                  percent: memberContributionPercent,
+                  backgroundColor: Colors.grey.shade200,
+                  progressColor:
+                      progressColor, // Use the computed progress color
+                  animation: true,
+                  animationDuration: 1500,
+                ),
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: Container(
+                    padding: EdgeInsets.only(left: 4),
+                    color: Colors.grey.shade200,
+                    child: Text(
+                      '${member['total_elevation'].toStringAsFixed(0)} m',
+                      style: TextStyle(fontSize: 8),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -331,12 +396,32 @@ class _CompetitionPageState extends State<CompetitionPage>
           children: [
             Text('${member['fullname']}',
                 style: GoogleFonts.syne(textStyle: TextStyle(fontSize: 12))),
-            LinearPercentIndicator(
-              width: MediaQuery.of(context).size.width * 0.3,
-              lineHeight: 6.0,
-              percent: memberContributionPercent,
-              backgroundColor: Colors.grey.shade200,
-              progressColor: progressColor, // Use the computed progress color
+            Stack(
+              children: [
+                LinearPercentIndicator(
+                  width: MediaQuery.of(context).size.width * 0.3,
+                  lineHeight: 10.0,
+                  percent: memberContributionPercent,
+                  backgroundColor: Colors.grey.shade200,
+                  progressColor:
+                      progressColor, // Use the computed progress color
+                  animation: true,
+                  animationDuration: 1500,
+                ),
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: Container(
+                    padding: EdgeInsets.only(left: 4),
+                    color: Colors.grey.shade200,
+                    child: Text(
+                      '${member['total_elevation'].toStringAsFixed(0)} m',
+                      style: TextStyle(fontSize: 8),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -446,12 +531,12 @@ class _CompetitionPageState extends State<CompetitionPage>
               },
               child: const Text('Join a Team'),
             ),
-            ElevatedButton(
-              onPressed: () {
-                playWinningAnimation();
-              },
-              child: const Text('Play Animation'),
-            ),
+            // ElevatedButton(
+            //   onPressed: () {
+            //     playWinningAnimation();
+            //   },
+            //   child: const Text('Play Animation'),
+            // ),
           ],
         ),
       ),

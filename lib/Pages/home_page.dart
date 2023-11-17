@@ -17,10 +17,15 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   int _selectedIndex = 0;
   final currentUser = FirebaseAuth.instance.currentUser;
+  final GlobalKey<CompetitionPageState> competitionPageKey = GlobalKey();
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+      if (_selectedIndex == 2) {
+        // Assuming competition tab is at index 2
+        competitionPageKey.currentState?.checkForWinner();
+      }
     });
   }
 
@@ -46,9 +51,7 @@ class _HomeState extends State<Home> {
           Builder(
             builder: (BuildContext context) => const Leaderboard(),
           ),
-          Builder(
-            builder: (BuildContext context) => CompetitionPage(),
-          ),
+          Builder(builder: (BuildContext context) => CompetitionPage(key: competitionPageKey)),
           Builder(
             builder: (BuildContext context) => const TalkSmack(),
           ),
