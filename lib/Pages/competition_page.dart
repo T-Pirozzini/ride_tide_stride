@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lottie/lottie.dart';
 
 class CompetitionPage extends StatefulWidget {
   final bool showTeamChoiceDialog;
@@ -13,7 +14,8 @@ class CompetitionPage extends StatefulWidget {
   State<CompetitionPage> createState() => _CompetitionPageState();
 }
 
-class _CompetitionPageState extends State<CompetitionPage> {
+class _CompetitionPageState extends State<CompetitionPage>
+    with TickerProviderStateMixin {
   final currentUser = FirebaseAuth.instance.currentUser;
 
   String getFormattedCurrentMonth() {
@@ -159,6 +161,8 @@ class _CompetitionPageState extends State<CompetitionPage> {
     return FirebaseFirestore.instance.collection('Competitions').snapshots();
   }
 
+  late final AnimationController _winningAnimationController;
+
   List<dynamic> team1Members = [];
   List<dynamic> team2Members = [];
 
@@ -182,6 +186,48 @@ class _CompetitionPageState extends State<CompetitionPage> {
         });
       }
     });
+
+    _winningAnimationController = AnimationController(vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _winningAnimationController.dispose();
+    super.dispose();
+  }
+
+  void playWinningAnimation() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        content: Lottie.asset(
+          'assets/lottie/win_animation.json',
+          controller: _winningAnimationController,
+          onLoaded: (composition) {
+            _winningAnimationController
+              ..duration = composition
+                  .duration // You can set a longer duration here if needed
+              ..repeat(); // Make the animation repeat indefinitely
+          },
+          repeat: true, // Play animation in a loop
+          fit: BoxFit.contain, // Make sure the entire animation is visible
+        ),
+        title: Center(
+          child: Text('Team 1 Wins!',
+              style: GoogleFonts.syne(textStyle: TextStyle(fontSize: 32))),
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('Close'),
+            onPressed: () {
+              _winningAnimationController
+                  .stop(); // Stop the animation when the dialog is closed
+              Navigator.of(context).pop(); // Closes the dialog
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -195,15 +241,7 @@ class _CompetitionPageState extends State<CompetitionPage> {
     double team2TotalElevation = team2Members.fold(
       0.0,
       (sum, member) => sum + (member['total_elevation'] as double? ?? 0.0),
-    );
-
-    Color getShadeForTeamMember(int baseColorValue, int memberIndex) {
-      // This function assumes that baseColorValue is a valid color value like Colors.blue.value or Colors.red.value.
-      // The shadeOffset ensures that the color stays within a reasonable range and does not overflow valid color values.
-      int shadeOffset = 100 * (memberIndex + 1);
-      int newColorValue = (baseColorValue + shadeOffset) % 0xFFFFFF;
-      return Color(newColorValue).withOpacity(1.0);
-    }
+    );   
 
 // Team 1 cumulative percent calculation
     List<Widget> team1Indicators = team1Members.map((member) {
@@ -407,6 +445,12 @@ class _CompetitionPageState extends State<CompetitionPage> {
                 _showTeamChoiceDialog(context);
               },
               child: const Text('Join a Team'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                playWinningAnimation();
+              },
+              child: const Text('Play Animation'),
             ),
           ],
         ),

@@ -51,6 +51,7 @@ dependencies:
   url_launcher: ^6.2.0
   mailto: ^2.0.0
   percent_indicator: ^4.2.3
+  lottie: ^2.7.0
 
 dev_dependencies:
   flutter_test:
@@ -86,6 +87,7 @@ flutter:
   assets:
     - assets/
     - assets/images/
+    - assets/lottie/win_animation.json
     
   #   - images/a_dot_ham.jpeg
 
