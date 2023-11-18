@@ -88,84 +88,117 @@ class CompetitionPageState extends State<CompetitionPage>
     return userActivities;
   }
 
-  void _showTeamChoiceDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Center(child: const Text('Choose a team!')),
-          content: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <Widget>[
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  ElevatedButton(
-                    onPressed: () async {
-                      Map<String, dynamic>? stravaUsername =
-                          await getStravaUserDetails();
-                      if (stravaUsername != null) {
-                        final competitionsCollection = FirebaseFirestore
-                            .instance
-                            .collection('Competitions');
-                        double updatedElevation =
-                            (stravaUsername['total_elevation'] as double? ??
-                                    0.0) +
-                                0.2;
+  Future<bool> checkIfUserIsOnATeam() async {
+    String userEmail = currentUser?.email ?? '';
+    final competitionDocId = getFormattedCurrentMonth();
+    var competitionDoc = FirebaseFirestore.instance
+        .collection('Competitions')
+        .doc(competitionDocId);
 
-                        // Update the user's total elevation
-                        stravaUsername['total_elevation'] = updatedElevation;
+    var snapshot = await competitionDoc.get();
+    if (!snapshot.exists) {
+      print('Competition document does not exist for $competitionDocId');
+      return false;
+    }
 
-                        // Only update the team array
-                        await competitionsCollection
-                            .doc(getFormattedCurrentMonth())
-                            .update({
-                          'team_1': FieldValue.arrayUnion([stravaUsername]),
-                        });
-                      }
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text('Join Team 1'),
-                  ),
-                ],
-              ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  ElevatedButton(
-                    onPressed: () async {
-                      Map<String, dynamic>? stravaUsername =
-                          await getStravaUserDetails();
-                      if (stravaUsername != null) {
-                        final competitionsCollection = FirebaseFirestore
-                            .instance
-                            .collection('Competitions');
-                        double updatedElevation =
-                            (stravaUsername['total_elevation'] as double? ??
-                                    0.0) +
-                                0.2;
+    var data = snapshot.data() as Map<String, dynamic>;
+    List<dynamic> team1 = data['team_1'] ?? [];
+    List<dynamic> team2 = data['team_2'] ?? [];
 
-                        // Update the user's total elevation
-                        stravaUsername['total_elevation'] = updatedElevation;
+    bool isOnTeam1 = team1.any((member) => member['email'] == userEmail);
+    bool isOnTeam2 = team2.any((member) => member['email'] == userEmail);
 
-                        // Only update the team array
-                        await competitionsCollection
-                            .doc(getFormattedCurrentMonth())
-                            .update({
-                          'team_2': FieldValue.arrayUnion([stravaUsername]),
-                        });
-                      }
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text('Join Team 2'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
+    return isOnTeam1 || isOnTeam2;
+  }
+
+  Future<void> _showTeamChoiceDialog(BuildContext context) async {
+    // Check if the user is already on a team
+    bool isAlreadyOnATeam = await checkIfUserIsOnATeam();
+    if (isAlreadyOnATeam) {
+      SnackBar snackBar = SnackBar(
+        content: Text('You are already on a team!'),
+        duration: Duration(seconds: 2),
+      );
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    } else {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Center(child: const Text('Choose a team!')),
+            content: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: <Widget>[
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    ElevatedButton(
+                      onPressed: () async {
+                        Map<String, dynamic>? stravaUsername =
+                            await getStravaUserDetails();
+                        if (stravaUsername != null) {
+                          final competitionsCollection = FirebaseFirestore
+                              .instance
+                              .collection('Competitions');
+                          double updatedElevation =
+                              (stravaUsername['total_elevation'] as double? ??
+                                      0.0) +
+                                  0.2;
+
+                          // Update the user's total elevation
+                          stravaUsername['total_elevation'] = updatedElevation;
+
+                          // Only update the team array
+                          await competitionsCollection
+                              .doc(getFormattedCurrentMonth())
+                              .update({
+                            'team_1': FieldValue.arrayUnion([stravaUsername]),
+                          });
+                        }
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text('Join Team 1'),
+                    ),
+                  ],
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    ElevatedButton(
+                      onPressed: () async {
+                        Map<String, dynamic>? stravaUsername =
+                            await getStravaUserDetails();
+                        if (stravaUsername != null) {
+                          final competitionsCollection = FirebaseFirestore
+                              .instance
+                              .collection('Competitions');
+                          double updatedElevation =
+                              (stravaUsername['total_elevation'] as double? ??
+                                      0.0) +
+                                  0.2;
+
+                          // Update the user's total elevation
+                          stravaUsername['total_elevation'] = updatedElevation;
+
+                          // Only update the team array
+                          await competitionsCollection
+                              .doc(getFormattedCurrentMonth())
+                              .update({
+                            'team_2': FieldValue.arrayUnion([stravaUsername]),
+                          });
+                        }
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text('Join Team 2'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
   }
 
   Stream<QuerySnapshot> getCompetitionsData() {
@@ -627,9 +660,155 @@ class CompetitionPageState extends State<CompetitionPage>
               },
               child: const Text('Join a Team'),
             ),
+            ElevatedButton(
+              onPressed: () {
+                _showProfileDialog(context);
+              },
+              child: const Text('Show Profile'),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  void _showProfileDialog(context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return FutureBuilder(
+          future: Future.wait([
+            getStravaUserDetails(),
+          ]),
+          builder:
+              (BuildContext context, AsyncSnapshot<List<dynamic>> snapshot) {
+            if (snapshot.hasError) {
+              return const Text('Something went wrong');
+            }
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Text('Loading');
+            }
+
+            final userDetails = snapshot.data?[0] as Map<String, dynamic>?;
+            final fullName = userDetails?['fullname'] as String?;
+
+            if (userDetails == null || fullName == null) {
+              return const Text('No user data found');
+            }
+
+            return FutureBuilder(
+              future: findHighestAverageWatts(fullName),
+              builder: (BuildContext context,
+                  AsyncSnapshot<double?> avgWattsSnapshot) {
+                if (avgWattsSnapshot.hasError) {
+                  return const Text('Something went wrong');
+                }
+                if (avgWattsSnapshot.connectionState ==
+                    ConnectionState.waiting) {
+                  return const Text('Loading');
+                }
+
+                final highestAverageWatts = avgWattsSnapshot.data;
+
+                return AlertDialog(
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(fullName,
+                          style: GoogleFonts.syne(
+                              textStyle: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black))),
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Container(
+                            width: 620,
+                            height: 400,
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image: AssetImage(
+                                    'assets/images/profile_no_bg.png'),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: Container(
+                              padding: EdgeInsets.all(20),
+                              child: Column(
+                                children: [
+                                  Text('Power Level',
+                                      style: GoogleFonts.syne(
+                                          textStyle: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white))),
+                                  Text(
+                                    '${highestAverageWatts ?? "N/A"}', // Display highest average watts
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.syne(
+                                      textStyle: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  actions: <Widget>[
+                    TextButton(
+                      child: const Text('Close'),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<double?> findHighestAverageWatts(String fullName) async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('activities')
+        .where('fullname', isEqualTo: fullName)
+        .get();
+
+    final activities =
+        snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+
+    if (activities.isEmpty) {
+      return null; // No activities found for the user
+    }
+
+    double? highestAverageWatts;
+
+    for (final activity in activities) {
+      final averageWatts = activity['average_watts'] as double?;
+
+      if (averageWatts != null) {
+        if (highestAverageWatts == null || averageWatts > highestAverageWatts) {
+          highestAverageWatts = averageWatts;
+        }
+      }
+    }
+
+    return highestAverageWatts;
   }
 }
