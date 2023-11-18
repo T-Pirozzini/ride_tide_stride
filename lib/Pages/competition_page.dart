@@ -627,9 +627,155 @@ class CompetitionPageState extends State<CompetitionPage>
               },
               child: const Text('Join a Team'),
             ),
+            ElevatedButton(
+              onPressed: () {
+                _showProfileDialog(context);
+              },
+              child: const Text('Show Profile'),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  void _showProfileDialog(context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return FutureBuilder(
+          future: Future.wait([
+            getStravaUserDetails(),
+          ]),
+          builder:
+              (BuildContext context, AsyncSnapshot<List<dynamic>> snapshot) {
+            if (snapshot.hasError) {
+              return const Text('Something went wrong');
+            }
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Text('Loading');
+            }
+
+            final userDetails = snapshot.data?[0] as Map<String, dynamic>?;
+            final fullName = userDetails?['fullname'] as String?;
+
+            if (userDetails == null || fullName == null) {
+              return const Text('No user data found');
+            }
+
+            return FutureBuilder(
+              future: findHighestAverageWatts(fullName),
+              builder: (BuildContext context,
+                  AsyncSnapshot<double?> avgWattsSnapshot) {
+                if (avgWattsSnapshot.hasError) {
+                  return const Text('Something went wrong');
+                }
+                if (avgWattsSnapshot.connectionState ==
+                    ConnectionState.waiting) {
+                  return const Text('Loading');
+                }
+
+                final highestAverageWatts = avgWattsSnapshot.data;
+
+                return AlertDialog(
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(fullName,
+                          style: GoogleFonts.syne(
+                              textStyle: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black))),
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Container(
+                            width: 620,
+                            height: 400,
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image: AssetImage(
+                                    'assets/images/profile_no_bg.png'),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: Container(
+                              padding: EdgeInsets.all(20),
+                              child: Column(
+                                children: [
+                                  Text('Power Level',
+                                      style: GoogleFonts.syne(
+                                          textStyle: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white))),
+                                  Text(
+                                    '${highestAverageWatts ?? "N/A"}', // Display highest average watts
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.syne(
+                                      textStyle: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  actions: <Widget>[
+                    TextButton(
+                      child: const Text('Close'),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<double?> findHighestAverageWatts(String fullName) async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('activities')
+        .where('fullname', isEqualTo: fullName)
+        .get();
+
+    final activities =
+        snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+
+    if (activities.isEmpty) {
+      return null; // No activities found for the user
+    }
+
+    double? highestAverageWatts;
+
+    for (final activity in activities) {
+      final averageWatts = activity['average_watts'] as double?;
+
+      if (averageWatts != null) {
+        if (highestAverageWatts == null || averageWatts > highestAverageWatts) {
+          highestAverageWatts = averageWatts;
+        }
+      }
+    }
+
+    return highestAverageWatts;
   }
 }
