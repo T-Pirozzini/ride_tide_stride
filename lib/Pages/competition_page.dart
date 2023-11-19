@@ -292,6 +292,26 @@ class CompetitionPageState extends State<CompetitionPage>
     super.dispose();
   }
 
+  Future<List<QueryDocumentSnapshot>> getActivitiesForUser(
+      String userEmail) async {
+    final firstDayOfMonth =
+        DateTime(DateTime.now().year, DateTime.now().month, 1);
+    final lastDayOfMonth =
+        DateTime(DateTime.now().year, DateTime.now().month + 1, 0);
+
+    // Fetch activities within the date range and for the specified user
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('activities')
+        .where('start_date',
+            isGreaterThanOrEqualTo: firstDayOfMonth.toUtc().toIso8601String())
+        .where('start_date',
+            isLessThanOrEqualTo: lastDayOfMonth.toUtc().toIso8601String())
+        .where('user_email', isEqualTo: userEmail)
+        .get();
+
+    return querySnapshot.docs;
+  }
+
   void updateTeamMemberElevation(String userEmail) async {
     final competitionDocId = getFormattedCurrentMonth();
     var competitionDoc = FirebaseFirestore.instance
@@ -305,7 +325,7 @@ class CompetitionPageState extends State<CompetitionPage>
       return;
     }
 
-    var userActivities = await getFilteredActivities();
+    var userActivities = await getActivitiesForUser(userEmail);
 
     double totalElevation = 0.0;
     for (var doc in userActivities) {
