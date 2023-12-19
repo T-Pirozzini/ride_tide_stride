@@ -54,8 +54,8 @@ class _LeaderboardState extends State<Leaderboard> {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final endOfMonth = DateTime(now.year, now.month + 1, 0);
-    final endTime = endOfMonth.millisecondsSinceEpoch;
+    final endOfMonth = DateTime(now.year, now.month + 1, 1).subtract(const Duration(days: 1));
+    final endTime = DateTime(endOfMonth.year, endOfMonth.month, endOfMonth.day, 23, 59, 59).millisecondsSinceEpoch;
     // final testTime =
     //     DateTime.now().millisecondsSinceEpoch + 5000; // 5 seconds from now
 
