@@ -151,7 +151,7 @@ class CompetitionPageState extends State<CompetitionPage>
                           // Only update the team array
                           await competitionsCollection
                               .doc(getFormattedCurrentMonth())
-                              .update({
+                              .set({
                             'team_1': FieldValue.arrayUnion([stravaUsername]),
                           });
                         }
@@ -183,7 +183,7 @@ class CompetitionPageState extends State<CompetitionPage>
                           // Only update the team array
                           await competitionsCollection
                               .doc(getFormattedCurrentMonth())
-                              .update({
+                              .set({
                             'team_2': FieldValue.arrayUnion([stravaUsername]),
                           });
                         }
