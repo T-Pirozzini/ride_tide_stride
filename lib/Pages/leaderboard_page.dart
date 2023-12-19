@@ -336,7 +336,7 @@ class LeaderboardTab extends StatelessWidget {
         double usableHeight = deviceHeight - topPadding - bottomPadding;
 
         double fontSizeForDate = usableHeight * 0.018;
-        double fontSizeForName = usableHeight * 0.02;
+        double fontSizeForName = usableHeight * 0.017;
 
         return SingleChildScrollView(
           child: Column(
@@ -377,6 +377,7 @@ class LeaderboardTab extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8.0)),
                   child: ListTile(
                     title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
                           formatDate(activity['start_date']),
@@ -462,7 +463,7 @@ class LeaderboardTab extends StatelessWidget {
                                         fontSize: 12.0,
                                         fontWeight: FontWeight.w500),
                                   )
-                                : Text('0 W'),
+                                : Text('0 W', style: TextStyle(fontSize: 12.0)),
                           ],
                         ),
                         const SizedBox(height: 4.0),
@@ -557,7 +558,7 @@ class LeaderboardTab extends StatelessWidget {
                 double deviceHeight = MediaQuery.of(localContext).size.height;
                 double deviceWidth = MediaQuery.of(localContext).size.width;
                 double dialogHeight = deviceHeight * 0.6;
-                double dialogWidth = deviceWidth * 0.95;
+                double dialogWidth = deviceWidth * 0.9;
                 fetchUserActivities(entry['full_name']).then(
                   (activities) {
                     showDialog(
@@ -823,50 +824,59 @@ class LeaderboardTab extends StatelessWidget {
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
                               color: Colors.black))),
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Container(
-                        width: 620,
-                        height: 400,
-                        decoration: BoxDecoration(
-                          image: DecorationImage(
-                            image:
-                                AssetImage('assets/images/profile_no_bg.png'),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: Container(
-                          padding: EdgeInsets.all(20),
-                          child: Column(
-                            children: [
-                              Text('Power Level',
-                                  style: GoogleFonts.syne(
-                                      textStyle: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.white))),
-                              Text(
-                                '${highestAverageWatts ?? "N/A"}', // Display highest average watts
-                                textAlign: TextAlign.center,
-                                style: GoogleFonts.syne(
-                                  textStyle: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
+                  ClipOval(
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(
+                              200), // Adjust the radius value as needed
+                          child: Container(
+                            width: 400,
+                            height: 300,
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image: AssetImage(
+                                    'assets/images/power_level_3.png'),
+                                fit: BoxFit.fitHeight,                                
                               ),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: Container(
+                            padding: EdgeInsets.all(20),
+                            child: Container(
+                              color: Colors.black,
+                              child: Column(
+                                children: [
+                                  Text('Power Level',
+                                      style: GoogleFonts.syne(
+                                          textStyle: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white))),
+                                  Text(
+                                    '${highestAverageWatts ?? "N/A"}', // Display highest average watts
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.syne(
+                                      textStyle: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
