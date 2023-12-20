@@ -740,50 +740,59 @@ class CompetitionPageState extends State<CompetitionPage>
                                   fontSize: 18,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.black))),
-                      Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Container(
-                            width: 620,
-                            height: 400,
-                            decoration: BoxDecoration(
-                              image: DecorationImage(
-                                image: AssetImage(
-                                    'assets/images/profile_no_bg.png'),
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            child: Container(
-                              padding: EdgeInsets.all(20),
-                              child: Column(
-                                children: [
-                                  Text('Power Level',
-                                      style: GoogleFonts.syne(
-                                          textStyle: TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.white))),
-                                  Text(
-                                    '${highestAverageWatts ?? "N/A"}', // Display highest average watts
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.syne(
-                                      textStyle: TextStyle(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
-                                      ),
-                                    ),
+                      ClipOval(
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(
+                                  200), // Adjust the radius value as needed
+                              child: Container(
+                                width: 400,
+                                height: 300,
+                                decoration: BoxDecoration(
+                                  image: DecorationImage(
+                                    image: AssetImage(
+                                        'assets/images/power_level_3.png'),
+                                    fit: BoxFit.fitHeight,
                                   ),
-                                ],
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                            Positioned(
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              child: Container(
+                                padding: EdgeInsets.all(20),
+                                child: Container(
+                                  color: Colors.black,
+                                  child: Column(
+                                    children: [
+                                      Text('Power Level',
+                                          style: GoogleFonts.syne(
+                                              textStyle: TextStyle(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Colors.white))),
+                                      Text(
+                                        '${highestAverageWatts ?? "N/A"}', // Display highest average watts
+                                        textAlign: TextAlign.center,
+                                        style: GoogleFonts.syne(
+                                          textStyle: TextStyle(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -802,7 +811,7 @@ class CompetitionPageState extends State<CompetitionPage>
         );
       },
     );
-  }
+  }  
 
   Future<double?> findHighestAverageWatts(String fullName) async {
     final snapshot = await FirebaseFirestore.instance

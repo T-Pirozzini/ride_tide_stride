@@ -54,8 +54,11 @@ class _LeaderboardState extends State<Leaderboard> {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final endOfMonth = DateTime(now.year, now.month + 1, 0);
-    final endTime = endOfMonth.millisecondsSinceEpoch;
+    final endOfMonth =
+        DateTime(now.year, now.month + 1, 1).subtract(const Duration(days: 1));
+    final endTime =
+        DateTime(endOfMonth.year, endOfMonth.month, endOfMonth.day, 23, 59, 59)
+            .millisecondsSinceEpoch;
     // final testTime =
     //     DateTime.now().millisecondsSinceEpoch + 5000; // 5 seconds from now
 
@@ -95,6 +98,12 @@ class _LeaderboardState extends State<Leaderboard> {
                   Navigator.of(context).pushNamed('/resultsPage');
                 },
                 child: const Text('View Past Results'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pushNamed('/awardsPage');
+                },
+                child: const Text('View Awards'),
               ),
             ],
           ),
@@ -332,8 +341,8 @@ class LeaderboardTab extends StatelessWidget {
         double bottomPadding = MediaQuery.of(context).padding.bottom;
         double usableHeight = deviceHeight - topPadding - bottomPadding;
 
-        double fontSizeForDate = usableHeight * 0.015;
-        double fontSizeForName = usableHeight * 0.02;
+        double fontSizeForDate = usableHeight * 0.018;
+        double fontSizeForName = usableHeight * 0.017;
 
         return SingleChildScrollView(
           child: Column(
@@ -373,13 +382,8 @@ class LeaderboardTab extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8.0)),
                   child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Color.fromARGB(167, 40, 61, 59),
-                      foregroundColor: Colors.white,
-                      child: getIconForActivityType(activity['type']),
-                    ),
                     title: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
                           formatDate(activity['start_date']),
@@ -388,32 +392,65 @@ class LeaderboardTab extends StatelessWidget {
                               color: Colors.grey,
                               fontWeight: FontWeight.w400),
                         ),
-                        const SizedBox(height: 2.0),
                         Text(
                           activity['name'],
                           style: TextStyle(
                               fontSize: fontSizeForName,
                               fontWeight: FontWeight.w600),
                         ),
+                        CircleAvatar(
+                          backgroundColor: Color.fromARGB(167, 40, 61, 59),
+                          foregroundColor: Colors.white,
+                          child: getIconForActivityType(activity['type']),
+                        ),
                       ],
                     ),
-                    subtitle: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    leading: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          formatDuration(activity['moving_time']),
-                          style: const TextStyle(fontSize: 12.0),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.timelapse,
+                                color: Colors.purple[600], size: 12.0),
+                            const SizedBox(width: 4.0),
+                            Text(
+                              formatDuration(activity['moving_time']),
+                              style: const TextStyle(fontSize: 12.0),
+                            ),
+                          ],
                         ),
-                        Text(
-                          '${(activity['distance'] / 1000).toStringAsFixed(2)} km',
-                          style: const TextStyle(fontSize: 12.0),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.straighten,
+                                color: Colors.blue[600], size: 12.0),
+                            const SizedBox(width: 4.0),
+                            Text(
+                              '${(activity['distance'] / 1000).toStringAsFixed(2)} km',
+                              style: const TextStyle(fontSize: 12.0),
+                            ),
+                          ],
                         ),
-                        Text(
-                          '${activity['elevation_gain']} m',
-                          style: const TextStyle(fontSize: 12.0),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.landscape,
+                                color: Colors.green[600], size: 12.0),
+                            const SizedBox(width: 4.0),
+                            Text(
+                              '${activity['elevation_gain']} m',
+                              style: const TextStyle(fontSize: 12.0),
+                            ),
+                          ],
                         ),
                       ],
+                    ),
+                    subtitle: Center(
+                      child: Text('Tap to view on Strava',
+                          style: TextStyle(
+                              fontSize: 8.0, fontStyle: FontStyle.italic)),
                     ),
                     trailing: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -423,15 +460,16 @@ class LeaderboardTab extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.flash_on,
-                                color: Colors.yellow[600], size: 20.0),
+                                color: Colors.yellow[600], size: 12.0),
                             const SizedBox(width: 4.0),
                             activity['average_watts'] != null
                                 ? Text(
                                     '${activity['average_watts'].toString()} W',
                                     style: const TextStyle(
+                                        fontSize: 12.0,
                                         fontWeight: FontWeight.w500),
                                   )
-                                : Text('0 W'),
+                                : Text('0 W', style: TextStyle(fontSize: 12.0)),
                           ],
                         ),
                         const SizedBox(height: 4.0),
@@ -439,12 +477,14 @@ class LeaderboardTab extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.speed_outlined,
-                                color: Colors.red[600], size: 20.0),
+                                color: Colors.red[600], size: 12.0),
                             const SizedBox(width: 4.0),
                             Text(
                               '$minutes:${seconds.toString().padLeft(2, '0')} /km',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w500),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                                fontSize: 12.0,
+                              ),
                             ),
                           ],
                         ),
@@ -524,7 +564,7 @@ class LeaderboardTab extends StatelessWidget {
                 double deviceHeight = MediaQuery.of(localContext).size.height;
                 double deviceWidth = MediaQuery.of(localContext).size.width;
                 double dialogHeight = deviceHeight * 0.6;
-                double dialogWidth = deviceWidth * 0.95;
+                double dialogWidth = deviceWidth * 0.9;
                 fetchUserActivities(entry['full_name']).then(
                   (activities) {
                     showDialog(
@@ -790,50 +830,59 @@ class LeaderboardTab extends StatelessWidget {
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
                               color: Colors.black))),
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Container(
-                        width: 620,
-                        height: 400,
-                        decoration: BoxDecoration(
-                          image: DecorationImage(
-                            image:
-                                AssetImage('assets/images/profile_no_bg.png'),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: Container(
-                          padding: EdgeInsets.all(20),
-                          child: Column(
-                            children: [
-                              Text('Power Level',
-                                  style: GoogleFonts.syne(
-                                      textStyle: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.white))),
-                              Text(
-                                '${highestAverageWatts ?? "N/A"}', // Display highest average watts
-                                textAlign: TextAlign.center,
-                                style: GoogleFonts.syne(
-                                  textStyle: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
+                  ClipOval(
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(
+                              200), // Adjust the radius value as needed
+                          child: Container(
+                            width: 400,
+                            height: 300,
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image: AssetImage(
+                                    'assets/images/power_level_3.png'),
+                                fit: BoxFit.fitHeight,
                               ),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: Container(
+                            padding: EdgeInsets.all(20),
+                            child: Container(
+                              color: Colors.black,
+                              child: Column(
+                                children: [
+                                  Text('Power Level',
+                                      style: GoogleFonts.syne(
+                                          textStyle: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white))),
+                                  Text(
+                                    '${highestAverageWatts ?? "N/A"}', // Display highest average watts
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.syne(
+                                      textStyle: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
