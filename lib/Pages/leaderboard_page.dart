@@ -99,6 +99,12 @@ class _LeaderboardState extends State<Leaderboard> {
                 },
                 child: const Text('View Past Results'),
               ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pushNamed('/awardsPage');
+                },
+                child: const Text('View Awards'),
+              ),
             ],
           ),
         ),
@@ -838,7 +844,7 @@ class LeaderboardTab extends StatelessWidget {
                               image: DecorationImage(
                                 image: AssetImage(
                                     'assets/images/power_level_3.png'),
-                                fit: BoxFit.fitHeight,                                
+                                fit: BoxFit.fitHeight,
                               ),
                             ),
                           ),
