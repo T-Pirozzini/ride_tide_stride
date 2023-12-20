@@ -15,12 +15,17 @@ class _AwardsPageState extends State<AwardsPage> {
   @override
   void initState() {
     super.initState();
-    fetchAwards();
+    fetchAwards().then((_) {
+      print('Awards fetched successfully.');
+    }).catchError((e) {
+      print('An error occurred while fetching awards: $e');
+    });
   }
 
   Future<void> fetchAwards() async {
-    final snapshot =
+    final resultsSnapshot =
         await FirebaseFirestore.instance.collection('Results').get();
+
     Map<String, AwardWinner> bestAwards = {
       'distance':
           AwardWinner(name: '', category: 'distance', month: '', value: 0),
@@ -30,9 +35,9 @@ class _AwardsPageState extends State<AwardsPage> {
           AwardWinner(name: '', category: 'moving_time', month: '', value: 0),
     };
 
-    for (var doc in snapshot.docs) {
-      final month = doc.id;
-      final List<dynamic> usersData = doc.get('data');
+    for (var monthDoc in resultsSnapshot.docs) {
+      final month = monthDoc.id; // e.g., "November 2023"
+      final List<dynamic> usersData = monthDoc.get('data');
 
       for (var userData in usersData) {
         final fullname = userData['fullname'];
@@ -51,63 +56,105 @@ class _AwardsPageState extends State<AwardsPage> {
       }
     }
 
+    List<Future<AwardWinner?>> fetchTasks = [];
+    for (var monthDoc in resultsSnapshot.docs) {
+      final String monthYear = monthDoc.id; // "November 2023"
+      final DateTime startOfMonth = getFirstDayOfMonthFromString(monthYear);
+      final DateTime endOfMonth =
+          DateTime(startOfMonth.year, startOfMonth.month + 1, 1);
+
+      fetchTasks.add(fetchActivityAwards(startOfMonth, endOfMonth, monthYear));
+    }
+
+    List<AwardWinner?> fetchedDiverseAwards = await Future.wait(fetchTasks);
+
+    // Filter out any nulls from fetchedDiverseAwards
+    List<AwardWinner> validDiverseAwards =
+        fetchedDiverseAwards.whereType<AwardWinner>().toList();
+
+    // Update the state with the best awards and the new diverse awards
     setState(() {
       awardWinners = bestAwards.values.toList();
+      diverseAwardWinners = validDiverseAwards;
     });
-    await fetchActivityAwards('2023-11');
   }
 
-  Future<void> fetchActivityAwards(String month) async {
-    final startOfMonth = DateTime.parse('$month-01T00:00:00Z');
-    final endOfMonth = DateTime(startOfMonth.year, startOfMonth.month + 1, 1);
+  Future<AwardWinner?> fetchActivityAwards(
+      DateTime startOfMonth, DateTime endOfMonth, String monthYear) async {
+    try {
+      // Format the start and end dates to match the ISO 8601 format used in your Firestore collection
+      String formattedStart = startOfMonth.toUtc().toIso8601String();
+      String formattedEnd = endOfMonth.toUtc().toIso8601String();
 
-    final activitiesSnapshot = await FirebaseFirestore.instance
-        .collection('activities')
-        .where('start_date',
-            isGreaterThanOrEqualTo: startOfMonth.toIso8601String())
-        .where('start_date', isLessThan: endOfMonth.toIso8601String())
-        .get();
+      final activitiesSnapshot = await FirebaseFirestore.instance
+          .collection('activities')
+          .where('start_date', isGreaterThanOrEqualTo: formattedStart)
+          .where('start_date', isLessThan: formattedEnd)
+          .get();
 
-    Map<String, Set<String>> userActivities = {};
+      Map<String, Set<String>> userActivities = {};
 
-    for (var doc in activitiesSnapshot.docs) {
-      final data = doc.data() as Map<String, dynamic>;
-      final fullName = data['fullname'];
-      final activityType = data['sport_type'];
-      print('$fullName $activityType');
+      for (var doc in activitiesSnapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        final fullName = data['fullname'] as String;
+        final activityType = data['sport_type'] as String;
+        print('Activity: $fullName, $activityType');
 
-      // Initialize the set of activities for the user if it's their first activity
-      userActivities.putIfAbsent(fullName, () => <String>{});
-
-      // Add the activity type to the user's set
-      userActivities[fullName]?.add(activityType);
-    }
-
-    // Find the user with the most diverse set of activities
-    String topUser = '';
-    int maxActivityTypes = 0;
-
-    userActivities.forEach((fullName, activities) {
-      if (activities.length > maxActivityTypes) {
-        maxActivityTypes = activities.length;
-        topUser = fullName;
+        userActivities.putIfAbsent(fullName, () => <String>{});
+        userActivities[fullName]?.add(activityType);
       }
-    });
 
-    if (topUser.isNotEmpty) {
-      final diverseActivityAward = AwardWinner(
-        name: topUser,
-        category: 'Diverse Activities',
-        month: month,
-        value: maxActivityTypes.toDouble(),
-      );
+      String topUser = '';
+      int maxActivityTypes = 0;
 
-      setState(() {
-        diverseAwardWinners = [
-          diverseActivityAward
-        ]; // Replace the existing list with the new winner
+      userActivities.forEach((fullName, activities) {
+        if (activities.length > maxActivityTypes) {
+          maxActivityTypes = activities.length;
+          topUser = fullName;
+        }
       });
+
+      if (topUser.isNotEmpty) {
+        print(
+            'Top user for diverse activities in $monthYear: $topUser with $maxActivityTypes activities.');
+        return AwardWinner(
+          name: topUser,
+          category: 'Diverse Activities',
+          month: monthYear,
+          value: maxActivityTypes.toDouble(),
+        );
+      }
+    } catch (e) {
+      print('Error fetching diverse activities for $monthYear: $e');
     }
+    return null;
+  }
+
+  DateTime getFirstDayOfMonthFromString(String monthYear) {
+    final Map<String, String> monthMappings = {
+      'January': '01',
+      'February': '02',
+      'March': '03',
+      'April': '04',
+      'May': '05',
+      'June': '06',
+      'July': '07',
+      'August': '08',
+      'September': '09',
+      'October': '10',
+      'November': '11',
+      'December': '12',
+    };
+
+    final parts = monthYear.split(' ');
+    if (parts.length != 2) return DateTime.now(); // Handle invalid format
+
+    final month = monthMappings[parts[0]];
+    final year = parts[1];
+
+    if (month == null) return DateTime.now(); // Handle invalid month
+
+    return DateTime.parse('$year-$month-01T00:00:00');
   }
 
   @override
@@ -149,9 +196,9 @@ class _AwardsPageState extends State<AwardsPage> {
               ),
             ),
             const SizedBox(height: 20),
-            // Call buildAwardListView and buildDiverseAwardListView separately
-            buildAwardListView(awardWinners),
-            buildDiverseAwardListView(diverseAwardWinners),
+            if (awardWinners.isNotEmpty) buildAwardListView(awardWinners),
+            if (diverseAwardWinners.isNotEmpty)
+              buildDiverseAwardListView(diverseAwardWinners),
           ],
         ),
       ),
@@ -160,7 +207,7 @@ class _AwardsPageState extends State<AwardsPage> {
 
   Widget buildAwardListView(List<AwardWinner> awards) {
     return Container(
-      height: 200,
+      height: 300,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: awards.length,
@@ -207,7 +254,7 @@ class _AwardsPageState extends State<AwardsPage> {
 
   Widget buildDiverseAwardListView(List<AwardWinner> awards) {
     return Container(
-      height: 200,
+      height: 300,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: awards.length,
