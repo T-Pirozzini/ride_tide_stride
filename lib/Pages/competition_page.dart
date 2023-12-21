@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
-import 'package:timeago/timeago.dart' as TimeAgo;
+import 'package:ride_tide_stride/pages/chat_widget.dart';
 
 class CompetitionPage extends StatefulWidget {
   const CompetitionPage({super.key});
@@ -23,20 +23,32 @@ class CompetitionPageState extends State<CompetitionPage>
   final List<String> messages = [];
   final TextEditingController _textController = TextEditingController();
 
-  void _sendMessage() {
-    final text = _textController.text;
-    if (text.isEmpty) {
-    return; // Avoid sending empty messages
-  }
-  final messageData = {
-    'time': FieldValue.serverTimestamp(), // Firestore server timestamp
-    'user': currentUser?.email ?? 'Anonymous',
-    'message': text,
-  };
-    setState(() {
-      messages.add(text);
-      _textController.clear();
-    });
+  void _sendMessage(String messageText) async {
+    if (messageText.isEmpty) {
+      return; // Avoid sending empty messages
+    }
+    final messageData = {
+      'time': FieldValue.serverTimestamp(), // Firestore server timestamp
+      'user': currentUser?.email ?? 'Anonymous',
+      'message': messageText
+    };
+
+    String currentMonthDoc = getFormattedCurrentMonth();
+
+    // Write the message to Firestore
+    try {
+      await FirebaseFirestore.instance
+          .collection('Competitions')
+          .doc(currentMonthDoc)
+          .collection('messages')
+          .add(messageData);
+
+      // setState(() {
+      //   // messages.add(messageText);
+      // });
+    } catch (e) {
+      print('Error saving message: $e');
+    }
   }
 
   String getFormattedCurrentMonth() {
@@ -263,6 +275,7 @@ class CompetitionPageState extends State<CompetitionPage>
   List<dynamic> team2Members = [];
 
   late StreamSubscription<QuerySnapshot> _activitySubscription;
+  Stream<QuerySnapshot>? _messagesStream;
 
   @override
   void initState() {
@@ -303,6 +316,13 @@ class CompetitionPageState extends State<CompetitionPage>
         }
       });
     });
+    _messagesStream = FirebaseFirestore.instance
+        .collection('Competitions')
+        .doc(getFormattedCurrentMonth())
+        .collection('messages')
+        .orderBy('time',
+            descending: true) // Assuming 'time' is your timestamp field
+        .snapshots();
   }
 
   @override
@@ -723,57 +743,33 @@ class CompetitionPageState extends State<CompetitionPage>
           ),
         ],
       ),
-      endDrawer: Directionality(
-        textDirection: ui.TextDirection.ltr,
-        child: Drawer(
-          child: Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    String userEmail =
-                        currentUser?.email?.split('@')[0] ?? 'Unknown User';
-                    DateTime messageTime =
-                        DateTime.now().subtract(Duration(minutes: index));
-
-                    return ListTile(
-                      title: Text(messages[index]),
-                      subtitle: Text(
-                        userEmail,
-                        style: TextStyle(fontSize: 12),
-                      ),
-                      trailing: Text(TimeAgo.format(messageTime),
-                          style: TextStyle(fontSize: 12)),
-                      leading: CircleAvatar(
-                        child: Text(currentUser!.email?[0] ?? ''),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _textController,
-                        decoration: InputDecoration(
-                          labelText: 'Type a message',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.send),
-                      onPressed: _sendMessage,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+      endDrawer: Drawer(
+        child: StreamBuilder<QuerySnapshot>(
+          stream: _messagesStream,
+          builder:
+              (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+            if (snapshot.hasError) {
+              return Text('Something went wrong');
+            }
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Text('Loading');
+            }
+            final messages = snapshot.data?.docs
+                    .map((doc) =>
+                        doc['message'] as String) // Extract 'message' field
+                    .toList() ??
+                [];
+            return ChatWidget(
+              key: ValueKey(messages.length),
+              messages: messages,
+              currentUserEmail: currentUser?.email ?? '',
+              onSend: (String message) {
+                if (message.isNotEmpty) {
+                  _sendMessage(message);
+                }
+              },
+            );
+          },
         ),
       ),
     );
