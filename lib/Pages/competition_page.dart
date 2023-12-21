@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
+import 'package:timeago/timeago.dart' as TimeAgo;
 
 class CompetitionPage extends StatefulWidget {
   const CompetitionPage({super.key});
@@ -17,6 +19,25 @@ class CompetitionPage extends StatefulWidget {
 class CompetitionPageState extends State<CompetitionPage>
     with TickerProviderStateMixin {
   final currentUser = FirebaseAuth.instance.currentUser;
+
+  final List<String> messages = [];
+  final TextEditingController _textController = TextEditingController();
+
+  void _sendMessage() {
+    final text = _textController.text;
+    if (text.isEmpty) {
+    return; // Avoid sending empty messages
+  }
+  final messageData = {
+    'time': FieldValue.serverTimestamp(), // Firestore server timestamp
+    'user': currentUser?.email ?? 'Anonymous',
+    'message': text,
+  };
+    setState(() {
+      messages.add(text);
+      _textController.clear();
+    });
+  }
 
   String getFormattedCurrentMonth() {
     final DateTime currentDateTime = DateTime.now();
@@ -289,6 +310,7 @@ class CompetitionPageState extends State<CompetitionPage>
     _winningAnimationController.dispose();
     _hasCheckedWinner = false;
     _activitySubscription.cancel();
+    _textController.dispose();
     super.dispose();
   }
 
@@ -420,6 +442,8 @@ class CompetitionPageState extends State<CompetitionPage>
 
   @override
   Widget build(BuildContext context) {
+    final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
     // Calculate the total elevation for each team
     double team1TotalElevation = team1Members.fold(
       0.0,
@@ -578,6 +602,7 @@ class CompetitionPageState extends State<CompetitionPage>
     }).toList();
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: const Color(0xFFDFD3C3),
       body: StreamBuilder(
           stream: getCompetitionsData(),
@@ -687,6 +712,68 @@ class CompetitionPageState extends State<CompetitionPage>
               child: const Text('Show Profile'),
             ),
           ],
+        ),
+      ),
+      appBar: AppBar(
+        title: Text('Your Page Title'),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.chat),
+            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+          ),
+        ],
+      ),
+      endDrawer: Directionality(
+        textDirection: ui.TextDirection.ltr,
+        child: Drawer(
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    String userEmail =
+                        currentUser?.email?.split('@')[0] ?? 'Unknown User';
+                    DateTime messageTime =
+                        DateTime.now().subtract(Duration(minutes: index));
+
+                    return ListTile(
+                      title: Text(messages[index]),
+                      subtitle: Text(
+                        userEmail,
+                        style: TextStyle(fontSize: 12),
+                      ),
+                      trailing: Text(TimeAgo.format(messageTime),
+                          style: TextStyle(fontSize: 12)),
+                      leading: CircleAvatar(
+                        child: Text(currentUser!.email?[0] ?? ''),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _textController,
+                        decoration: InputDecoration(
+                          labelText: 'Type a message',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.send),
+                      onPressed: _sendMessage,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -811,7 +898,7 @@ class CompetitionPageState extends State<CompetitionPage>
         );
       },
     );
-  }  
+  }
 
   Future<double?> findHighestAverageWatts(String fullName) async {
     final snapshot = await FirebaseFirestore.instance
