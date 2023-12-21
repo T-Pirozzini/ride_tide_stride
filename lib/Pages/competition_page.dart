@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
+import 'package:ride_tide_stride/pages/chat_widget.dart';
 
 class CompetitionPage extends StatefulWidget {
   const CompetitionPage({super.key});
@@ -17,6 +19,37 @@ class CompetitionPage extends StatefulWidget {
 class CompetitionPageState extends State<CompetitionPage>
     with TickerProviderStateMixin {
   final currentUser = FirebaseAuth.instance.currentUser;
+
+  final List<String> messages = [];
+  final TextEditingController _textController = TextEditingController();
+
+  void _sendMessage(String messageText) async {
+    if (messageText.isEmpty) {
+      return; // Avoid sending empty messages
+    }
+    final messageData = {
+      'time': FieldValue.serverTimestamp(), // Firestore server timestamp
+      'user': currentUser?.email ?? 'Anonymous',
+      'message': messageText
+    };
+
+    String currentMonthDoc = getFormattedCurrentMonth();
+
+    // Write the message to Firestore
+    try {
+      await FirebaseFirestore.instance
+          .collection('Competitions')
+          .doc(currentMonthDoc)
+          .collection('messages')
+          .add(messageData);
+
+      // setState(() {
+      //   // messages.add(messageText);
+      // });
+    } catch (e) {
+      print('Error saving message: $e');
+    }
+  }
 
   String getFormattedCurrentMonth() {
     final DateTime currentDateTime = DateTime.now();
@@ -242,6 +275,7 @@ class CompetitionPageState extends State<CompetitionPage>
   List<dynamic> team2Members = [];
 
   late StreamSubscription<QuerySnapshot> _activitySubscription;
+  Stream<QuerySnapshot>? _messagesStream;
 
   @override
   void initState() {
@@ -282,6 +316,13 @@ class CompetitionPageState extends State<CompetitionPage>
         }
       });
     });
+    _messagesStream = FirebaseFirestore.instance
+        .collection('Competitions')
+        .doc(getFormattedCurrentMonth())
+        .collection('messages')
+        .orderBy('time',
+            descending: true) // Assuming 'time' is your timestamp field
+        .snapshots();
   }
 
   @override
@@ -289,6 +330,7 @@ class CompetitionPageState extends State<CompetitionPage>
     _winningAnimationController.dispose();
     _hasCheckedWinner = false;
     _activitySubscription.cancel();
+    _textController.dispose();
     super.dispose();
   }
 
@@ -420,6 +462,8 @@ class CompetitionPageState extends State<CompetitionPage>
 
   @override
   Widget build(BuildContext context) {
+    final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
     // Calculate the total elevation for each team
     double team1TotalElevation = team1Members.fold(
       0.0,
@@ -578,95 +622,99 @@ class CompetitionPageState extends State<CompetitionPage>
     }).toList();
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: const Color(0xFFDFD3C3),
-      body: StreamBuilder(
-          stream: getCompetitionsData(),
-          // Add stream builder here
-          builder: (BuildContext context, AsyncSnapshot snapshot) {
-            if (snapshot.hasError) {
-              return const Text('Something went wrong');
-            }
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Text('Loading');
-            }
+      resizeToAvoidBottomInset: true,
+      body: SingleChildScrollView(
+        child: StreamBuilder(
+            stream: getCompetitionsData(),
+            // Add stream builder here
+            builder: (BuildContext context, AsyncSnapshot snapshot) {
+              if (snapshot.hasError) {
+                return const Text('Something went wrong');
+              }
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Text('Loading');
+              }
 
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Text('${getFormattedCurrentMonth()}',
-                    style:
-                        GoogleFonts.syne(textStyle: TextStyle(fontSize: 18))),
-                const SizedBox(height: 15.0),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text('Elevation Challenge',
-                      style: GoogleFonts.sriracha(
-                          textStyle: TextStyle(
-                              fontSize: 28, fontWeight: FontWeight.bold))),
-                ),
-                Center(
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      ...team1Indicators,
-                      ...team2Indicators,
-                      // The mountain image in the center
-                      Container(
-                        width: 250,
-                        height: 250,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          image: DecorationImage(
-                            image: AssetImage('assets/images/mtn.png'),
-                            fit: BoxFit.fill,
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Text('${getFormattedCurrentMonth()}',
+                      style:
+                          GoogleFonts.syne(textStyle: TextStyle(fontSize: 18))),
+                  const SizedBox(height: 15.0),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text('Elevation Challenge',
+                        style: GoogleFonts.sriracha(
+                            textStyle: TextStyle(
+                                fontSize: 28, fontWeight: FontWeight.bold))),
+                  ),
+                  Center(
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        ...team1Indicators,
+                        ...team2Indicators,
+                        // The mountain image in the center
+                        Container(
+                          width: 250,
+                          height: 250,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            image: DecorationImage(
+                              image: AssetImage('assets/images/mtn.png'),
+                              fit: BoxFit.fill,
+                            ),
                           ),
                         ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 20.0),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text('Team 1',
+                              style: GoogleFonts.syne(
+                                  textStyle: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600))),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              ...team1MemberLineIndicators,
+                            ],
+                          ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text('Team 2',
+                              style: GoogleFonts.syne(
+                                  textStyle: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600))),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              ...team2MemberLineIndicators,
+                            ],
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ),
-                SizedBox(height: 20.0),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text('Team 1',
-                            style: GoogleFonts.syne(
-                                textStyle: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600))),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            ...team1MemberLineIndicators,
-                          ],
-                        ),
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text('Team 2',
-                            style: GoogleFonts.syne(
-                                textStyle: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600))),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            ...team2MemberLineIndicators,
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            );
-          }),
+                ],
+              );
+            }),
+      ),
       bottomNavigationBar: BottomAppBar(
         color:
             Colors.white, // This sets the background color of the BottomAppBar
@@ -687,6 +735,44 @@ class CompetitionPageState extends State<CompetitionPage>
               child: const Text('Show Profile'),
             ),
           ],
+        ),
+      ),
+      appBar: AppBar(
+        title: Text('Your Page Title'),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.chat),
+            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+          ),
+        ],
+      ),
+      endDrawer: Drawer(
+        child: StreamBuilder<QuerySnapshot>(
+          stream: _messagesStream,
+          builder:
+              (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+            if (snapshot.hasError) {
+              return Text('Something went wrong');
+            }
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Text('Loading');
+            }
+            final messages = snapshot.data?.docs
+                    .map((doc) =>
+                        doc['message'] as String) // Extract 'message' field
+                    .toList() ??
+                [];
+            return ChatWidget(
+              key: ValueKey(messages.length),
+              messages: messages,
+              currentUserEmail: currentUser?.email ?? '',
+              onSend: (String message) {
+                if (message.isNotEmpty) {
+                  _sendMessage(message);
+                }
+              },
+            );
+          },
         ),
       ),
     );
@@ -811,7 +897,7 @@ class CompetitionPageState extends State<CompetitionPage>
         );
       },
     );
-  }  
+  }
 
   Future<double?> findHighestAverageWatts(String fullName) async {
     final snapshot = await FirebaseFirestore.instance
