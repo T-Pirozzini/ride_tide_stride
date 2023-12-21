@@ -144,6 +144,20 @@ class CompetitionPageState extends State<CompetitionPage>
     return isOnTeam1 || isOnTeam2;
   }
 
+  Color getUserTeamColor() {
+    String userEmail = currentUser?.email ?? '';
+    bool isOnTeam1 = team1Members.any((member) => member['email'] == userEmail);
+    bool isOnTeam2 = team2Members.any((member) => member['email'] == userEmail);
+
+    if (isOnTeam1) {
+      return Colors.blue[100]!; // Color for Team 1
+    } else if (isOnTeam2) {
+      return Colors.lightGreenAccent[100]!; // Color for Team 2
+    } else {
+      return Colors.grey; // Default color if not on any team
+    }
+  }
+
   Future<void> _showTeamChoiceDialog(BuildContext context) async {
     // Check if the user is already on a team
     bool isAlreadyOnATeam = await checkIfUserIsOnATeam();
@@ -771,6 +785,7 @@ class CompetitionPageState extends State<CompetitionPage>
                   _sendMessage(message);
                 }
               },
+              teamColor: getUserTeamColor(),
             );
           },
         ),

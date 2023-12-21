@@ -5,12 +5,14 @@ class ChatWidget extends StatefulWidget {
   final Function(String) onSend;
   final List<String> messages;
   final String? currentUserEmail;
+  final Color teamColor;
 
   const ChatWidget(
       {Key? key,
       required this.onSend,
       required this.messages,
-      required this.currentUserEmail})
+      required this.currentUserEmail,
+      required this.teamColor})
       : super(key: key);
 
   @override
@@ -51,9 +53,16 @@ class _ChatWidgetState extends State<ChatWidget> {
                   ],
                 ),
                 leading: CircleAvatar(
-                  child: Text(widget.currentUserEmail!.isNotEmpty
-                      ? widget.currentUserEmail![0]
-                      : ''),
+                  backgroundColor: widget.teamColor,
+                  child: Text(
+                    widget.currentUserEmail!.isNotEmpty
+                        ? widget.currentUserEmail![0].toUpperCase()
+                        : '',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
                 ),
               );
             },
