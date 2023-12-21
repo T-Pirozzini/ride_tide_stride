@@ -624,94 +624,97 @@ class CompetitionPageState extends State<CompetitionPage>
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: const Color(0xFFDFD3C3),
-      body: StreamBuilder(
-          stream: getCompetitionsData(),
-          // Add stream builder here
-          builder: (BuildContext context, AsyncSnapshot snapshot) {
-            if (snapshot.hasError) {
-              return const Text('Something went wrong');
-            }
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Text('Loading');
-            }
+      resizeToAvoidBottomInset: true,
+      body: SingleChildScrollView(
+        child: StreamBuilder(
+            stream: getCompetitionsData(),
+            // Add stream builder here
+            builder: (BuildContext context, AsyncSnapshot snapshot) {
+              if (snapshot.hasError) {
+                return const Text('Something went wrong');
+              }
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Text('Loading');
+              }
 
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Text('${getFormattedCurrentMonth()}',
-                    style:
-                        GoogleFonts.syne(textStyle: TextStyle(fontSize: 18))),
-                const SizedBox(height: 15.0),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text('Elevation Challenge',
-                      style: GoogleFonts.sriracha(
-                          textStyle: TextStyle(
-                              fontSize: 28, fontWeight: FontWeight.bold))),
-                ),
-                Center(
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      ...team1Indicators,
-                      ...team2Indicators,
-                      // The mountain image in the center
-                      Container(
-                        width: 250,
-                        height: 250,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          image: DecorationImage(
-                            image: AssetImage('assets/images/mtn.png'),
-                            fit: BoxFit.fill,
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Text('${getFormattedCurrentMonth()}',
+                      style:
+                          GoogleFonts.syne(textStyle: TextStyle(fontSize: 18))),
+                  const SizedBox(height: 15.0),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text('Elevation Challenge',
+                        style: GoogleFonts.sriracha(
+                            textStyle: TextStyle(
+                                fontSize: 28, fontWeight: FontWeight.bold))),
+                  ),
+                  Center(
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        ...team1Indicators,
+                        ...team2Indicators,
+                        // The mountain image in the center
+                        Container(
+                          width: 250,
+                          height: 250,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            image: DecorationImage(
+                              image: AssetImage('assets/images/mtn.png'),
+                              fit: BoxFit.fill,
+                            ),
                           ),
                         ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 20.0),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text('Team 1',
+                              style: GoogleFonts.syne(
+                                  textStyle: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600))),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              ...team1MemberLineIndicators,
+                            ],
+                          ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text('Team 2',
+                              style: GoogleFonts.syne(
+                                  textStyle: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600))),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              ...team2MemberLineIndicators,
+                            ],
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ),
-                SizedBox(height: 20.0),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text('Team 1',
-                            style: GoogleFonts.syne(
-                                textStyle: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600))),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            ...team1MemberLineIndicators,
-                          ],
-                        ),
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text('Team 2',
-                            style: GoogleFonts.syne(
-                                textStyle: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600))),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            ...team2MemberLineIndicators,
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            );
-          }),
+                ],
+              );
+            }),
+      ),
       bottomNavigationBar: BottomAppBar(
         color:
             Colors.white, // This sets the background color of the BottomAppBar
