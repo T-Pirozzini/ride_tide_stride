@@ -53,6 +53,7 @@ dependencies:
   percent_indicator: ^4.2.3
   lottie: ^2.7.0  
   timeago: ^3.6.0
+  provider: ^6.1.1
 
 dev_dependencies:
   flutter_test:
