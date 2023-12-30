@@ -7,7 +7,6 @@ import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
-import 'package:provider/provider.dart';
 import 'package:ride_tide_stride/pages/chat_widget.dart';
 
 class ElevationChallenge extends StatefulWidget {
