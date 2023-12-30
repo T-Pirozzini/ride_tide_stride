@@ -12,6 +12,15 @@ class _Snow2SurfState extends State<Snow2Surf> {
     {
       'name': 'Alpine Ski',
       'icon': Icons.abc,
+      'info': 'fastest 5km time',
+      'current': {
+        'user': 'User',
+        'time': 'Time',
+      },
+      'record': {
+        'user': 'User',
+        'time': 'Time',
+      }
     },
     {
       'name': 'Cross Country Ski',
@@ -43,32 +52,72 @@ class _Snow2SurfState extends State<Snow2Surf> {
     },
   ];
 
+  Widget buildCurrentCategoryCard(List<Map<String, dynamic>> categories) {
+    return Container(
+      width: 300,
+      child: ListView.builder(
+        itemCount: categories.length,
+        itemBuilder: (context, index) {
+          return Column(
+            children: [
+              Text('Team Name'),
+              ListTile(
+                leading: Icon(categories[index]['icon']),
+                title: Text(categories[index]['name']),
+                subtitle: Text('User'), // Replace with actual data
+                trailing: Text('Time'), // Replace with actual data
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget buildRecordCategoryCard(List<Map<String, dynamic>> categories) {
+    return Container(
+      width: 300,
+      child: ListView.builder(
+        itemCount: categories.length,
+        itemBuilder: (context, index) {
+          return Column(
+            children: [
+              Text('Current Record'),
+              ListTile(
+                leading: Icon(categories[index]['icon']),
+                title: Text(categories[index]['name']),
+                subtitle: Text('User'), // Replace with actual data
+                trailing: Text('Time'), // Replace with actual data
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Row(
-        children: [
-          ListView.builder(
-            itemCount: categories.length,
-            itemBuilder: (context, index) {
-              return ListTile(
-                leading: Icon(categories[index]['icon']),
-                title: Text(categories[index]['name']),
-                // Add other properties if needed, like subtitle
-              );
-            },
+    double screenHeight = MediaQuery.of(context).size.height;
+
+    return Scaffold(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Container(
+            height: screenHeight,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                Card(
+                    child: buildCurrentCategoryCard(
+                        categories)), // Current stats card
+                Card(
+                    child: buildRecordCategoryCard(
+                        categories)), // Record stats card
+              ],
+            ),
           ),
-          ListView.builder(
-            itemCount: categories.length,
-            itemBuilder: (context, index) {
-              return ListTile(
-                leading: Icon(categories[index]['icon']),
-                title: Text(categories[index]['name']),
-                // Add other properties if needed, like subtitle
-              );
-            },
-          ),
-        ],
+        ),
       ),
     );
   }
