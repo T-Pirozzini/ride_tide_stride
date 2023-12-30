@@ -25,97 +25,143 @@ class _Snow2SurfState extends State<Snow2Surf> {
     {
       'name': 'Cross Country Ski',
       'icon': Icons.abc,
+      'info': 'fastest 5km time',
+      'current': {
+        'user': 'User',
+        'time': 'Time',
+      },
+      'record': {
+        'user': 'User',
+        'time': 'Time',
+      }
     },
     {
       'name': 'Road Run',
       'icon': Icons.abc,
+      'info': 'fastest 5km time',
+      'current': {
+        'user': 'User',
+        'time': 'Time',
+      },
+      'record': {
+        'user': 'User',
+        'time': 'Time',
+      }
     },
     {
       'name': 'Trail Run',
       'icon': Icons.abc,
+      'info': 'fastest 5km time',
+      'current': {
+        'user': 'User',
+        'time': 'Time',
+      },
+      'record': {
+        'user': 'User',
+        'time': 'Time',
+      }
     },
     {
       'name': 'Mountain Bike',
       'icon': Icons.abc,
+      'info': 'fastest 5km time',
+      'current': {
+        'user': 'User',
+        'time': 'Time',
+      },
+      'record': {
+        'user': 'User',
+        'time': 'Time',
+      }
     },
     {
       'name': 'Kayak',
       'icon': Icons.abc,
+      'info': 'fastest 5km time',
+      'current': {
+        'user': 'User',
+        'time': 'Time',
+      },
+      'record': {
+        'user': 'User',
+        'time': 'Time',
+      }
     },
     {
       'name': 'Road Bike',
       'icon': Icons.abc,
+      'info': 'fastest 5km time',
+      'current': {
+        'user': 'User',
+        'time': 'Time',
+      },
+      'record': {
+        'user': 'User',
+        'time': 'Time',
+      }
     },
     {
       'name': 'Canoe',
       'icon': Icons.abc,
+      'info': 'fastest 5km time',
+      'current': {
+        'user': 'User',
+        'time': 'Time',
+      },
+      'record': {
+        'user': 'User',
+        'time': 'Time',
+      }
     },
   ];
 
-  Widget buildCurrentCategoryCard(List<Map<String, dynamic>> categories) {
-    return Container(
-      width: 300,
-      child: ListView.builder(
-        itemCount: categories.length,
-        itemBuilder: (context, index) {
-          return Column(
-            children: [
-              Text('Team Name'),
-              ListTile(
-                leading: Icon(categories[index]['icon']),
+  Widget buildCategoryCard(
+      List<Map<String, dynamic>> categories, String title) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(title,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        ),
+        Expanded(
+          child: ListView.builder(
+            itemCount: categories.length,
+            itemBuilder: (context, index) {
+              return ListTile(
+                leading:
+                    Icon(categories[index]['icon']), // Replace with actual icon
                 title: Text(categories[index]['name']),
-                subtitle: Text('User'), // Replace with actual data
-                trailing: Text('Time'), // Replace with actual data
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget buildRecordCategoryCard(List<Map<String, dynamic>> categories) {
-    return Container(
-      width: 300,
-      child: ListView.builder(
-        itemCount: categories.length,
-        itemBuilder: (context, index) {
-          return Column(
-            children: [
-              Text('Current Record'),
-              ListTile(
-                leading: Icon(categories[index]['icon']),
-                title: Text(categories[index]['name']),
-                subtitle: Text('User'), // Replace with actual data
-                trailing: Text('Time'), // Replace with actual data
-              ),
-            ],
-          );
-        },
-      ),
+                subtitle: Text(categories[index]['current']
+                    ['user']), // Replace with actual data
+                trailing: Text(categories[index]['current']
+                    ['time']), // Replace with actual data
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    double screenHeight = MediaQuery.of(context).size.height;
-
     return Scaffold(
+      backgroundColor: Colors.grey[200],
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Container(
-            height: screenHeight,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                Card(
-                    child: buildCurrentCategoryCard(
-                        categories)), // Current stats card
-                Card(
-                    child: buildRecordCategoryCard(
-                        categories)), // Record stats card
-              ],
-            ),
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              Container(
+                width: 300, // Define a fixed width for each container
+                child: buildCategoryCard(categories, 'Current Stats'),
+              ),
+              Container(
+                width: 300, // Define a fixed width for each container
+                child: buildCategoryCard(categories, 'Record Stats'),
+              ),
+            ],
           ),
         ),
       ),
