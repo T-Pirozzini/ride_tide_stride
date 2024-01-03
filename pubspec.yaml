@@ -54,6 +54,7 @@ dependencies:
   lottie: ^2.7.0  
   timeago: ^3.6.0
   provider: ^6.1.1
+  material_symbols_icons: ^4.2713.0
 
 dev_dependencies:
   flutter_test:
