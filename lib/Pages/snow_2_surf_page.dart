@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class Snow2Surf extends StatefulWidget {
   const Snow2Surf({super.key});
@@ -115,20 +116,47 @@ class _Snow2SurfState extends State<Snow2Surf> {
     },
   ];
 
+  String formattedCurrentMonth = '';
+
+  void getCurrentMonth() {
+    final DateTime currentDateTime = DateTime.now();
+    String formattedCurrentMonth =
+        DateFormat('MMMM yyyy').format(currentDateTime);
+    setState(() {
+      this.formattedCurrentMonth = formattedCurrentMonth;
+    });
+  }
+
+  void initState() {
+    super.initState();
+    getCurrentMonth();
+  }
+
   Widget buildCategoryCard(
       List<Map<String, dynamic>> categories, String title) {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        Text(title,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Text(title,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          child: Text(
+            'The top stats for each sport this month - from all user submitted leaderboard entries',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
         ),
         Expanded(
           child: ListView.builder(
             itemCount: categories.length,
             itemBuilder: (context, index) {
               return ListTile(
+                visualDensity: VisualDensity(horizontal: 0, vertical: -4),
                 leading:
                     Icon(categories[index]['icon']), // Replace with actual icon
                 title: Text(categories[index]['name']),
@@ -149,19 +177,10 @@ class _Snow2SurfState extends State<Snow2Surf> {
     return Scaffold(
       backgroundColor: Colors.grey[200],
       body: SafeArea(
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              Container(
-                width: 300, // Define a fixed width for each container
-                child: buildCategoryCard(categories, 'Current Stats'),
-              ),
-              Container(
-                width: 300, // Define a fixed width for each container
-                child: buildCategoryCard(categories, 'Record Stats'),
-              ),
-            ],
+        child: Center(
+          child: Container(
+            width: MediaQuery.of(context).size.width,
+            child: buildCategoryCard(categories, formattedCurrentMonth),
           ),
         ),
       ),
