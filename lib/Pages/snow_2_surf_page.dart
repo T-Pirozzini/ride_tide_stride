@@ -14,6 +14,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
   List<Map<String, dynamic>> categories = [
     {
       'name': 'Alpine Ski',
+      'type': ['Snowboard', 'AlpineSki'],
       'icon': Icons.downhill_skiing_outlined,
       'info': 'fastest 5km time',
       'current': {
@@ -27,6 +28,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
     },
     {
       'name': 'Cross Country Ski',
+      'type': ['NordicSki'],
       'icon': Icons.downhill_skiing_outlined,
       'info': 'fastest 5km time',
       'current': {
@@ -40,6 +42,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
     },
     {
       'name': 'Road Run',
+      'type': ['VirtualRun', 'Run'],
       'icon': Icons.directions_run_outlined,
       'info': 'fastest 5km time',
       'current': {
@@ -53,6 +56,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
     },
     {
       'name': 'Trail Run',
+      'type': ['Run'],
       'icon': Icons.directions_run_outlined,
       'info': 'fastest 5km time',
       'current': {
@@ -66,6 +70,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
     },
     {
       'name': 'Mountain Bike',
+      'type': ['Ride'],
       'icon': Icons.directions_bike_outlined,
       'info': 'fastest 5km time',
       'current': {
@@ -79,6 +84,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
     },
     {
       'name': 'Kayak',
+      'type': ['Kayaking'],
       'icon': Icons.kayaking_outlined,
       'info': 'fastest 5km time',
       'current': {
@@ -92,6 +98,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
     },
     {
       'name': 'Road Bike',
+      'type': ['VirtualRide', 'Ride'],
       'icon': Icons.directions_bike_outlined,
       'info': 'fastest 5km time',
       'current': {
@@ -105,6 +112,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
     },
     {
       'name': 'Canoe',
+      'type': ['Canoeing'],
       'icon': Icons.rowing_outlined,
       'info': 'fastest 5km time',
       'current': {
@@ -209,16 +217,16 @@ class _Snow2SurfState extends State<Snow2Surf> {
   };
 
   Map<String, double> sportDistances = {
-  'Run': 5.0, 
-  'RoadBike': 25.0, 
-  'MountainBike': 25.0, 
-  'RoadRun': 5.0, 
-  'TrailRun': 5.0, 
-  'AlpineSki': 5.0, 
-  'CrossCountrySki': 5.0, 
-  'Kayak': 5.0, 
-  'Canoe': 5.0, 
-};
+    'Run': 5.0,
+    'RoadBike': 25.0,
+    'MountainBike': 25.0,
+    'RoadRun': 5.0,
+    'TrailRun': 5.0,
+    'AlpineSki': 5.0,
+    'CrossCountrySki': 5.0,
+    'Kayak': 5.0,
+    'Canoe': 5.0,
+  };
 
   void initState() {
     super.initState();
@@ -303,69 +311,60 @@ class _Snow2SurfState extends State<Snow2Surf> {
                 return Text('Error: ${snapshot.error}');
               }
               final activityDocs = snapshot.data?.docs ?? [];
-              List<double> roadBikeSpeeds = [];
-              List<double> runSpeeds = [];
-
-              categories.forEach((category) {
-                String categoryName = category['name'];
-                List<String> typesToCheck =
-                    activityTypeToCategory[categoryName] ?? [];
-                Map<String, String> results = {'pace': 'N/A', 'time': 'N/A'};
-
-                for (String type in typesToCheck) {
-                  Map<String, String> calcResults =
-                      calculatePace(activityDocs, type);
-                  // Logic to combine results if needed
-                  results['pace'] =
-                      calcResults['pace']!; // Or some logic to choose the best
-                  results['time'] = calcResults['time']!;
-                  results['user'] = 'User';
-                }
-
-                category['current']['time'] = results['time'];
-                category['current']['user'] = 'User';
-              });
-
+              Map<String, Map<String, dynamic>> bestTimes = {};
               for (final doc in activityDocs) {
-                double averageSpeed = doc['average_speed'];
-                String fullname = doc['fullname'];
-                String date = doc['start_date'];
                 String type = doc['type'];
-                double distance = doc['distance'];
-                print(averageSpeed);
-                print(fullname);
-                print(date);
-                print(type);
-                print(distance);
-                if (type == 'VirtualRide') {
-                  roadBikeSpeeds.add(averageSpeed);
+                double averageSpeed = doc['average_speed']; // in m/s
+                String fullname = doc['fullname'];
+                double distance = sportDistances[type] ??
+                    0; // Get the specific distance for the sport
+                double timeInSeconds = (distance * 1000) / averageSpeed;
+                print(timeInSeconds);
+
+                if (!bestTimes.containsKey(type) ||
+                    timeInSeconds < bestTimes[type]?['time']) {
+                  bestTimes[type] = {
+                    'fullname': fullname,
+                    'time': timeInSeconds,
+                  };
+                  print(bestTimes);
                 }
-                if (type == 'Run') {
-                  runSpeeds.add(averageSpeed);
-                }
-              }
-
-              double avgRoadBikeSpeed = roadBikeSpeeds.isNotEmpty
-                  ? roadBikeSpeeds.reduce((a, b) => a + b) /
-                      roadBikeSpeeds.length
-                  : 0.0;
-
-              double avgRunSpeed = runSpeeds.isNotEmpty
-                  ? runSpeeds.reduce((a, b) => a + b) / runSpeeds.length
-                  : 0.0;
-
-              //calculation for pace
-              double speedKph = avgRunSpeed * 3.6; // Convert to km/h
-              double pace = 60 / speedKph;
-              double totalTime = pace * 5; // Total time for 5km
-              int totalMinutes = totalTime.floor();
-              int totalSeconds = ((totalTime - totalMinutes) * 60).round();
-              String runTime =
-                  '$totalMinutes:${totalSeconds.toString().padLeft(2, '0')}';
+              }              
 
               return ListView.builder(
                 itemCount: categories.length,
                 itemBuilder: (context, index) {
+                  var category = categories[index];
+                  List<String> sportTypes = List<String>.from(
+                      category['type']); 
+                  Map<String, dynamic>? bestTimeEntry;
+
+                  for (String type in sportTypes) {
+                    if (bestTimes.containsKey(type)) {
+                      if (bestTimeEntry == null ||
+                          bestTimes[type]!['time'] < bestTimeEntry['time']) {
+                        bestTimeEntry = bestTimes[type];
+                      }
+                    }
+                  }
+
+                  String displayName = bestTimeEntry != null
+                      ? bestTimeEntry['fullname']
+                      : "User";
+                  double totalTime =
+                      bestTimeEntry != null ? bestTimeEntry['time'] : 0.0;
+
+                  int totalTimeInSeconds =
+                      totalTime.toInt(); 
+
+                  int hours = totalTimeInSeconds ~/ 3600;
+                  int minutes = (totalTimeInSeconds % 3600) ~/ 60;
+                  int seconds = totalTimeInSeconds % 60;
+
+                  String displayTime = totalTimeInSeconds > 0
+                      ? "${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}"
+                      : "0:00";
+
                   return ListTile(
                     visualDensity: VisualDensity(horizontal: 0, vertical: -4),
                     leading: Row(
@@ -377,9 +376,8 @@ class _Snow2SurfState extends State<Snow2Surf> {
                       ],
                     ), // Replace with actual icon
                     title: Text(categories[index]['name']),
-                    subtitle: Text(categories[index]['current']
-                        ['user']), // Replace with actual data
-                    trailing: Text(runTime), // Replace with actual data
+                    subtitle: Text(displayName),
+                    trailing: Text(displayTime),
                   );
                 },
               );
