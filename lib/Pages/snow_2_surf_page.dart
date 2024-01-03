@@ -16,113 +16,49 @@ class _Snow2SurfState extends State<Snow2Surf> {
       'name': 'Alpine Ski',
       'type': ['Snowboard', 'AlpineSki'],
       'icon': Icons.downhill_skiing_outlined,
-      'info': 'fastest 5km time',
-      'current': {
-        'user': 'User',
-        'time': 'Time',
-      },
-      'record': {
-        'user': 'User',
-        'time': 'Time',
-      }
+      'distance': 2.0,
     },
     {
       'name': 'Cross Country Ski',
       'type': ['NordicSki'],
       'icon': Icons.downhill_skiing_outlined,
-      'info': 'fastest 5km time',
-      'current': {
-        'user': 'User',
-        'time': 'Time',
-      },
-      'record': {
-        'user': 'User',
-        'time': 'Time',
-      }
+      'distance': 8.0,
     },
     {
       'name': 'Road Run',
       'type': ['VirtualRun', 'Run'],
       'icon': Icons.directions_run_outlined,
-      'info': 'fastest 5km time',
-      'current': {
-        'user': 'User',
-        'time': 'Time',
-      },
-      'record': {
-        'user': 'User',
-        'time': 'Time',
-      }
+      'distance': 7.0,
     },
     {
       'name': 'Trail Run',
       'type': ['Run'],
       'icon': Icons.directions_run_outlined,
-      'info': 'fastest 5km time',
-      'current': {
-        'user': 'User',
-        'time': 'Time',
-      },
-      'record': {
-        'user': 'User',
-        'time': 'Time',
-      }
+      'distance': 6.0,
     },
     {
       'name': 'Mountain Bike',
       'type': ['Ride'],
       'icon': Icons.directions_bike_outlined,
-      'info': 'fastest 5km time',
-      'current': {
-        'user': 'User',
-        'time': 'Time',
-      },
-      'record': {
-        'user': 'User',
-        'time': 'Time',
-      }
+      'distance': 15.0,
     },
     {
       'name': 'Kayak',
       'type': ['Kayaking'],
       'icon': Icons.kayaking_outlined,
-      'info': 'fastest 5km time',
-      'current': {
-        'user': 'User',
-        'time': 'Time',
-      },
-      'record': {
-        'user': 'User',
-        'time': 'Time',
-      }
+      'distance': 5.0,
     },
     {
       'name': 'Road Bike',
       'type': ['VirtualRide', 'Ride'],
       'icon': Icons.directions_bike_outlined,
-      'info': 'fastest 5km time',
-      'current': {
-        'user': 'User',
-        'time': 'Time',
-      },
-      'record': {
-        'user': 'User',
-        'time': 'Time',
-      }
+      'distance': 25.0,
     },
     {
       'name': 'Canoe',
       'type': ['Canoeing'],
       'icon': Icons.rowing_outlined,
-      'info': 'fastest 5km time',
-      'current': {
-        'user': 'User',
-        'time': 'Time',
-      },
-      'record': {
-        'user': 'User',
-        'time': 'Time',
-      }
+      'distance': 5.0,
     },
   ];
 
@@ -137,27 +73,15 @@ class _Snow2SurfState extends State<Snow2Surf> {
     });
   }
 
-  // // Function to fetch user activities
-  // Future<List<Map<String, dynamic>>> fetchUserActivities(
-  //     String fullName) async {
-  //   final currentMonth = DateTime.now().month;
-  //   final currentYear = DateTime.now().year;
-  //   final firstDayOfMonth = DateTime(currentYear, currentMonth, 1);
-  //   final lastDayOfMonth = DateTime(currentYear, currentMonth + 1, 0);
-
-  //   final snapshot = await FirebaseFirestore.instance
-  //       .collection('activities')
-  //       .where('fullname', isEqualTo: fullName)
-  //       .get();
-
-  //   return snapshot.docs
-  //       .map((doc) => doc.data() as Map<String, dynamic>)
-  //       .where((data) {
-  //     final startDate = DateTime.parse(data['start_date']);
-  //     return startDate.isAfter(firstDayOfMonth) &&
-  //         startDate.isBefore(lastDayOfMonth);
-  //   }).toList();
-  // }
+  String formatTime(double totalTime) {
+    int totalTimeInSeconds = totalTime.toInt();
+    int hours = totalTimeInSeconds ~/ 3600;
+    int minutes = (totalTimeInSeconds % 3600) ~/ 60;
+    int seconds = totalTimeInSeconds % 60;
+    return totalTimeInSeconds > 0
+        ? "${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}"
+        : "0:00";
+  }
 
   Stream<QuerySnapshot> getCurrentMonthData() {
     final currentMonth = DateTime.now().month;
@@ -174,59 +98,6 @@ class _Snow2SurfState extends State<Snow2Surf> {
             isLessThanOrEqualTo: lastDayOfMonth.toUtc().toIso8601String())
         .snapshots();
   }
-
-  Map<String, String> calculatePace(List<DocumentSnapshot> docs, String type) {
-    List<double> speeds = [];
-
-    for (final doc in docs) {
-      if (doc['type'] == type) {
-        double averageSpeed = doc['average_speed'];
-        speeds.add(averageSpeed);
-      }
-    }
-
-    if (speeds.isEmpty) {
-      return {'pace': 'N/A', 'time': 'N/A'};
-    }
-
-    double avgSpeed = speeds.reduce((a, b) => a + b) / speeds.length;
-    double speedKph = avgSpeed * 3.6;
-    double pace = 60 / speedKph;
-    int minutes = pace.floor();
-    int seconds = ((pace - minutes) * 60).round();
-    String paceString = '$minutes:${seconds.toString().padLeft(2, '0')}';
-
-    double totalTime = pace * 5;
-    int totalMinutes = totalTime.floor();
-    int totalSeconds = ((totalTime - totalMinutes) * 60).round();
-    String timeString =
-        '$totalMinutes:${totalSeconds.toString().padLeft(2, '0')}';
-
-    return {'pace': paceString, 'time': timeString};
-  }
-
-  Map<String, List<String>> activityTypeToCategory = {
-    'RoadBike': ['VirtualRide', 'Ride'],
-    'MountainBike': ['Ride'],
-    'RoadRun': ['VirtualRun', 'Run'],
-    'TrailRun': ['Run'],
-    'AlpineSki': ['Snowboard', 'AlpineSki'],
-    'CrossCountrySki': ['NordicSki'],
-    'Kayak': ['Kayaking'],
-    'Canoe': ['Canoeing'],
-  };
-
-  Map<String, double> sportDistances = {
-    'Run': 5.0,
-    'RoadBike': 25.0,
-    'MountainBike': 25.0,
-    'RoadRun': 5.0,
-    'TrailRun': 5.0,
-    'AlpineSki': 5.0,
-    'CrossCountrySki': 5.0,
-    'Kayak': 5.0,
-    'Canoe': 5.0,
-  };
 
   void initState() {
     super.initState();
@@ -312,32 +183,40 @@ class _Snow2SurfState extends State<Snow2Surf> {
               }
               final activityDocs = snapshot.data?.docs ?? [];
               Map<String, Map<String, dynamic>> bestTimes = {};
+
+              Map<String, double> typeToDistanceMap = {};
+              categories.forEach((category) {
+                category['type'].forEach((type) {
+                  typeToDistanceMap[type] = category['distance'];
+                });
+              });
+
               for (final doc in activityDocs) {
                 String type = doc['type'];
                 double averageSpeed = doc['average_speed']; // in m/s
                 String fullname = doc['fullname'];
-                double distance = sportDistances[type] ??
-                    0; // Get the specific distance for the sport
-                double timeInSeconds = (distance * 1000) / averageSpeed;
-                print(timeInSeconds);
+
+                double originalDistance = typeToDistanceMap[type] ?? 0.0;
+                double timeInSeconds = (originalDistance * 1000) /
+                    averageSpeed; // This is the time for the original distance
 
                 if (!bestTimes.containsKey(type) ||
-                    timeInSeconds < bestTimes[type]?['time']) {
+                    timeInSeconds < bestTimes[type]!['time']) {
                   bestTimes[type] = {
                     'fullname': fullname,
                     'time': timeInSeconds,
+                    'speed': averageSpeed,
                   };
-                  print(bestTimes);
                 }
-              }              
+              }
 
               return ListView.builder(
                 itemCount: categories.length,
                 itemBuilder: (context, index) {
                   var category = categories[index];
-                  List<String> sportTypes = List<String>.from(
-                      category['type']); 
+                  List<String> sportTypes = List<String>.from(category['type']);
                   Map<String, dynamic>? bestTimeEntry;
+                  double categoryDistance = category['distance'];
 
                   for (String type in sportTypes) {
                     if (bestTimes.containsKey(type)) {
@@ -351,19 +230,27 @@ class _Snow2SurfState extends State<Snow2Surf> {
                   String displayName = bestTimeEntry != null
                       ? bestTimeEntry['fullname']
                       : "User";
-                  double totalTime =
-                      bestTimeEntry != null ? bestTimeEntry['time'] : 0.0;
 
-                  int totalTimeInSeconds =
-                      totalTime.toInt(); 
+                  double bestSpeed =
+                      bestTimeEntry != null ? bestTimeEntry['speed'] : 0.0;
 
-                  int hours = totalTimeInSeconds ~/ 3600;
-                  int minutes = (totalTimeInSeconds % 3600) ~/ 60;
-                  int seconds = totalTimeInSeconds % 60;
+                  // Adjust the distance based on the category name
+                  if (category['name'] == 'Trail Run') {
+                    categoryDistance = 6.0; // Distance for Trail Run
+                  } else if (category['name'] == 'Road Run') {
+                    categoryDistance = 7.0; // Distance for Road Run
+                  }
+                  if (category['name'] == 'Road Bike') {
+                    categoryDistance = 25.0; // Distance for Road Bike
+                  } else if (category['name'] == 'Mountain Bike') {
+                    categoryDistance = 15.0; // Distance for Mountain Bike
+                  }
 
-                  String displayTime = totalTimeInSeconds > 0
-                      ? "${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}"
-                      : "0:00";
+                  double totalTimeInSeconds = bestSpeed > 0
+                      ? (categoryDistance * 1000) / bestSpeed
+                      : 0.0;
+
+                  String displayTime = formatTime(totalTimeInSeconds);
 
                   return ListTile(
                     visualDensity: VisualDensity(horizontal: 0, vertical: -4),
@@ -377,7 +264,13 @@ class _Snow2SurfState extends State<Snow2Surf> {
                     ), // Replace with actual icon
                     title: Text(categories[index]['name']),
                     subtitle: Text(displayName),
-                    trailing: Text(displayTime),
+                    trailing: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(displayTime),
+                        Text(categoryDistance.toString() + " km"),
+                      ],
+                    ),
                   );
                 },
               );
