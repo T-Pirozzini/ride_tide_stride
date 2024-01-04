@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -63,7 +64,6 @@ class _Snow2SurfState extends State<Snow2Surf> {
   ];
 
   String formattedCurrentMonth = '';
-  double totalBestTimeInSeconds = 0.0;
 
   void getCurrentMonth() {
     final DateTime currentDateTime = DateTime.now();
@@ -84,28 +84,50 @@ class _Snow2SurfState extends State<Snow2Surf> {
         : "0:00";
   }
 
-  String calculateCumulativeTime(cumulativeTimes) {
-    double cumulativeTime = 0;
+  double totalTime = 0.0;
+
+  Future<String> calculateCumulativeTime(List<double> cumulativeTimes) async {
     for (double time in cumulativeTimes) {
-      cumulativeTime += time;
+      totalTime += time;
     }
-    print(cumulativeTime);
-    print(formatTime(cumulativeTime));
-    return formatTime(cumulativeTime);
+    String formattedTime = formatTime(totalTime);
+
+    // Retrieve the current value from Firestore
+    DocumentSnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore
+        .instance
+        .collection('Competitions')
+        .doc(formattedCurrentMonth)
+        .get();
+
+    // Extract the current Snow2SurfTotalTime from the snapshot
+    String? currentSnow2SurfTotalTime = snapshot.data()?['Snow2SurfTotalTime'];
+
+    // Check if the times are different and update if necessary
+    if (formattedTime != currentSnow2SurfTotalTime) {
+      await FirebaseFirestore.instance
+          .collection('Competitions')
+          .doc(formattedCurrentMonth)
+          .update({'Snow2SurfTotalTime': formattedTime});
+    }
+
+    return formattedTime;
   }
 
-  void updateCategoriesWithBestTimes(
-      Map<String, Map<String, dynamic>> bestTimes) {
-    for (int i = 0; i < categories.length; i++) {
-      String categoryType = categories[i]['type']
-          [0]; // Assuming first type is the primary identifier
-      if (bestTimes.containsKey(categoryType)) {
-        double bestTime = bestTimes[categoryType]
-            ?['time']; // Extract the best time from the nested map
-        categories[i]['best_time'] = bestTime; // Add best time to the category
-      }
+  Future<String> fetchTotalTime() async {
+    try {
+      DocumentSnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore
+          .instance
+          .collection('Competitions')
+          .doc(formattedCurrentMonth)
+          .get();
+
+      String? fetchedTotalTime = snapshot.data()?['Snow2SurfTotalTime'];
+      return fetchedTotalTime ?? "0:00";
+    } catch (e) {
+      print("Error fetching total time: $e");
+      return "0:00";
     }
-  }  
+  }
 
   Stream<QuerySnapshot> getCurrentMonthData() {
     final currentMonth = DateTime.now().month;
@@ -231,7 +253,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
                     'speed': averageSpeed,
                   };
                 }
-              }             
+              }
 
               return Column(
                 children: [
@@ -274,11 +296,14 @@ class _Snow2SurfState extends State<Snow2Surf> {
                         } else if (category['name'] == 'Mountain Bike') {
                           categoryDistance = 15.0; // Distance for Mountain Bike
                         }
-
+                        List cumulativeTimes = [];
                         double totalTimeInSeconds = bestSpeed > 0
                             ? (categoryDistance * 1000) / bestSpeed
                             : 0.0;
                         String displayTime = formatTime(totalTimeInSeconds);
+                        cumulativeTimes.add(totalTimeInSeconds);
+
+                        // calculateCumulativeTime(cumulativeTimes);
 
                         return ListTile(
                           visualDensity:
@@ -304,7 +329,6 @@ class _Snow2SurfState extends State<Snow2Surf> {
                       },
                     ),
                   ),
-                  Text('Display total Here: '),
                 ],
               );
             },
@@ -319,10 +343,27 @@ class _Snow2SurfState extends State<Snow2Surf> {
     return Scaffold(
       backgroundColor: Colors.grey[200],
       body: SafeArea(
-        child: Center(
-          child: Container(
-            width: MediaQuery.of(context).size.width,
-            child: buildCategoryCard(categories, formattedCurrentMonth),
+        child: Container(
+          width: MediaQuery.of(context).size.width,
+          child: Column(
+            children: [
+              Expanded(
+                  child: buildCategoryCard(categories, formattedCurrentMonth)),
+              FutureBuilder<String>(
+                future: fetchTotalTime(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircularProgressIndicator();
+                  }
+                  if (snapshot.hasError) {
+                    return Text("Error: ${snapshot.error}");
+                  }
+                  return Text("Total Time: ${snapshot.data}",
+                      style:
+                          TextStyle(fontSize: 22, fontWeight: FontWeight.bold));
+                },
+              ),
+            ],
           ),
         ),
       ),
