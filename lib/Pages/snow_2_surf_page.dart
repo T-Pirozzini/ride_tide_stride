@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -13,111 +14,56 @@ class _Snow2SurfState extends State<Snow2Surf> {
   List<Map<String, dynamic>> categories = [
     {
       'name': 'Alpine Ski',
+      'type': ['Snowboard', 'AlpineSki'],
       'icon': Icons.downhill_skiing_outlined,
-      'info': 'fastest 5km time',
-      'current': {
-        'user': 'User',
-        'time': 'Time',
-      },
-      'record': {
-        'user': 'User',
-        'time': 'Time',
-      }
+      'distance': 2.0,
     },
     {
       'name': 'Cross Country Ski',
+      'type': ['NordicSki'],
       'icon': Icons.downhill_skiing_outlined,
-      'info': 'fastest 5km time',
-      'current': {
-        'user': 'User',
-        'time': 'Time',
-      },
-      'record': {
-        'user': 'User',
-        'time': 'Time',
-      }
+      'distance': 8.0,
     },
     {
       'name': 'Road Run',
+      'type': ['VirtualRun', 'Run'],
       'icon': Icons.directions_run_outlined,
-      'info': 'fastest 5km time',
-      'current': {
-        'user': 'User',
-        'time': 'Time',
-      },
-      'record': {
-        'user': 'User',
-        'time': 'Time',
-      }
+      'distance': 7.0,
     },
     {
       'name': 'Trail Run',
+      'type': ['Run'],
       'icon': Icons.directions_run_outlined,
-      'info': 'fastest 5km time',
-      'current': {
-        'user': 'User',
-        'time': 'Time',
-      },
-      'record': {
-        'user': 'User',
-        'time': 'Time',
-      }
+      'distance': 6.0,
     },
     {
       'name': 'Mountain Bike',
+      'type': ['Ride'],
       'icon': Icons.directions_bike_outlined,
-      'info': 'fastest 5km time',
-      'current': {
-        'user': 'User',
-        'time': 'Time',
-      },
-      'record': {
-        'user': 'User',
-        'time': 'Time',
-      }
+      'distance': 15.0,
     },
     {
       'name': 'Kayak',
+      'type': ['Kayaking'],
       'icon': Icons.kayaking_outlined,
-      'info': 'fastest 5km time',
-      'current': {
-        'user': 'User',
-        'time': 'Time',
-      },
-      'record': {
-        'user': 'User',
-        'time': 'Time',
-      }
+      'distance': 5.0,
     },
     {
       'name': 'Road Bike',
+      'type': ['VirtualRide', 'Ride'],
       'icon': Icons.directions_bike_outlined,
-      'info': 'fastest 5km time',
-      'current': {
-        'user': 'User',
-        'time': 'Time',
-      },
-      'record': {
-        'user': 'User',
-        'time': 'Time',
-      }
+      'distance': 25.0,
     },
     {
       'name': 'Canoe',
+      'type': ['Canoeing'],
       'icon': Icons.rowing_outlined,
-      'info': 'fastest 5km time',
-      'current': {
-        'user': 'User',
-        'time': 'Time',
-      },
-      'record': {
-        'user': 'User',
-        'time': 'Time',
-      }
+      'distance': 5.0,
     },
   ];
 
   String formattedCurrentMonth = '';
+  double totalBestTimeInSeconds = 0.0;
 
   void getCurrentMonth() {
     final DateTime currentDateTime = DateTime.now();
@@ -126,6 +72,55 @@ class _Snow2SurfState extends State<Snow2Surf> {
     setState(() {
       this.formattedCurrentMonth = formattedCurrentMonth;
     });
+  }
+
+  String formatTime(double totalTime) {
+    int totalTimeInSeconds = totalTime.toInt();
+    int hours = totalTimeInSeconds ~/ 3600;
+    int minutes = (totalTimeInSeconds % 3600) ~/ 60;
+    int seconds = totalTimeInSeconds % 60;
+    return totalTimeInSeconds > 0
+        ? "${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}"
+        : "0:00";
+  }
+
+  String calculateCumulativeTime(cumulativeTimes) {
+    double cumulativeTime = 0;
+    for (double time in cumulativeTimes) {
+      cumulativeTime += time;
+    }
+    print(cumulativeTime);
+    print(formatTime(cumulativeTime));
+    return formatTime(cumulativeTime);
+  }
+
+  void updateCategoriesWithBestTimes(
+      Map<String, Map<String, dynamic>> bestTimes) {
+    for (int i = 0; i < categories.length; i++) {
+      String categoryType = categories[i]['type']
+          [0]; // Assuming first type is the primary identifier
+      if (bestTimes.containsKey(categoryType)) {
+        double bestTime = bestTimes[categoryType]
+            ?['time']; // Extract the best time from the nested map
+        categories[i]['best_time'] = bestTime; // Add best time to the category
+      }
+    }
+  }  
+
+  Stream<QuerySnapshot> getCurrentMonthData() {
+    final currentMonth = DateTime.now().month;
+    final currentYear = DateTime.now().year;
+
+    final firstDayOfMonth = DateTime(currentYear, currentMonth, 1);
+    final lastDayOfMonth = DateTime(currentYear, currentMonth + 1, 0);
+
+    return FirebaseFirestore.instance
+        .collection('activities')
+        .where('start_date',
+            isGreaterThanOrEqualTo: firstDayOfMonth.toUtc().toIso8601String())
+        .where('start_date',
+            isLessThanOrEqualTo: lastDayOfMonth.toUtc().toIso8601String())
+        .snapshots();
   }
 
   void initState() {
@@ -200,31 +195,120 @@ class _Snow2SurfState extends State<Snow2Surf> {
           ),
         ),
         Expanded(
-          child: ListView.builder(
-            itemCount: categories.length,
-            itemBuilder: (context, index) {
-              return ListTile(
-                visualDensity: VisualDensity(horizontal: 0, vertical: -4),
-                leading: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    getNumberIcon(index),
-                    SizedBox(width: 8),
-                    Icon(categories[index]['icon']),
-                  ],
-                ), // Replace with actual icon
-                title: Text(categories[index]['name']),
-                subtitle: Text(categories[index]['current']
-                    ['user']), // Replace with actual data
-                trailing: Text(categories[index]['current']
-                    ['time']), // Replace with actual data
+          child: StreamBuilder<QuerySnapshot>(
+            stream: getCurrentMonthData(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const CircularProgressIndicator();
+              }
+
+              if (snapshot.hasError) {
+                return Text('Error: ${snapshot.error}');
+              }
+              final activityDocs = snapshot.data?.docs ?? [];
+              Map<String, Map<String, dynamic>> bestTimes = {};
+
+              Map<String, double> typeToDistanceMap = {};
+              categories.forEach((category) {
+                category['type'].forEach((type) {
+                  typeToDistanceMap[type] = category['distance'];
+                });
+              });
+
+              for (final doc in activityDocs) {
+                String type = doc['type'];
+                double averageSpeed = doc['average_speed'];
+                String fullname = doc['fullname'];
+
+                double originalDistance = typeToDistanceMap[type] ?? 0.0;
+                double timeInSeconds = (originalDistance * 1000) / averageSpeed;
+
+                if (!bestTimes.containsKey(type) ||
+                    timeInSeconds < bestTimes[type]!['time']) {
+                  bestTimes[type] = {
+                    'fullname': fullname,
+                    'time': timeInSeconds,
+                    'speed': averageSpeed,
+                  };
+                }
+              }             
+
+              return Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        var category = categories[index];
+                        List<String> sportTypes =
+                            List<String>.from(category['type']);
+                        Map<String, dynamic>? bestTimeEntry;
+                        double categoryDistance = category['distance'];
+
+                        for (String type in sportTypes) {
+                          if (bestTimes.containsKey(type)) {
+                            if (bestTimeEntry == null ||
+                                bestTimes[type]!['time'] <
+                                    bestTimeEntry['time']) {
+                              bestTimeEntry = bestTimes[type];
+                            }
+                          }
+                        }
+
+                        String displayName = bestTimeEntry != null
+                            ? bestTimeEntry['fullname']
+                            : "User";
+
+                        double bestSpeed = bestTimeEntry != null
+                            ? bestTimeEntry['speed']
+                            : 0.0;
+
+                        // Adjust the distance based on the category name
+                        if (category['name'] == 'Trail Run') {
+                          categoryDistance = 6.0; // Distance for Trail Run
+                        } else if (category['name'] == 'Road Run') {
+                          categoryDistance = 7.0; // Distance for Road Run
+                        }
+                        if (category['name'] == 'Road Bike') {
+                          categoryDistance = 25.0; // Distance for Road Bike
+                        } else if (category['name'] == 'Mountain Bike') {
+                          categoryDistance = 15.0; // Distance for Mountain Bike
+                        }
+
+                        double totalTimeInSeconds = bestSpeed > 0
+                            ? (categoryDistance * 1000) / bestSpeed
+                            : 0.0;
+                        String displayTime = formatTime(totalTimeInSeconds);
+
+                        return ListTile(
+                          visualDensity:
+                              VisualDensity(horizontal: 0, vertical: -4),
+                          leading: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              getNumberIcon(index),
+                              SizedBox(width: 8),
+                              Icon(categories[index]['icon']),
+                            ],
+                          ), // Replace with actual icon
+                          title: Text(categories[index]['name']),
+                          subtitle: Text(displayName),
+                          trailing: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(displayTime),
+                              Text(categoryDistance.toString() + " km"),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  Text('Display total Here: '),
+                ],
               );
             },
           ),
-        ),
-        Text(
-          "Cumulative Time: 00:00:00",
-          style: TextStyle(fontSize: 24),
         ),
       ],
     );
