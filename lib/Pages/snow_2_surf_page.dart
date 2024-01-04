@@ -63,6 +63,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
   ];
 
   String formattedCurrentMonth = '';
+  double totalBestTimeInSeconds = 0.0;
 
   void getCurrentMonth() {
     final DateTime currentDateTime = DateTime.now();
@@ -82,6 +83,29 @@ class _Snow2SurfState extends State<Snow2Surf> {
         ? "${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}"
         : "0:00";
   }
+
+  String calculateCumulativeTime(cumulativeTimes) {
+    double cumulativeTime = 0;
+    for (double time in cumulativeTimes) {
+      cumulativeTime += time;
+    }
+    print(cumulativeTime);
+    print(formatTime(cumulativeTime));
+    return formatTime(cumulativeTime);
+  }
+
+  void updateCategoriesWithBestTimes(
+      Map<String, Map<String, dynamic>> bestTimes) {
+    for (int i = 0; i < categories.length; i++) {
+      String categoryType = categories[i]['type']
+          [0]; // Assuming first type is the primary identifier
+      if (bestTimes.containsKey(categoryType)) {
+        double bestTime = bestTimes[categoryType]
+            ?['time']; // Extract the best time from the nested map
+        categories[i]['best_time'] = bestTime; // Add best time to the category
+      }
+    }
+  }  
 
   Stream<QuerySnapshot> getCurrentMonthData() {
     final currentMonth = DateTime.now().month;
@@ -193,12 +217,11 @@ class _Snow2SurfState extends State<Snow2Surf> {
 
               for (final doc in activityDocs) {
                 String type = doc['type'];
-                double averageSpeed = doc['average_speed']; // in m/s
+                double averageSpeed = doc['average_speed'];
                 String fullname = doc['fullname'];
 
                 double originalDistance = typeToDistanceMap[type] ?? 0.0;
-                double timeInSeconds = (originalDistance * 1000) /
-                    averageSpeed; // This is the time for the original distance
+                double timeInSeconds = (originalDistance * 1000) / averageSpeed;
 
                 if (!bestTimes.containsKey(type) ||
                     timeInSeconds < bestTimes[type]!['time']) {
@@ -208,78 +231,84 @@ class _Snow2SurfState extends State<Snow2Surf> {
                     'speed': averageSpeed,
                   };
                 }
-              }
+              }             
 
-              return ListView.builder(
-                itemCount: categories.length,
-                itemBuilder: (context, index) {
-                  var category = categories[index];
-                  List<String> sportTypes = List<String>.from(category['type']);
-                  Map<String, dynamic>? bestTimeEntry;
-                  double categoryDistance = category['distance'];
+              return Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        var category = categories[index];
+                        List<String> sportTypes =
+                            List<String>.from(category['type']);
+                        Map<String, dynamic>? bestTimeEntry;
+                        double categoryDistance = category['distance'];
 
-                  for (String type in sportTypes) {
-                    if (bestTimes.containsKey(type)) {
-                      if (bestTimeEntry == null ||
-                          bestTimes[type]!['time'] < bestTimeEntry['time']) {
-                        bestTimeEntry = bestTimes[type];
-                      }
-                    }
-                  }
+                        for (String type in sportTypes) {
+                          if (bestTimes.containsKey(type)) {
+                            if (bestTimeEntry == null ||
+                                bestTimes[type]!['time'] <
+                                    bestTimeEntry['time']) {
+                              bestTimeEntry = bestTimes[type];
+                            }
+                          }
+                        }
 
-                  String displayName = bestTimeEntry != null
-                      ? bestTimeEntry['fullname']
-                      : "User";
+                        String displayName = bestTimeEntry != null
+                            ? bestTimeEntry['fullname']
+                            : "User";
 
-                  double bestSpeed =
-                      bestTimeEntry != null ? bestTimeEntry['speed'] : 0.0;
+                        double bestSpeed = bestTimeEntry != null
+                            ? bestTimeEntry['speed']
+                            : 0.0;
 
-                  // Adjust the distance based on the category name
-                  if (category['name'] == 'Trail Run') {
-                    categoryDistance = 6.0; // Distance for Trail Run
-                  } else if (category['name'] == 'Road Run') {
-                    categoryDistance = 7.0; // Distance for Road Run
-                  }
-                  if (category['name'] == 'Road Bike') {
-                    categoryDistance = 25.0; // Distance for Road Bike
-                  } else if (category['name'] == 'Mountain Bike') {
-                    categoryDistance = 15.0; // Distance for Mountain Bike
-                  }
+                        // Adjust the distance based on the category name
+                        if (category['name'] == 'Trail Run') {
+                          categoryDistance = 6.0; // Distance for Trail Run
+                        } else if (category['name'] == 'Road Run') {
+                          categoryDistance = 7.0; // Distance for Road Run
+                        }
+                        if (category['name'] == 'Road Bike') {
+                          categoryDistance = 25.0; // Distance for Road Bike
+                        } else if (category['name'] == 'Mountain Bike') {
+                          categoryDistance = 15.0; // Distance for Mountain Bike
+                        }
 
-                  double totalTimeInSeconds = bestSpeed > 0
-                      ? (categoryDistance * 1000) / bestSpeed
-                      : 0.0;
+                        double totalTimeInSeconds = bestSpeed > 0
+                            ? (categoryDistance * 1000) / bestSpeed
+                            : 0.0;
+                        String displayTime = formatTime(totalTimeInSeconds);
 
-                  String displayTime = formatTime(totalTimeInSeconds);
-
-                  return ListTile(
-                    visualDensity: VisualDensity(horizontal: 0, vertical: -4),
-                    leading: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        getNumberIcon(index),
-                        SizedBox(width: 8),
-                        Icon(categories[index]['icon']),
-                      ],
-                    ), // Replace with actual icon
-                    title: Text(categories[index]['name']),
-                    subtitle: Text(displayName),
-                    trailing: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(displayTime),
-                        Text(categoryDistance.toString() + " km"),
-                      ],
+                        return ListTile(
+                          visualDensity:
+                              VisualDensity(horizontal: 0, vertical: -4),
+                          leading: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              getNumberIcon(index),
+                              SizedBox(width: 8),
+                              Icon(categories[index]['icon']),
+                            ],
+                          ), // Replace with actual icon
+                          title: Text(categories[index]['name']),
+                          subtitle: Text(displayName),
+                          trailing: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(displayTime),
+                              Text(categoryDistance.toString() + " km"),
+                            ],
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
+                  ),
+                  Text('Display total Here: '),
+                ],
               );
             },
           ),
-        ),
-        Text(
-          "Cumulative Time: 00:00:00",
-          style: TextStyle(fontSize: 24),
         ),
       ],
     );
