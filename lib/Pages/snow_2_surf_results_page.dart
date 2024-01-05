@@ -5,12 +5,14 @@ class Snow2SurfResultsPage extends StatefulWidget {
   final IconData icon;
   final String category;
   final List<String> types;
+  final double distance;
 
   Snow2SurfResultsPage({
     Key? key,
     required this.icon,
     required this.category,
     required this.types,
+    required this.distance,
   }) : super(key: key);
 
   @override
@@ -34,6 +36,16 @@ class _Snow2SurfResultsPageState extends State<Snow2SurfResultsPage> {
         .snapshots();
   }
 
+  String formatTime(double totalTime) {
+    int totalTimeInSeconds = totalTime.toInt();
+    int hours = totalTimeInSeconds ~/ 3600;
+    int minutes = (totalTimeInSeconds % 3600) ~/ 60;
+    int seconds = totalTimeInSeconds % 60;
+    return totalTimeInSeconds > 0
+        ? "${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}"
+        : "0:00";
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -44,7 +56,11 @@ class _Snow2SurfResultsPageState extends State<Snow2SurfResultsPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(widget.icon),
+            Icon(
+              widget.icon,
+              size: 75,
+            ),
+            Divider(thickness: 2),
             StreamBuilder<QuerySnapshot>(
               stream: getCurrentMonthData(),
               builder: (context, snapshot) {
@@ -62,21 +78,39 @@ class _Snow2SurfResultsPageState extends State<Snow2SurfResultsPage> {
                 for (var doc in activityDocs) {
                   var data = doc.data() as Map<String, dynamic>;
                   String type = data['type'];
-                  double distance = data['distance'] / 1000;
+                  double activityDistance =
+                      data['distance'] / 1000; // Convert to kilometers
                   String fullName = data['fullname'];
-                  double averageSpeed = data['average_speed'];
+                  double averageSpeed =
+                      data['average_speed']; // Speed in meters per second
 
-                  if (widget.types.contains(type)) {
-                    // Adjusted filtering logic
+                  double speedKph = averageSpeed * 3.6; // Convert to km/h
+                  double pace = 60 / speedKph; // Pace in minutes per kilometer
+                  int minutes = pace.floor();
+                  int seconds = ((pace - minutes) * 60).round();
+
+                  // Format pace as mm:ss per kilometer
+                  String paceFormatted =
+                      "${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')} min/km";
+
+                  double totalTimeInSeconds = averageSpeed > 0
+                      ? (widget.distance * 1000) / averageSpeed
+                      : 0.0;
+                  String displayTime = formatTime(totalTimeInSeconds);
+
+                  // Check if the activity's type is in the types list and if its distance meets the requirement
+                  if (widget.types.contains(type) &&
+                      activityDistance >= widget.distance) {
                     activityWidgets.add(
                       ListTile(
                         title: Text(fullName),
                         subtitle: Text(
-                            'Distance: $distance km, Speed: $averageSpeed m/s'),
+                            '${widget.distance} km at $paceFormatted = $displayTime'),
                       ),
                     );
                   }
                 }
+
                 return Expanded(
                   child: ListView(
                     children: activityWidgets,

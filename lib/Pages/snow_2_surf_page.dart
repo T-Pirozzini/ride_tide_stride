@@ -322,6 +322,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                       icon: categories[index]['icon'],
                                       category: category['type'].toString(), 
                                       types: categories[index]['type'],
+                                      distance: category['distance'],
 
                                     ),
                                   ),
