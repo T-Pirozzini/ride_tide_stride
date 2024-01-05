@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:ride_tide_stride/pages/snow_2_surf_results_page.dart';
 
 class Snow2Surf extends StatefulWidget {
   const Snow2Surf({super.key});
@@ -168,8 +170,10 @@ class _Snow2SurfState extends State<Snow2Surf> {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(title,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(
+          title,
+          style: GoogleFonts.syne(textStyle: TextStyle(fontSize: 20)),
+        ),
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: Text(
@@ -209,7 +213,6 @@ class _Snow2SurfState extends State<Snow2Surf> {
                 double activityDistance = doc['distance'] / 1000;
                 print('Activity Distance: $activityDistance');
                 String fullname = doc['fullname'];
-                Timestamp timestamp = doc['timestamp'];
 
                 double categoryDistance = typeToDistanceMap[type] ?? 0.0;
                 // Check if the activity's distance is greater than or equal to the category distance
@@ -223,7 +226,6 @@ class _Snow2SurfState extends State<Snow2Surf> {
                       'fullname': fullname,
                       'time': timeInSeconds,
                       'speed': averageSpeed,
-                      'timestamp': timestamp.toDate(),
                     };
                   }
                 }
@@ -243,7 +245,23 @@ class _Snow2SurfState extends State<Snow2Surf> {
 
                           // Return a widget to display the total time
                           return ListTile(
-                            title: Text('Total Time: ${formatTime(totalTime)}'),
+                            title: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Total Time: ',
+                                  style: GoogleFonts.syne(
+                                      textStyle: TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold)),
+                                ),
+                                Text(
+                                  '${formatTime(totalTime)}',
+                                  style: GoogleFonts.syne(
+                                      textStyle: TextStyle(fontSize: 24)),
+                                ),
+                              ],
+                            ),
                             // Adjust the styling as needed
                           );
                         } else {
@@ -291,30 +309,47 @@ class _Snow2SurfState extends State<Snow2Surf> {
 
 // Add to your list of best times
                           bestTimesInSeconds.add(totalTimeInSeconds);
-// Calculate the total time after building the list
-                          double totalTime = bestTimesInSeconds.fold(
-                              0, (prev, curr) => prev + curr);
-                          print('Total Time!!: ${formatTime(totalTime)}');
 
-                          return ListTile(
-                            visualDensity:
-                                VisualDensity(horizontal: 0, vertical: -4),
-                            leading: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                getNumberIcon(index),
-                                SizedBox(width: 8),
-                                Icon(categories[index]['icon']),
-                              ],
-                            ), // Replace with actual icon
-                            title: Text(categories[index]['name']),
-                            subtitle: Text(displayName),
-                            trailing: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(displayTime),
-                                Text(categoryDistance.toString() + " km"),
-                              ],
+                          return Padding(
+                            padding: const EdgeInsets.all(1.0),
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => Snow2SurfResultsPage( 
+                                      
+                                      icon: categories[index]['icon'],
+                                      category: category['type'].toString(), 
+                                      types: categories[index]['type'],
+
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: ListTile(
+                                tileColor: Colors.white,
+
+                                visualDensity:
+                                    VisualDensity(horizontal: 0, vertical: -4),
+                                leading: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    getNumberIcon(index),
+                                    SizedBox(width: 8),
+                                    Icon(categories[index]['icon']),
+                                  ],
+                                ), // Replace with actual icon
+                                title: Text(categories[index]['name']),
+                                subtitle: Text(displayName),
+                                trailing: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(displayTime),
+                                    Text(categoryDistance.toString() + " km"),
+                                  ],
+                                ),
+                              ),
                             ),
                           );
                         }
