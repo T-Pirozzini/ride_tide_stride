@@ -872,6 +872,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
       'average_speed': activity['average_speed'],
       'average_watts': activity['average_watts'],
       'acheivement_count': activity['achievement_count'],
+      'specific_type': '',
     };
 
     // Add the data to Firestore

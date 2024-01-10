@@ -46,6 +46,15 @@ class _Snow2SurfResultsPageState extends State<Snow2SurfResultsPage> {
         : "0:00";
   }
 
+  void _updateActivityType(String docId, String specificType) {
+    FirebaseFirestore.instance
+        .collection('activities')
+        .doc(docId)
+        .update({'specific-type': specificType})
+        .then((_) => print('Activity updated successfully'))
+        .catchError((error) => print('Error updating activity: $error'));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -101,13 +110,48 @@ class _Snow2SurfResultsPageState extends State<Snow2SurfResultsPage> {
                   // Check if the activity's type is in the types list and if its distance meets the requirement
                   if (widget.types.contains(type) &&
                       activityDistance >= widget.distance) {
-                    activityWidgets.add(
-                      ListTile(
-                        title: Text(fullName),
-                        subtitle: Text(
-                            '${widget.distance} km at $paceFormatted = $displayTime'),
-                      ),
-                    );
+                    // Assuming 'specific-type' field exists in your Firestore documents
+                    String specificType = data['specific-type'] ??
+                        (type == 'Run' ? 'Road Run' : 'Road Bike');
+
+                    // Check if the activity's type is 'Run' or 'Ride', then add a switch
+                    if (type == 'Run' || type == 'Ride') {
+                      List<String> options = type == 'Run'
+                          ? ['Trail Run', 'Road Run']
+                          : ['Mountain Bike', 'Road Bike'];
+
+                      activityWidgets.add(
+                        ListTile(
+                          title: Text(fullName),
+                          subtitle: Text(
+                              '${widget.distance} km at $paceFormatted = $displayTime'),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(options[0]),
+                              Switch(
+                                value: specificType == options[1],
+                                onChanged: (bool value) {
+                                  String newType =
+                                      value ? options[1] : options[0];
+                                  _updateActivityType(doc.id,
+                                      newType); // Update the activity type in Firestore
+                                },
+                              ),
+                              Text(options[1]),
+                            ],
+                          ),
+                        ),
+                      );
+                    } else {
+                      activityWidgets.add(
+                        ListTile(
+                          title: Text(fullName),
+                          subtitle: Text(
+                              '${widget.distance} km at $paceFormatted = $displayTime'),
+                        ),
+                      );
+                    }
                   }
                 }
 

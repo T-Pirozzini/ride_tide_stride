@@ -99,10 +99,10 @@ class _Snow2SurfState extends State<Snow2Surf> {
   Stream<QuerySnapshot> getCurrentMonthData() {
     final currentMonth = DateTime.now().month;
     final currentYear = DateTime.now().year;
-
     final firstDayOfMonth = DateTime(currentYear, currentMonth, 1);
     final lastDayOfMonth = DateTime(currentYear, currentMonth + 1, 0);
 
+    // Fetch activities for the current month
     return FirebaseFirestore.instance
         .collection('activities')
         .where('start_date',
@@ -112,130 +112,15 @@ class _Snow2SurfState extends State<Snow2Surf> {
         .snapshots();
   }
 
-  Future<void> _showLegsChoiceDialog(BuildContext context) async {
-    bool hasAlreadySelectedLegs = await checkIfUserAlreadSelectedLegs();
-    if (hasAlreadySelectedLegs) {
-      SnackBar snackBar = SnackBar(
-        content: Text('You already selected legs this month!'),
-        duration: Duration(seconds: 2),
-      );
-      ScaffoldMessenger.of(context).showSnackBar(snackBar);
-      return;
-    }
-    Set<String> selectedLegs = {};
-    Set<String> selectedTypes = {};
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-          return AlertDialog(
-            title: Center(child: const Text('Select up to 3 legs!')),
-            content: SingleChildScrollView(
-              child: ListBody(
-                children: categories.asMap().entries.map((entry) {
-                  int index = entry.key;
-                  Map<String, dynamic> category = entry.value;
-                  String legTitle = 'Leg ${index + 1} - ${category['name']}';
-
-                  return CheckboxListTile(
-                    title: Text(legTitle, style: TextStyle(fontSize: 12)),
-                    value: selectedLegs.contains(legTitle),
-                    onChanged: (bool? value) {
-                      setState(() {
-                        // Add this call to setState
-                        if (value == true) {
-                          if (selectedLegs.length < 3) {
-                            // Check for running or biking category conflict
-                            if ((selectedTypes.contains('Run') &&
-                                    category['type'].contains('Run')) ||
-                                (selectedTypes.contains('Ride') &&
-                                    category['type'].contains('Ride'))) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                      'Cannot select two legs of the same type (Run or Ride).'),
-                                  duration: Duration(seconds: 3),
-                                ),
-                              );
-                              return;
-                            }
-
-                            selectedLegs.add(legTitle);
-                            category['type']
-                                .forEach((type) => selectedTypes.add(type));
-                          }
-                        } else {
-                          selectedLegs.remove(legTitle);
-                          category['type']
-                              .forEach((type) => selectedTypes.remove(type));
-                        }
-                      });
-                    },
-                  );
-                }).toList(),
-              ),
-            ),
-            actions: <Widget>[
-              ElevatedButton(
-                child: Text('Submit'),
-                onPressed: () {
-                  submitUserLegs(selectedLegs);
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
-        });
-      },
-    );
-  }
-
-  void submitUserLegs(Set<String> selectedLegs) async {
-    String userEmail = currentUser?.email ?? '';
-    final competitionDocId = formattedCurrentMonth;
-    var competitionDoc = FirebaseFirestore.instance
-        .collection('Competitions')
-        .doc(competitionDocId);
-
-    await competitionDoc.set({
-      'users': {
-        userEmail: {
-          'selected_legs': selectedLegs.toList(),
-          'hasCompletedSelection': true,
-        },
-      },
-    }, SetOptions(merge: true));
-  }
-
-  Future<bool> checkIfUserAlreadSelectedLegs() async {
-    String userEmail = currentUser?.email ?? '';
-    final competitionDocId = formattedCurrentMonth;
-    var competitionDoc = FirebaseFirestore.instance
-        .collection('Competitions')
-        .doc(competitionDocId);
-
-    var snapshot = await competitionDoc.get();
-    if (!snapshot.exists) {
-      print('Competition document does not exist for $competitionDocId');
-      return false;
-    }
-
-    var data = snapshot.data() as Map<String, dynamic>;
-    var usersData = data['users'] ?? {};
-    var userData = usersData[userEmail] ?? {};
-
-    return userData['hasCompletedSelection'] ?? false;
-  }
-
   void initState() {
     super.initState();
     getCurrentMonth();
   }
 
   Widget buildCategoryCard(
-      List<Map<String, dynamic>> categories, String title) {
+    List<Map<String, dynamic>> categories,
+    String title,
+  ) {
     Icon getNumberIcon(int index) {
       switch (index) {
         case 0:
@@ -296,7 +181,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
         Text('Snow2Surf',
             style: GoogleFonts.tektur(
                 textStyle:
-                    TextStyle(fontSize: 22, fontWeight: FontWeight.bold))),        
+                    TextStyle(fontSize: 22, fontWeight: FontWeight.bold))),
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
             stream: getCurrentMonthData(),
@@ -320,7 +205,8 @@ class _Snow2SurfState extends State<Snow2Surf> {
               print("type to distance map: $typeToDistanceMap");
 
               for (final doc in activityDocs) {
-                String type = doc['type'];
+                var data = doc.data() as Map<String, dynamic>;
+                String type = data['specific-type'] ?? data['type'];
                 double averageSpeed = doc['average_speed'];
                 double activityDistance = doc['distance'] / 1000;
                 print('Activity Distance: $activityDistance');
@@ -380,6 +266,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
                           var category = categories[index];
                           List<String> sportTypes =
                               List<String>.from(category['type']);
+
                           Map<String, dynamic>? bestTimeEntry;
                           double categoryDistance = category['distance'];
 
@@ -472,24 +359,6 @@ class _Snow2SurfState extends State<Snow2Surf> {
             },
           ),
         ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            // Place your buttons here
-            ElevatedButton(
-              onPressed: () {
-                _showLegsChoiceDialog(context);
-              },
-              child: Column(
-                children: [
-                  const Text('Select your legs'),
-                  const Text('max 3 legs per month',
-                      style: TextStyle(fontSize: 10)),
-                ],
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }
@@ -504,7 +373,8 @@ class _Snow2SurfState extends State<Snow2Surf> {
           child: Column(
             children: [
               Expanded(
-                  child: buildCategoryCard(categories, formattedCurrentMonth)),
+                child: buildCategoryCard(categories, formattedCurrentMonth),
+              ),
             ],
           ),
         ),
