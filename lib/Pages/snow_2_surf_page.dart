@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -14,6 +14,8 @@ class Snow2Surf extends StatefulWidget {
 }
 
 class _Snow2SurfState extends State<Snow2Surf> {
+  final currentUser = FirebaseAuth.instance.currentUser;
+
   List<Map<String, dynamic>> categories = [
     {
       'name': 'Alpine Ski',
@@ -110,6 +112,123 @@ class _Snow2SurfState extends State<Snow2Surf> {
         .snapshots();
   }
 
+  Future<void> _showLegsChoiceDialog(BuildContext context) async {
+    bool hasAlreadySelectedLegs = await checkIfUserAlreadSelectedLegs();
+    if (hasAlreadySelectedLegs) {
+      SnackBar snackBar = SnackBar(
+        content: Text('You already selected legs this month!'),
+        duration: Duration(seconds: 2),
+      );
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      return;
+    }
+    Set<String> selectedLegs = {};
+    Set<String> selectedTypes = {};
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+          return AlertDialog(
+            title: Center(child: const Text('Select up to 3 legs!')),
+            content: SingleChildScrollView(
+              child: ListBody(
+                children: categories.asMap().entries.map((entry) {
+                  int index = entry.key;
+                  Map<String, dynamic> category = entry.value;
+                  String legTitle = 'Leg ${index + 1} - ${category['name']}';
+
+                  return CheckboxListTile(
+                    title: Text(legTitle, style: TextStyle(fontSize: 12)),
+                    value: selectedLegs.contains(legTitle),
+                    onChanged: (bool? value) {
+                      setState(() {
+                        // Add this call to setState
+                        if (value == true) {
+                          if (selectedLegs.length < 3) {
+                            // Check for running or biking category conflict
+                            if ((selectedTypes.contains('Run') &&
+                                    category['type'].contains('Run')) ||
+                                (selectedTypes.contains('Ride') &&
+                                    category['type'].contains('Ride'))) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      'Cannot select two legs of the same type (Run or Ride).'),
+                                  duration: Duration(seconds: 3),
+                                ),
+                              );
+                              return;
+                            }
+
+                            selectedLegs.add(legTitle);
+                            category['type']
+                                .forEach((type) => selectedTypes.add(type));
+                          }
+                        } else {
+                          selectedLegs.remove(legTitle);
+                          category['type']
+                              .forEach((type) => selectedTypes.remove(type));
+                        }
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+            ),
+            actions: <Widget>[
+              ElevatedButton(
+                child: Text('Submit'),
+                onPressed: () {
+                  submitUserLegs(selectedLegs);
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        });
+      },
+    );
+  }
+
+  void submitUserLegs(Set<String> selectedLegs) async {
+    String userEmail = currentUser?.email ?? '';
+    final competitionDocId = formattedCurrentMonth;
+    var competitionDoc = FirebaseFirestore.instance
+        .collection('Competitions')
+        .doc(competitionDocId);
+
+    await competitionDoc.set({
+      'users': {
+        userEmail: {
+          'selected_legs': selectedLegs.toList(),
+          'hasCompletedSelection': true,
+        },
+      },
+    }, SetOptions(merge: true));
+  }
+
+  Future<bool> checkIfUserAlreadSelectedLegs() async {
+    String userEmail = currentUser?.email ?? '';
+    final competitionDocId = formattedCurrentMonth;
+    var competitionDoc = FirebaseFirestore.instance
+        .collection('Competitions')
+        .doc(competitionDocId);
+
+    var snapshot = await competitionDoc.get();
+    if (!snapshot.exists) {
+      print('Competition document does not exist for $competitionDocId');
+      return false;
+    }
+
+    var data = snapshot.data() as Map<String, dynamic>;
+    var usersData = data['users'] ?? {};
+    var userData = usersData[userEmail] ?? {};
+
+    return userData['hasCompletedSelection'] ?? false;
+  }
+
   void initState() {
     super.initState();
     getCurrentMonth();
@@ -177,18 +296,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
         Text('Snow2Surf',
             style: GoogleFonts.tektur(
                 textStyle:
-                    TextStyle(fontSize: 22, fontWeight: FontWeight.bold))),
-        // Padding(
-        //   padding: const EdgeInsets.all(8.0),
-        //   child: Text(
-        //     'The top stats for each sport this month - from all user submitted leaderboard entries',
-        //     textAlign: TextAlign.center,
-        //     style: TextStyle(
-        //       fontSize: 12,
-        //       fontStyle: FontStyle.italic,
-        //     ),
-        //   ),
-        // ),
+                    TextStyle(fontSize: 22, fontWeight: FontWeight.bold))),        
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
             stream: getCurrentMonthData(),
@@ -363,6 +471,24 @@ class _Snow2SurfState extends State<Snow2Surf> {
               );
             },
           ),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: <Widget>[
+            // Place your buttons here
+            ElevatedButton(
+              onPressed: () {
+                _showLegsChoiceDialog(context);
+              },
+              child: Column(
+                children: [
+                  const Text('Select your legs'),
+                  const Text('max 3 legs per month',
+                      style: TextStyle(fontSize: 10)),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );
