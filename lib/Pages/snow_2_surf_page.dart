@@ -174,17 +174,21 @@ class _Snow2SurfState extends State<Snow2Surf> {
           title,
           style: GoogleFonts.syne(textStyle: TextStyle(fontSize: 20)),
         ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text(
-            'The top stats for each sport this month - from all user submitted leaderboard entries',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ),
+        Text('Snow2Surf',
+            style: GoogleFonts.tektur(
+                textStyle:
+                    TextStyle(fontSize: 22, fontWeight: FontWeight.bold))),
+        // Padding(
+        //   padding: const EdgeInsets.all(8.0),
+        //   child: Text(
+        //     'The top stats for each sport this month - from all user submitted leaderboard entries',
+        //     textAlign: TextAlign.center,
+        //     style: TextStyle(
+        //       fontSize: 12,
+        //       fontStyle: FontStyle.italic,
+        //     ),
+        //   ),
+        // ),
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
             stream: getCurrentMonthData(),
@@ -317,13 +321,11 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => Snow2SurfResultsPage( 
-                                      
+                                    builder: (context) => Snow2SurfResultsPage(
                                       icon: categories[index]['icon'],
-                                      category: category['type'].toString(), 
+                                      category: category['type'].toString(),
                                       types: categories[index]['type'],
                                       distance: category['distance'],
-
                                     ),
                                   ),
                                 );
