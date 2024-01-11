@@ -67,16 +67,41 @@ class _LeaderboardState extends State<Leaderboard> {
       child: Scaffold(
         backgroundColor: const Color(0xFFDFD3C3),
         appBar: AppBar(
-          title: const Text('Leaderboard',
-              style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w300,
-                  letterSpacing: 1.2)),
-          bottom: const TabBar(
+          title: Text(
+            'Leaderboard',
+            style: GoogleFonts.tektur(
+                textStyle: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w300,
+                    letterSpacing: 1.2)),
+          ),
+          bottom: TabBar(
+            labelStyle: GoogleFonts.tektur(textStyle: TextStyle()),
             tabs: [
-              Tab(text: 'Time'),
-              Tab(text: 'Distance'),
-              Tab(text: 'Elevation'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.timelapse),
+                  SizedBox(width: 4),
+                  Tab(text: 'Time'),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.straighten),
+                  SizedBox(width: 4),
+                  Tab(text: 'Distance'),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.landscape),
+                  SizedBox(width: 4),
+                  Tab(text: 'Elevation'),
+                ],
+              ),
             ],
           ),
           actions: [
