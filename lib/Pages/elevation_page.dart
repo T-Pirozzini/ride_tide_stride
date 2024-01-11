@@ -721,32 +721,50 @@ class ElevationChallengeState extends State<ElevationChallenge>
                       ),
                     ],
                   ),
+                  // Row(
+                  //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  //   children: <Widget>[
+                  //     // Place your buttons here
+                  //     ElevatedButton(
+                  //       onPressed: () {
+                  //         _showTeamChoiceDialog(context);
+                  //       },
+                  //       child: const Text('Join a Team!!'),
+                  //     ),
+                  //     ElevatedButton(
+                  //       onPressed: () {
+                  //         _showProfileDialog(context);
+                  //       },
+                  //       child: const Text('Show Profile'),
+                  //     ),
+                  //   ],
+                  // ),
                 ],
               );
             }),
       ),
-      bottomNavigationBar: BottomAppBar(
-        color:
-            Colors.white, // This sets the background color of the BottomAppBar
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            // Place your buttons here
-            ElevatedButton(
-              onPressed: () {
-                _showTeamChoiceDialog(context);
-              },
-              child: const Text('Join a Team'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                _showProfileDialog(context);
-              },
-              child: const Text('Show Profile'),
-            ),
-          ],
-        ),
-      ),
+      // bottomNavigationBar: BottomAppBar(
+      //   color:
+      //       Colors.white, // This sets the background color of the BottomAppBar
+      //   child: Row(
+      //     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      //     children: <Widget>[
+      //       // Place your buttons here
+      //       ElevatedButton(
+      //         onPressed: () {
+      //           _showTeamChoiceDialog(context);
+      //         },
+      //         child: const Text('Join a Team'),
+      //       ),
+      //       ElevatedButton(
+      //         onPressed: () {
+      //           _showProfileDialog(context);
+      //         },
+      //         child: const Text('Show Profile'),
+      //       ),
+      //     ],
+      //   ),
+      // ),
       endDrawer: Drawer(
         child: StreamBuilder<QuerySnapshot>(
           stream: _messagesStream,

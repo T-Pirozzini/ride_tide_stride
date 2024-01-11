@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -14,6 +14,8 @@ class Snow2Surf extends StatefulWidget {
 }
 
 class _Snow2SurfState extends State<Snow2Surf> {
+  final currentUser = FirebaseAuth.instance.currentUser;
+
   List<Map<String, dynamic>> categories = [
     {
       'name': 'Alpine Ski',
@@ -31,21 +33,21 @@ class _Snow2SurfState extends State<Snow2Surf> {
     },
     {
       'name': 'Road Run',
-      'type': ['VirtualRun', 'Run'],
+      'type': ['VirtualRun', 'Road Run', 'Run'],
       'icon': Icons.directions_run_outlined,
       'distance': 7.0,
       'bestTime': '0:00',
     },
     {
       'name': 'Trail Run',
-      'type': ['Run'],
+      'type': ['Trail Run'],
       'icon': Icons.directions_run_outlined,
       'distance': 6.0,
       'bestTime': '0:00',
     },
     {
       'name': 'Mountain Bike',
-      'type': ['Ride'],
+      'type': ['Mtn Bike'],
       'icon': Icons.directions_bike_outlined,
       'distance': 15.0,
       'bestTime': '0:00',
@@ -59,7 +61,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
     },
     {
       'name': 'Road Bike',
-      'type': ['VirtualRide', 'Ride'],
+      'type': ['VirtualRide', 'Road Bike', 'Ride'],
       'icon': Icons.directions_bike_outlined,
       'distance': 25.0,
       'bestTime': '0:00',
@@ -97,10 +99,10 @@ class _Snow2SurfState extends State<Snow2Surf> {
   Stream<QuerySnapshot> getCurrentMonthData() {
     final currentMonth = DateTime.now().month;
     final currentYear = DateTime.now().year;
-
     final firstDayOfMonth = DateTime(currentYear, currentMonth, 1);
     final lastDayOfMonth = DateTime(currentYear, currentMonth + 1, 0);
 
+    // Fetch activities for the current month
     return FirebaseFirestore.instance
         .collection('activities')
         .where('start_date',
@@ -116,7 +118,9 @@ class _Snow2SurfState extends State<Snow2Surf> {
   }
 
   Widget buildCategoryCard(
-      List<Map<String, dynamic>> categories, String title) {
+    List<Map<String, dynamic>> categories,
+    String title,
+  ) {
     Icon getNumberIcon(int index) {
       switch (index) {
         case 0:
@@ -174,17 +178,10 @@ class _Snow2SurfState extends State<Snow2Surf> {
           title,
           style: GoogleFonts.syne(textStyle: TextStyle(fontSize: 20)),
         ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text(
-            'The top stats for each sport this month - from all user submitted leaderboard entries',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ),
+        Text('Snow2Surf',
+            style: GoogleFonts.tektur(
+                textStyle:
+                    TextStyle(fontSize: 22, fontWeight: FontWeight.bold))),
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
             stream: getCurrentMonthData(),
@@ -208,21 +205,22 @@ class _Snow2SurfState extends State<Snow2Surf> {
               print("type to distance map: $typeToDistanceMap");
 
               for (final doc in activityDocs) {
-                String type = doc['type'];
+                var data = doc.data() as Map<String, dynamic>;
+                String sportType = data['sport_type'] ?? data['type'];
                 double averageSpeed = doc['average_speed'];
                 double activityDistance = doc['distance'] / 1000;
                 print('Activity Distance: $activityDistance');
                 String fullname = doc['fullname'];
 
-                double categoryDistance = typeToDistanceMap[type] ?? 0.0;
+                double categoryDistance = typeToDistanceMap[sportType] ?? 0.0;
                 // Check if the activity's distance is greater than or equal to the category distance
                 if (activityDistance >= categoryDistance) {
                   double timeInSeconds =
                       (activityDistance * 1000) / averageSpeed;
 
-                  if (!bestTimes.containsKey(type) ||
-                      timeInSeconds < bestTimes[type]!['time']) {
-                    bestTimes[type] = {
+                  if (!bestTimes.containsKey(sportType) ||
+                      timeInSeconds < bestTimes[sportType]!['time']) {
+                    bestTimes[sportType] = {
                       'fullname': fullname,
                       'time': timeInSeconds,
                       'speed': averageSpeed,
@@ -268,6 +266,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
                           var category = categories[index];
                           List<String> sportTypes =
                               List<String>.from(category['type']);
+
                           Map<String, dynamic>? bestTimeEntry;
                           double categoryDistance = category['distance'];
 
@@ -317,13 +316,11 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => Snow2SurfResultsPage( 
-                                      
+                                    builder: (context) => Snow2SurfResultsPage(
                                       icon: categories[index]['icon'],
-                                      category: category['type'].toString(), 
+                                      category: category['name'],
                                       types: categories[index]['type'],
                                       distance: category['distance'],
-
                                     ),
                                   ),
                                 );
@@ -376,7 +373,8 @@ class _Snow2SurfState extends State<Snow2Surf> {
           child: Column(
             children: [
               Expanded(
-                  child: buildCategoryCard(categories, formattedCurrentMonth)),
+                child: buildCategoryCard(categories, formattedCurrentMonth),
+              ),
             ],
           ),
         ),
