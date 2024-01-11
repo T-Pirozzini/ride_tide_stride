@@ -23,7 +23,6 @@ class _Snow2SurfResultsPageState extends State<Snow2SurfResultsPage> {
   Stream<QuerySnapshot> getCurrentMonthData() {
     final currentMonth = DateTime.now().month;
     final currentYear = DateTime.now().year;
-
     final firstDayOfMonth = DateTime(currentYear, currentMonth, 1);
     final lastDayOfMonth = DateTime(currentYear, currentMonth + 1, 0);
 
@@ -33,6 +32,8 @@ class _Snow2SurfResultsPageState extends State<Snow2SurfResultsPage> {
             isGreaterThanOrEqualTo: firstDayOfMonth.toUtc().toIso8601String())
         .where('start_date',
             isLessThanOrEqualTo: lastDayOfMonth.toUtc().toIso8601String())
+        .where('sport_type',
+            whereIn: widget.types) // Filter by the specific types
         .snapshots();
   }
 
@@ -44,16 +45,7 @@ class _Snow2SurfResultsPageState extends State<Snow2SurfResultsPage> {
     return totalTimeInSeconds > 0
         ? "${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}"
         : "0:00";
-  }
-
-  void _updateActivityType(String docId, String specificType) {
-    FirebaseFirestore.instance
-        .collection('activities')
-        .doc(docId)
-        .update({'specific-type': specificType})
-        .then((_) => print('Activity updated successfully'))
-        .catchError((error) => print('Error updating activity: $error'));
-  }
+  }  
 
   @override
   Widget build(BuildContext context) {
@@ -65,10 +57,7 @@ class _Snow2SurfResultsPageState extends State<Snow2SurfResultsPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              widget.icon,
-              size: 75,
-            ),
+            Icon(widget.icon, size: 75),
             Divider(thickness: 2),
             StreamBuilder<QuerySnapshot>(
               stream: getCurrentMonthData(),
@@ -76,94 +65,53 @@ class _Snow2SurfResultsPageState extends State<Snow2SurfResultsPage> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const CircularProgressIndicator();
                 }
-
                 if (snapshot.hasError) {
                   return Text('Error: ${snapshot.error}');
                 }
 
-                final activityDocs = snapshot.data?.docs ?? [];
-                List<Widget> activityWidgets = [];
-
-                for (var doc in activityDocs) {
-                  var data = doc.data() as Map<String, dynamic>;
-                  String type = data['type'];
-                  double activityDistance =
-                      data['distance'] / 1000; // Convert to kilometers
-                  String fullName = data['fullname'];
-                  double averageSpeed =
-                      data['average_speed']; // Speed in meters per second
-
-                  double speedKph = averageSpeed * 3.6; // Convert to km/h
-                  double pace = 60 / speedKph; // Pace in minutes per kilometer
-                  int minutes = pace.floor();
-                  int seconds = ((pace - minutes) * 60).round();
-
-                  // Format pace as mm:ss per kilometer
-                  String paceFormatted =
-                      "${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')} min/km";
-
-                  double totalTimeInSeconds = averageSpeed > 0
-                      ? (widget.distance * 1000) / averageSpeed
-                      : 0.0;
-                  String displayTime = formatTime(totalTimeInSeconds);
-
-                  // Check if the activity's type is in the types list and if its distance meets the requirement
-                  if (widget.types.contains(type) &&
-                      activityDistance >= widget.distance) {
-                    // Assuming 'specific-type' field exists in your Firestore documents
-                    String specificType = data['specific-type'] ??
-                        (type == 'Run' ? 'Road Run' : 'Road Bike');
-
-                    // Check if the activity's type is 'Run' or 'Ride', then add a switch
-                    if (type == 'Run' || type == 'Ride') {
-                      List<String> options = type == 'Run'
-                          ? ['Trail Run', 'Road Run']
-                          : ['Mountain Bike', 'Road Bike'];
-
-                      activityWidgets.add(
-                        ListTile(
-                          title: Text(fullName),
-                          subtitle: Text(
-                              '${widget.distance} km at $paceFormatted = $displayTime'),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(options[0]),
-                              Switch(
-                                value: specificType == options[1],
-                                onChanged: (bool value) {
-                                  String newType =
-                                      value ? options[1] : options[0];
-                                  _updateActivityType(doc.id,
-                                      newType); // Update the activity type in Firestore
-                                },
-                              ),
-                              Text(options[1]),
-                            ],
-                          ),
-                        ),
-                      );
-                    } else {
-                      activityWidgets.add(
-                        ListTile(
-                          title: Text(fullName),
-                          subtitle: Text(
-                              '${widget.distance} km at $paceFormatted = $displayTime'),
-                        ),
-                      );
-                    }
-                  }
-                }
+                List<DocumentSnapshot> activityDocs = snapshot.data?.docs ?? [];
+                // Filter and sort activities by total time or pace
+                List<Map<String, dynamic>> filteredSortedActivities =
+                    activityDocs
+                        .map((doc) => doc.data() as Map<String, dynamic>)
+                        .where((data) {
+                  double activityDistance = data['distance'] / 1000;
+                  return widget.types.contains(data['sport_type']) &&
+                      activityDistance >= widget.distance;
+                }).toList();
+                filteredSortedActivities.sort((a, b) {
+                  double totalTimeA = a['average_speed'] > 0
+                      ? (widget.distance * 1000) / a['average_speed']
+                      : double.infinity;
+                  double totalTimeB = b['average_speed'] > 0
+                      ? (widget.distance * 1000) / b['average_speed']
+                      : double.infinity;
+                  return totalTimeA.compareTo(totalTimeB);
+                });
 
                 return Expanded(
-                  child: ListView(
-                    children: activityWidgets,
+                  child: ListView.builder(
+                    itemCount: filteredSortedActivities.length,
+                    itemBuilder: (context, index) {
+                      var data = filteredSortedActivities[index];
+                      String fullName = data['fullname'];
+                      double totalTimeInSeconds = data['average_speed'] > 0
+                          ? (widget.distance * 1000) / data['average_speed']
+                          : 0.0;
+                      String displayTime = formatTime(totalTimeInSeconds);
+                      return Card(
+                        elevation: 2,
+                        child: ListTile(
+                          title: Text(fullName),
+                          subtitle:
+                              Text('${widget.distance} km at $displayTime'),
+                        ),
+                      );
+                    },
                   ),
                 );
               },
-            )
-
-            // Add more details as needed
+            ),
           ],
         ),
       ),

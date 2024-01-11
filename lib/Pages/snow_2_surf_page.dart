@@ -33,21 +33,21 @@ class _Snow2SurfState extends State<Snow2Surf> {
     },
     {
       'name': 'Road Run',
-      'type': ['VirtualRun', 'Run'],
+      'type': ['VirtualRun', 'Road Run', 'Run'],
       'icon': Icons.directions_run_outlined,
       'distance': 7.0,
       'bestTime': '0:00',
     },
     {
       'name': 'Trail Run',
-      'type': ['Run'],
+      'type': ['Trail Run'],
       'icon': Icons.directions_run_outlined,
       'distance': 6.0,
       'bestTime': '0:00',
     },
     {
       'name': 'Mountain Bike',
-      'type': ['Ride'],
+      'type': ['Mtn Bike'],
       'icon': Icons.directions_bike_outlined,
       'distance': 15.0,
       'bestTime': '0:00',
@@ -61,7 +61,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
     },
     {
       'name': 'Road Bike',
-      'type': ['VirtualRide', 'Ride'],
+      'type': ['VirtualRide', 'Road Bike', 'Ride'],
       'icon': Icons.directions_bike_outlined,
       'distance': 25.0,
       'bestTime': '0:00',
@@ -206,21 +206,21 @@ class _Snow2SurfState extends State<Snow2Surf> {
 
               for (final doc in activityDocs) {
                 var data = doc.data() as Map<String, dynamic>;
-                String type = data['specific-type'] ?? data['type'];
+                String sportType = data['sport_type'] ?? data['type'];
                 double averageSpeed = doc['average_speed'];
                 double activityDistance = doc['distance'] / 1000;
                 print('Activity Distance: $activityDistance');
                 String fullname = doc['fullname'];
 
-                double categoryDistance = typeToDistanceMap[type] ?? 0.0;
+                double categoryDistance = typeToDistanceMap[sportType] ?? 0.0;
                 // Check if the activity's distance is greater than or equal to the category distance
                 if (activityDistance >= categoryDistance) {
                   double timeInSeconds =
                       (activityDistance * 1000) / averageSpeed;
 
-                  if (!bestTimes.containsKey(type) ||
-                      timeInSeconds < bestTimes[type]!['time']) {
-                    bestTimes[type] = {
+                  if (!bestTimes.containsKey(sportType) ||
+                      timeInSeconds < bestTimes[sportType]!['time']) {
+                    bestTimes[sportType] = {
                       'fullname': fullname,
                       'time': timeInSeconds,
                       'speed': averageSpeed,
@@ -318,7 +318,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                   MaterialPageRoute(
                                     builder: (context) => Snow2SurfResultsPage(
                                       icon: categories[index]['icon'],
-                                      category: category['type'].toString(),
+                                      category: category['name'],
                                       types: categories[index]['type'],
                                       distance: category['distance'],
                                     ),
