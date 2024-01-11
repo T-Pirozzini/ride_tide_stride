@@ -22,17 +22,42 @@ class _AwardsPageState extends State<AwardsPage> {
     });
   }
 
+  String getImageForAwardType(String awardType) {
+    switch (awardType) {
+      case 'distance':
+        return 'assets/images/distance_award.png'; // Replace with your asset path
+      case 'elevation_gain':
+        return 'assets/images/elevation_award.png'; // Replace with your asset path
+      case 'moving_time':
+        return 'assets/images/time_award.png'; // Replace with your asset path
+      default:
+        return 'assets/images/default_award.png'; // A default image
+    }
+  }
+
   Future<void> fetchAwards() async {
     final resultsSnapshot =
         await FirebaseFirestore.instance.collection('Results').get();
 
     Map<String, AwardWinner> bestAwards = {
-      'distance':
-          AwardWinner(name: '', category: 'distance', month: '', value: 0),
+      'distance': AwardWinner(
+          name: '',
+          category: 'distance',
+          month: '',
+          value: 0,
+          image: 'assets/images/award_distance.png'),
       'elevation_gain': AwardWinner(
-          name: '', category: 'elevation_gain', month: '', value: 0),
-      'moving_time':
-          AwardWinner(name: '', category: 'moving_time', month: '', value: 0),
+          name: '',
+          category: 'elevation_gain',
+          month: '',
+          value: 0,
+          image: 'assets/images/award_elevation.png'),
+      'moving_time': AwardWinner(
+          name: '',
+          category: 'moving_time',
+          month: '',
+          value: 0,
+          image: 'assets/images/award_time.png'),
     };
 
     for (var monthDoc in resultsSnapshot.docs) {
@@ -50,11 +75,12 @@ class _AwardsPageState extends State<AwardsPage> {
               category: category,
               month: month,
               value: totals[category],
+              image: getImageForAwardType(category),
             );
           }
         }
-      }
-    }
+      }      
+    }    
 
     List<Future<AwardWinner?>> fetchTasks = [];
     for (var monthDoc in resultsSnapshot.docs) {
@@ -122,6 +148,7 @@ class _AwardsPageState extends State<AwardsPage> {
           category: 'Diverse Activities',
           month: monthYear,
           value: maxActivityTypes.toDouble(),
+          image: 'assets/images/award_diverse.png',
         );
       }
     } catch (e) {
@@ -221,7 +248,7 @@ class _AwardsPageState extends State<AwardsPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Image.asset(
-                    'assets/images/power_level_3.png', // Replace with your asset
+                    award.image, // Replace with your asset
                     height: 100,
                   ),
                   Text(
@@ -306,11 +333,13 @@ class AwardWinner {
   final String category;
   final String month;
   final double value;
+  final String image;
 
   AwardWinner({
     required this.name,
     required this.category,
     required this.month,
     required this.value,
+    required this.image,
   });
 }
