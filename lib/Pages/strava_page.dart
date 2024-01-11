@@ -876,6 +876,11 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
               content: SingleChildScrollView(
                 child: ListBody(
                   children: <Widget>[
+                    Text(activity['name']),
+                    Text(
+                      DateFormat('MMM d, yyyy (EEE)')
+                          .format(DateTime.parse(activity['start_date_local'])),
+                    ),
                     Text(
                         'Please select the specific type of ${activity['sport_type'] == "Run" ? "run" : "ride"}.'),
                     SizedBox(height: 10),

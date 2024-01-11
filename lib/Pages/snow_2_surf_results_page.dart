@@ -45,7 +45,18 @@ class _Snow2SurfResultsPageState extends State<Snow2SurfResultsPage> {
     return totalTimeInSeconds > 0
         ? "${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}"
         : "0:00";
-  }  
+  }
+
+  String formatPace(double averageSpeed) {
+    if (averageSpeed <= 0) return "N/A";
+
+    // Convert speed (m/s) to pace (minutes per km)
+    double paceInMinutes = (1000 / averageSpeed) / 60;
+    int minutes = paceInMinutes.toInt();
+    int seconds = ((paceInMinutes - minutes) * 60).round();
+
+    return "${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')} min/km";
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +68,13 @@ class _Snow2SurfResultsPageState extends State<Snow2SurfResultsPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(widget.icon, size: 75),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(widget.icon, size: 75),
+                Text('Top Times for ${widget.category}')
+              ],
+            ),
             Divider(thickness: 2),
             StreamBuilder<QuerySnapshot>(
               stream: getCurrentMonthData(),
@@ -95,6 +112,8 @@ class _Snow2SurfResultsPageState extends State<Snow2SurfResultsPage> {
                     itemBuilder: (context, index) {
                       var data = filteredSortedActivities[index];
                       String fullName = data['fullname'];
+                      double averageSpeed = data['average_speed'];
+                      String pace = formatPace(averageSpeed);
                       double totalTimeInSeconds = data['average_speed'] > 0
                           ? (widget.distance * 1000) / data['average_speed']
                           : 0.0;
@@ -103,14 +122,27 @@ class _Snow2SurfResultsPageState extends State<Snow2SurfResultsPage> {
                         elevation: 2,
                         child: ListTile(
                           title: Text(fullName),
-                          subtitle:
-                              Text('${widget.distance} km at $displayTime'),
+                          subtitle: Text(
+                              '${widget.distance} km x $pace = $displayTime'),
                         ),
                       );
                     },
                   ),
                 );
               },
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Icon(Icons.info_outline, color: Colors.grey, size: 32),
+                  Text(
+                    'The activity data is from the current month and must meet the minimum distance requirement.',
+                    style: TextStyle(fontStyle: FontStyle.italic, fontSize: 14),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
