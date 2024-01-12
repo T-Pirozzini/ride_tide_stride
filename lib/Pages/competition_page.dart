@@ -661,7 +661,9 @@ class CompetitionPageState extends State<CompetitionPage>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
                       Icon(Icons.landscape_outlined),
+                      SizedBox(width: 2.0),
                       Text('Mtn Scramble', style: GoogleFonts.tektur()),
+                      SizedBox(width: 2.0),
                       Icon(Icons.hiking_rounded),
                     ],
                   ),
@@ -671,10 +673,12 @@ class CompetitionPageState extends State<CompetitionPage>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
                       Icon(Icons.downhill_skiing),
+                      SizedBox(width: 2.0),
                       Text(
                         'Snow2Surf',
                         style: GoogleFonts.tektur(),
                       ),
+                      SizedBox(width: 2.0),
                       Icon(Icons.rowing),
                     ],
                   ),
