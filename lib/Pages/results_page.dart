@@ -147,7 +147,7 @@ class _ResultsPageState extends State<ResultsPage> {
 
           // Sort the documents by name in descending order (latest month first)
           List<QueryDocumentSnapshot> docs = snapshot.data!.docs;
-          docs.sort((a, b) => b.id.compareTo(a.id));
+          docs.sort((a, b) => a.id.compareTo(b.id));
 
           return ListView.builder(
             itemCount: docs.length,

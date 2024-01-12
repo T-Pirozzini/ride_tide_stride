@@ -802,22 +802,38 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                                     false;
                                           }
 
-                                          return ElevatedButton(
-                                            onPressed: isSubmitted || autoSubmit
-                                                ? null
-                                                : () {
-                                                    // Call the function to submit activity data to Firestore
-                                                    submitActivityToFirestore(
-                                                        activity, athleteData!);
+                                          return Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              ElevatedButton(
+                                                onPressed:
+                                                    isSubmitted || autoSubmit
+                                                        ? null
+                                                        : () {
+                                                            // Call the function to submit activity data to Firestore
+                                                            submitActivityToFirestore(
+                                                                activity,
+                                                                athleteData!);
+                                                          },
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: isSubmitted
+                                                      ? Colors.grey
+                                                      : const Color(
+                                                          0xFF283D3B), // Change color when submitted
+                                                ),
+                                                child: const Text(
+                                                    "Submit to Leaderboard"),
+                                              ),
+                                              if (isSubmitted)
+                                                IconButton(
+                                                  icon: Icon(Icons.undo),
+                                                  onPressed: () {
+                                                    deleteActivityFromFirestore(
+                                                        activity['id']);
                                                   },
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: isSubmitted
-                                                  ? Colors.grey
-                                                  : const Color(
-                                                      0xFF283D3B), // Change color when submitted
-                                            ),
-                                            child: const Text(
-                                                "Submit to Leaderboard"),
+                                                ),
+                                            ],
                                           );
                                         },
                                       ),
@@ -844,6 +860,88 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
     final CollectionReference activitiesCollection =
         FirebaseFirestore.instance.collection('activities');
 
+    showDialog(
+      context: context,
+      builder: (context) {
+        String localSportType = activity['sport_type'] == 'Run'
+            ? 'Road Run'
+            : 'Road Bike'; // Default value
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text(activity['sport_type'] == "Run"
+                  ? 'Road or Trail Run?'
+                  : 'Road or Mtn Bike?'),
+              content: SingleChildScrollView(
+                child: ListBody(
+                  children: <Widget>[
+                    Text(activity['name']),
+                    Text(
+                      DateFormat('MMM d, yyyy (EEE)')
+                          .format(DateTime.parse(activity['start_date_local'])),
+                    ),
+                    Text(
+                        'Please select the specific type of ${activity['sport_type'] == "Run" ? "run" : "ride"}.'),
+                    SizedBox(height: 10),
+                    DropdownButton<String>(
+                      value: localSportType,
+                      icon: const Icon(Icons.arrow_downward),
+                      iconSize: 24,
+                      elevation: 16,
+                      style: const TextStyle(color: Colors.teal),
+                      underline: Container(
+                        height: 2,
+                        color: Colors.tealAccent,
+                      ),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          localSportType = newValue!;
+                        });
+                      },
+                      items: (activity['sport_type'] == "Run"
+                              ? <String>['Road Run', 'Trail Run']
+                              : <String>['Road Bike', 'Mtn Bike'])
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value,
+                              style: TextStyle(
+                                  color: Colors.teal.shade700, fontSize: 16)),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('Cancel'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: Text('Submit'),
+                  onPressed: () {
+                    activity['sport_type'] = localSportType;
+                    Navigator.of(context).pop();
+                    _submitActivity(activity, athlete, activitiesCollection);
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _submitActivity(
+    Map<String, dynamic> activity,
+    Map<String, dynamic> athlete,
+    CollectionReference activitiesCollection,
+  ) {
     final Map<String, dynamic> activityData = {
       'activity_id': activity['id'],
       'name': activity['name'],
@@ -881,6 +979,24 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
       print("Error submitting activity data to Firestore: $error");
     });
   }
+}
+
+void deleteActivityFromFirestore(activityId) {
+  final CollectionReference activitiesCollection =
+      FirebaseFirestore.instance.collection('activities');
+
+  activitiesCollection
+      .where('activity_id', isEqualTo: activityId)
+      .get()
+      .then((querySnapshot) {
+    for (var doc in querySnapshot.docs) {
+      doc.reference.delete().then((_) {
+        print("Activity deleted successfully!");
+      }).catchError((error) {
+        print("Error deleting activity: $error");
+      });
+    }
+  });
 }
 
 // This function is to avoid repetition and make the code cleaner

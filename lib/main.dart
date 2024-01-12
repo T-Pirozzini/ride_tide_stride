@@ -3,7 +3,9 @@ import 'package:ride_tide_stride/auth/auth_page.dart';
 import 'package:ride_tide_stride/firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:ride_tide_stride/pages/awards_page.dart';
 import 'package:ride_tide_stride/pages/results_page.dart';
+import 'package:ride_tide_stride/pages/snow_2_surf_results_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,6 +47,7 @@ class MyApp extends StatelessWidget {
         home: const AuthPage(),
         routes: {
           '/resultsPage': (context) => ResultsPage(),
+          '/awardsPage': (context) => AwardsPage(),
         },
       ),
     );

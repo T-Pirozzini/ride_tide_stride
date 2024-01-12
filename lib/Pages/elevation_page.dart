@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -9,18 +8,17 @@ import 'package:lottie/lottie.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
 import 'package:ride_tide_stride/pages/chat_widget.dart';
-import 'package:ride_tide_stride/pages/elevation_page.dart';
-import 'package:ride_tide_stride/pages/snow_2_surf_page.dart';
 
-class CompetitionPage extends StatefulWidget {
-  const CompetitionPage({super.key});
+class ElevationChallenge extends StatefulWidget {
+  final Function? onCheckWinner;
+  const ElevationChallenge({Key? key, this.onCheckWinner}) : super(key: key);
 
   @override
-  State<CompetitionPage> createState() => CompetitionPageState();
+  State<ElevationChallenge> createState() => ElevationChallengeState();
 }
 
-class CompetitionPageState extends State<CompetitionPage>
-    with TickerProviderStateMixin {
+class ElevationChallengeState extends State<ElevationChallenge>
+    with TickerProviderStateMixin, ChangeNotifier {
   final currentUser = FirebaseAuth.instance.currentUser;
 
   final List<String> messages = [];
@@ -318,9 +316,8 @@ class CompetitionPageState extends State<CompetitionPage>
         });
       }
     });
-    if (!_hasCheckedWinner) {
-      checkForWinner();
-      _hasCheckedWinner = true;
+    if (widget.onCheckWinner != null) {
+      widget.onCheckWinner!();
     }
 
     _activitySubscription =
@@ -441,6 +438,7 @@ class CompetitionPageState extends State<CompetitionPage>
     } else if (team2TotalElevation >= 5000) {
       playWinningAnimation('Team 2');
     }
+    // notifyListeners();
   }
 
   void playWinningAnimation(String winningTeam) {
@@ -479,8 +477,6 @@ class CompetitionPageState extends State<CompetitionPage>
 
   @override
   Widget build(BuildContext context) {
-    final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
     // Calculate the total elevation for each team
     double team1TotalElevation = team1Members.fold(
       0.0,
@@ -638,374 +634,316 @@ class CompetitionPageState extends State<CompetitionPage>
       );
     }).toList();
 
-    return DefaultTabController(
-        length: 2,
-        child: Scaffold(
-          key: _scaffoldKey,
-          backgroundColor: const Color(0xFFDFD3C3),
-          resizeToAvoidBottomInset: true,
-          appBar: AppBar(
-            title: Text(
-              'The Challenge Hub',
-              style: GoogleFonts.tektur(
-                  textStyle: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w300,
-                      letterSpacing: 1.2)),
-            ),
-            centerTitle: true,
-            bottom: TabBar(
-              tabs: [
-                Tab(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Icon(Icons.landscape_outlined),
-                      Text('Mtn Scramble', style: GoogleFonts.tektur()),
-                      Icon(Icons.hiking_rounded),
-                    ],
-                  ),
-                ),
-                Tab(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Icon(Icons.downhill_skiing),
-                      Text(
-                        'Snow2Surf',
-                        style: GoogleFonts.tektur(),
-                      ),
-                      Icon(Icons.rowing),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            actions: <Widget>[
-              IconButton(
-                icon: Icon(Icons.chat),
-                onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
-              ),
-            ],
-          ),
-          body: TabBarView(
-            children: [
-              SingleChildScrollView(
-                child: StreamBuilder(
-                    stream: getCompetitionsData(),
-                    // Add stream builder here
-                    builder: (BuildContext context, AsyncSnapshot snapshot) {
-                      if (snapshot.hasError) {
-                        return const Text('Something went wrong');
-                      }
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Text('Loading');
-                      }
+    return Scaffold(
+      body: SingleChildScrollView(
+        child: StreamBuilder(
+            stream: getCompetitionsData(),
+            // Add stream builder here
+            builder: (BuildContext context, AsyncSnapshot snapshot) {
+              if (snapshot.hasError) {
+                return const Text('Something went wrong');
+              }
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Text('Loading');
+              }
 
-                      return Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          Text('${getFormattedCurrentMonth()}',
-                              style: GoogleFonts.syne(
-                                textStyle: TextStyle(fontSize: 20),
-                              )),
-                          SizedBox(height: 15.0),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text('Mtn Scramble',
-                                style: GoogleFonts.tektur(
-                                    textStyle: TextStyle(
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.bold))),
-                          ),
-                          Center(
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                ...team1Indicators,
-                                ...team2Indicators,
-                                // The mountain image in the center
-                                Container(
-                                  width: 250,
-                                  height: 250,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    image: DecorationImage(
-                                      image:
-                                          AssetImage('assets/images/mtn.png'),
-                                      fit: BoxFit.fill,
-                                    ),
-                                  ),
-                                ),
-                              ],
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Text('${getFormattedCurrentMonth()}',
+                      style:
+                          GoogleFonts.syne(textStyle: TextStyle(fontSize: 18))),
+                  const SizedBox(height: 15.0),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text('Elevation Challenge',
+                        style: GoogleFonts.sriracha(
+                            textStyle: TextStyle(
+                                fontSize: 28, fontWeight: FontWeight.bold))),
+                  ),
+                  Center(
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        ...team1Indicators,
+                        ...team2Indicators,
+                        // The mountain image in the center
+                        Container(
+                          width: 250,
+                          height: 250,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            image: DecorationImage(
+                              image: AssetImage('assets/images/mtn.png'),
+                              fit: BoxFit.fill,
                             ),
                           ),
-                          SizedBox(height: 20.0),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 20.0),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text('Team 1',
+                              style: GoogleFonts.syne(
+                                  textStyle: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600))),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Text('Team 1',
-                                      style: GoogleFonts.syne(
-                                          textStyle: TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.w600))),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      ...team1MemberLineIndicators,
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Text('Team 2',
-                                      style: GoogleFonts.syne(
-                                          textStyle: TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.w600))),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      ...team2MemberLineIndicators,
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20.0),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: <Widget>[
-                              // Place your buttons here
-                              ElevatedButton(
-                                onPressed: () {
-                                  _showTeamChoiceDialog(context);
-                                },
-                                child: const Text('Join a Team'),
-                              ),
-                              // ElevatedButton(
-                              //   onPressed: () {
-                              //     _showProfileDialog(context);
-                              //   },
-                              //   child: const Text('Show Profile'),
-                              // ),
+                              ...team1MemberLineIndicators,
                             ],
                           ),
                         ],
-                      );
-                    }),
-              ),
-              Snow2Surf(),
-            ],
-          ),
-          // bottomNavigationBar: BottomAppBar(
-          //   color: Colors
-          //       .white, // This sets the background color of the BottomAppBar
-          //   child: Row(
-          //     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          //     children: <Widget>[
-          //       // Place your buttons here
-          //       ElevatedButton(
-          //         onPressed: () {
-          //           _showTeamChoiceDialog(context);
-          //         },
-          //         child: const Text('Join a Team'),
-          //       ),
-          //       ElevatedButton(
-          //         onPressed: () {
-          //           _showProfileDialog(context);
-          //         },
-          //         child: const Text('Show Profile'),
-          //       ),
-          //     ],
-          //   ),
-          // ),
-          endDrawer: Drawer(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _messagesStream,
-              builder: (BuildContext context,
-                  AsyncSnapshot<QuerySnapshot> snapshot) {
-                if (snapshot.hasError) {
-                  return Text('Something went wrong');
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text('Team 2',
+                              style: GoogleFonts.syne(
+                                  textStyle: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600))),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              ...team2MemberLineIndicators,
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  // Row(
+                  //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  //   children: <Widget>[
+                  //     // Place your buttons here
+                  //     ElevatedButton(
+                  //       onPressed: () {
+                  //         _showTeamChoiceDialog(context);
+                  //       },
+                  //       child: const Text('Join a Team!!'),
+                  //     ),
+                  //     ElevatedButton(
+                  //       onPressed: () {
+                  //         _showProfileDialog(context);
+                  //       },
+                  //       child: const Text('Show Profile'),
+                  //     ),
+                  //   ],
+                  // ),
+                ],
+              );
+            }),
+      ),
+      // bottomNavigationBar: BottomAppBar(
+      //   color:
+      //       Colors.white, // This sets the background color of the BottomAppBar
+      //   child: Row(
+      //     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      //     children: <Widget>[
+      //       // Place your buttons here
+      //       ElevatedButton(
+      //         onPressed: () {
+      //           _showTeamChoiceDialog(context);
+      //         },
+      //         child: const Text('Join a Team'),
+      //       ),
+      //       ElevatedButton(
+      //         onPressed: () {
+      //           _showProfileDialog(context);
+      //         },
+      //         child: const Text('Show Profile'),
+      //       ),
+      //     ],
+      //   ),
+      // ),
+      endDrawer: Drawer(
+        child: StreamBuilder<QuerySnapshot>(
+          stream: _messagesStream,
+          builder:
+              (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+            if (snapshot.hasError) {
+              return Text('Something went wrong');
+            }
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Text('Loading');
+            }
+            final messages = snapshot.data?.docs
+                    .map((doc) =>
+                        doc['message'] as String) // Extract 'message' field
+                    .toList() ??
+                [];
+            return ChatWidget(
+              key: ValueKey(messages.length),
+              messages: messages,
+              currentUserEmail: currentUser?.email ?? '',
+              onSend: (String message) {
+                if (message.isNotEmpty) {
+                  _sendMessage(message);
                 }
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Text('Loading');
-                }
-                final messages = snapshot.data?.docs
-                        .map((doc) =>
-                            doc['message'] as String) // Extract 'message' field
-                        .toList() ??
-                    [];
-                return ChatWidget(
-                  key: ValueKey(messages.length),
-                  messages: messages,
-                  currentUserEmail: currentUser?.email ?? '',
-                  onSend: (String message) {
-                    if (message.isNotEmpty) {
-                      _sendMessage(message);
-                    }
-                  },
-                  teamColor: getUserTeamColor(),
-                );
               },
-            ),
-          ),
-        ));
+              teamColor: getUserTeamColor(),
+            );
+          },
+        ),
+      ),
+    );
   }
 
-  // void _showProfileDialog(context) {
-  //   showDialog(
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return FutureBuilder(
-  //         future: Future.wait([
-  //           getStravaUserDetails(),
-  //         ]),
-  //         builder:
-  //             (BuildContext context, AsyncSnapshot<List<dynamic>> snapshot) {
-  //           if (snapshot.hasError) {
-  //             return const Text('Something went wrong');
-  //           }
-  //           if (snapshot.connectionState == ConnectionState.waiting) {
-  //             return const Text('Loading');
-  //           }
+  void _showProfileDialog(context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return FutureBuilder(
+          future: Future.wait([
+            getStravaUserDetails(),
+          ]),
+          builder:
+              (BuildContext context, AsyncSnapshot<List<dynamic>> snapshot) {
+            if (snapshot.hasError) {
+              return const Text('Something went wrong');
+            }
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Text('Loading');
+            }
 
-  //           final userDetails = snapshot.data?[0] as Map<String, dynamic>?;
-  //           final fullName = userDetails?['fullname'] as String?;
+            final userDetails = snapshot.data?[0] as Map<String, dynamic>?;
+            final fullName = userDetails?['fullname'] as String?;
 
-  //           if (userDetails == null || fullName == null) {
-  //             return const Text('No user data found');
-  //           }
+            if (userDetails == null || fullName == null) {
+              return const Text('No user data found');
+            }
 
-  //           return FutureBuilder(
-  //             future: findHighestAverageWatts(fullName),
-  //             builder: (BuildContext context,
-  //                 AsyncSnapshot<double?> avgWattsSnapshot) {
-  //               if (avgWattsSnapshot.hasError) {
-  //                 return const Text('Something went wrong');
-  //               }
-  //               if (avgWattsSnapshot.connectionState ==
-  //                   ConnectionState.waiting) {
-  //                 return const Text('Loading');
-  //               }
+            return FutureBuilder(
+              future: findHighestAverageWatts(fullName),
+              builder: (BuildContext context,
+                  AsyncSnapshot<double?> avgWattsSnapshot) {
+                if (avgWattsSnapshot.hasError) {
+                  return const Text('Something went wrong');
+                }
+                if (avgWattsSnapshot.connectionState ==
+                    ConnectionState.waiting) {
+                  return const Text('Loading');
+                }
 
-  //               final highestAverageWatts = avgWattsSnapshot.data;
+                final highestAverageWatts = avgWattsSnapshot.data;
 
-  //               return AlertDialog(
-  //                 content: Column(
-  //                   mainAxisSize: MainAxisSize.min,
-  //                   children: [
-  //                     Text(fullName,
-  //                         style: GoogleFonts.syne(
-  //                             textStyle: TextStyle(
-  //                                 fontSize: 18,
-  //                                 fontWeight: FontWeight.w600,
-  //                                 color: Colors.black))),
-  //                     ClipOval(
-  //                       child: Stack(
-  //                         alignment: Alignment.center,
-  //                         children: [
-  //                           ClipRRect(
-  //                             borderRadius: BorderRadius.circular(
-  //                                 200), // Adjust the radius value as needed
-  //                             child: Container(
-  //                               width: 400,
-  //                               height: 300,
-  //                               decoration: BoxDecoration(
-  //                                 image: DecorationImage(
-  //                                   image: AssetImage(
-  //                                       'assets/images/power_level_3.png'),
-  //                                   fit: BoxFit.fitHeight,
-  //                                 ),
-  //                               ),
-  //                             ),
-  //                           ),
-  //                           Positioned(
-  //                             bottom: 0,
-  //                             left: 0,
-  //                             right: 0,
-  //                             child: Container(
-  //                               padding: EdgeInsets.all(20),
-  //                               child: Container(
-  //                                 color: Colors.black,
-  //                                 child: Column(
-  //                                   children: [
-  //                                     Text('Power Level',
-  //                                         style: GoogleFonts.syne(
-  //                                             textStyle: TextStyle(
-  //                                                 fontSize: 18,
-  //                                                 fontWeight: FontWeight.w600,
-  //                                                 color: Colors.white))),
-  //                                     Text(
-  //                                       '${highestAverageWatts ?? "N/A"}', // Display highest average watts
-  //                                       textAlign: TextAlign.center,
-  //                                       style: GoogleFonts.syne(
-  //                                         textStyle: TextStyle(
-  //                                           fontSize: 24,
-  //                                           fontWeight: FontWeight.w600,
-  //                                           color: Colors.white,
-  //                                         ),
-  //                                       ),
-  //                                     ),
-  //                                   ],
-  //                                 ),
-  //                               ),
-  //                             ),
-  //                           ),
-  //                         ],
-  //                       ),
-  //                     ),
-  //                   ],
-  //                 ),
-  //                 actions: <Widget>[
-  //                   TextButton(
-  //                     child: const Text('Close'),
-  //                     onPressed: () {
-  //                       Navigator.of(context).pop();
-  //                     },
-  //                   ),
-  //                 ],
-  //               );
-  //             },
-  //           );
-  //         },
-  //       );
-  //     },
-  //   );
-  // }
+                return AlertDialog(
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(fullName,
+                          style: GoogleFonts.syne(
+                              textStyle: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black))),
+                      ClipOval(
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(
+                                  200), // Adjust the radius value as needed
+                              child: Container(
+                                width: 400,
+                                height: 300,
+                                decoration: BoxDecoration(
+                                  image: DecorationImage(
+                                    image: AssetImage(
+                                        'assets/images/power_level_3.png'),
+                                    fit: BoxFit.fitHeight,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              child: Container(
+                                padding: EdgeInsets.all(20),
+                                child: Container(
+                                  color: Colors.black,
+                                  child: Column(
+                                    children: [
+                                      Text('Power Level',
+                                          style: GoogleFonts.syne(
+                                              textStyle: TextStyle(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Colors.white))),
+                                      Text(
+                                        '${highestAverageWatts ?? "N/A"}', // Display highest average watts
+                                        textAlign: TextAlign.center,
+                                        style: GoogleFonts.syne(
+                                          textStyle: TextStyle(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  actions: <Widget>[
+                    TextButton(
+                      child: const Text('Close'),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
 
-  // Future<double?> findHighestAverageWatts(String fullName) async {
-  //   final snapshot = await FirebaseFirestore.instance
-  //       .collection('activities')
-  //       .where('fullname', isEqualTo: fullName)
-  //       .get();
+  Future<double?> findHighestAverageWatts(String fullName) async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('activities')
+        .where('fullname', isEqualTo: fullName)
+        .get();
 
-  //   final activities =
-  //       snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+    final activities =
+        snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
 
-  //   if (activities.isEmpty) {
-  //     return null; // No activities found for the user
-  //   }
+    if (activities.isEmpty) {
+      return null; // No activities found for the user
+    }
 
-  //   double? highestAverageWatts;
+    double? highestAverageWatts;
 
-  //   for (final activity in activities) {
-  //     final averageWatts = activity['average_watts'] as double?;
+    for (final activity in activities) {
+      final averageWatts = activity['average_watts'] as double?;
 
-  //     if (averageWatts != null) {
-  //       if (highestAverageWatts == null || averageWatts > highestAverageWatts) {
-  //         highestAverageWatts = averageWatts;
-  //       }
-  //     }
-  //   }
+      if (averageWatts != null) {
+        if (highestAverageWatts == null || averageWatts > highestAverageWatts) {
+          highestAverageWatts = averageWatts;
+        }
+      }
+    }
 
-  //   return highestAverageWatts;
-  // }
+    return highestAverageWatts;
+  }
 }
