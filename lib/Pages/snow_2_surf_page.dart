@@ -27,14 +27,14 @@ class _Snow2SurfState extends State<Snow2Surf> {
     {
       'name': 'Cross Country Ski',
       'type': ['NordicSki'],
-      'icon': Icons.downhill_skiing_outlined,
+      'icon': Symbols.nordic_walking,
       'distance': 8.0,
       'bestTime': '0:00',
     },
     {
       'name': 'Road Run',
       'type': ['VirtualRun', 'Road Run', 'Run'],
-      'icon': Icons.directions_run_outlined,
+      'icon': Symbols.sprint,
       'distance': 7.0,
       'bestTime': '0:00',
     },
@@ -244,19 +244,20 @@ class _Snow2SurfState extends State<Snow2Surf> {
                           // Return a widget to display the total time
                           return ListTile(
                             title: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
                                   'Total Time: ',
                                   style: GoogleFonts.syne(
                                       textStyle: TextStyle(
-                                          fontSize: 24,
+                                          fontSize: 18,
                                           fontWeight: FontWeight.bold)),
                                 ),
                                 Text(
                                   '${formatTime(totalTime)}',
                                   style: GoogleFonts.syne(
-                                      textStyle: TextStyle(fontSize: 24)),
+                                      textStyle: TextStyle(fontSize: 18)),
                                 ),
                               ],
                             ),
@@ -374,6 +375,23 @@ class _Snow2SurfState extends State<Snow2Surf> {
             children: [
               Expanded(
                 child: buildCategoryCard(categories, formattedCurrentMonth),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.grey, size: 32),
+                    SizedBox(width: 8),
+                    Text(
+                      'To Qualify: Current month & min distance (as posted).',
+                      style: TextStyle(
+                          fontStyle: FontStyle.italic,
+                          fontSize: 14,
+                          overflow: null),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

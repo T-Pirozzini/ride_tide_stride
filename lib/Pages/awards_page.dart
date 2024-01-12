@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AwardsPage extends StatefulWidget {
   const AwardsPage({Key? key}) : super(key: key);
@@ -22,34 +23,80 @@ class _AwardsPageState extends State<AwardsPage> {
     });
   }
 
+  String formatAwardValue(AwardWinner award) {
+    switch (award.category) {
+      case 'Total Distance':
+        // Convert meters to kilometers and format to 2 decimal places
+        return '${(award.value / 1000).toStringAsFixed(2)} km';
+      case 'Total Elevation':
+        // Format to 2 decimal places with m at the end
+        return '${award.value.toStringAsFixed(2)} m';
+      case 'Total Time':
+        // Convert seconds to hours and minutes
+        int totalSeconds = award.value.toInt();
+        int hours = totalSeconds ~/ 3600;
+        int minutes = (totalSeconds % 3600) ~/ 60;
+        return '${hours}hr ${minutes}mins';
+      default:
+        return '${award.value}';
+    }
+  }
+
+  String getImageForAwardType(String awardType) {
+    switch (awardType) {
+      case 'distance':
+        return 'assets/images/award_distance.png';
+      case 'elevation_gain':
+        return 'assets/images/award_elevation.png';
+      case 'moving_time':
+        return 'assets/images/award_time.png';
+      default:
+        return 'assets/images/mtn.png';
+    }
+  }
+
   Future<void> fetchAwards() async {
     final resultsSnapshot =
         await FirebaseFirestore.instance.collection('Results').get();
 
     Map<String, AwardWinner> bestAwards = {
-      'distance':
-          AwardWinner(name: '', category: 'distance', month: '', value: 0),
+      'distance': AwardWinner(
+          name: '',
+          category: 'Total Distance',
+          month: '',
+          value: 0,
+          image: 'assets/images/award_distance.png'),
       'elevation_gain': AwardWinner(
-          name: '', category: 'elevation_gain', month: '', value: 0),
-      'moving_time':
-          AwardWinner(name: '', category: 'moving_time', month: '', value: 0),
+          name: '',
+          category: 'Total Elevation',
+          month: '',
+          value: 0,
+          image: 'assets/images/award_elevation.png'),
+      'moving_time': AwardWinner(
+          name: '',
+          category: 'Total Time',
+          month: '',
+          value: 0,
+          image: 'assets/images/award_time.png'),
     };
 
     for (var monthDoc in resultsSnapshot.docs) {
-      final month = monthDoc.id; // e.g., "November 2023"
+      final month = monthDoc.id;
       final List<dynamic> usersData = monthDoc.get('data');
 
       for (var userData in usersData) {
         final fullname = userData['fullname'];
         final Map<String, dynamic> totals = userData['totals'];
 
-        for (var category in ['distance', 'elevation_gain', 'moving_time']) {
-          if (totals[category] > bestAwards[category]!.value) {
-            bestAwards[category] = AwardWinner(
+        for (var categoryKey in bestAwards.keys) {
+          final categoryValue = bestAwards[categoryKey]!.value;
+          if (totals[categoryKey] > categoryValue) {
+            bestAwards[categoryKey] = AwardWinner(
               name: fullname,
-              category: category,
+              category: bestAwards[categoryKey]!.category,
               month: month,
-              value: totals[category],
+              value: totals[categoryKey],
+              image: getImageForAwardType(categoryKey),
             );
           }
         }
@@ -122,6 +169,7 @@ class _AwardsPageState extends State<AwardsPage> {
           category: 'Diverse Activities',
           month: monthYear,
           value: maxActivityTypes.toDouble(),
+          image: 'assets/images/award_diverse.png',
         );
       }
     } catch (e) {
@@ -173,9 +221,9 @@ class _AwardsPageState extends State<AwardsPage> {
       backgroundColor: const Color(0xFFDFD3C3),
       appBar: AppBar(
         title: const Text(
-          'Awards',
+          'Awards: A work in progress :)',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 18,
             fontWeight: FontWeight.w300,
             letterSpacing: 1.2,
           ),
@@ -187,10 +235,12 @@ class _AwardsPageState extends State<AwardsPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             const SizedBox(height: 20),
+            Text('Congratulations!',
+                style: GoogleFonts.tektur(textStyle: TextStyle(fontSize: 28))),
             const Text(
-              'Awards Page',
+              'You are among the best in the Universe!',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 18,
                 fontWeight: FontWeight.w300,
                 letterSpacing: 1.2,
               ),
@@ -216,31 +266,38 @@ class _AwardsPageState extends State<AwardsPage> {
           return Card(
             elevation: 4.0,
             child: Container(
-              width: 160,
+              width: 200,
+              padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 8.0),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  Image.asset(
-                    'assets/images/power_level_3.png', // Replace with your asset
-                    height: 100,
+                  Expanded(
+                    child: Image.asset(
+                      award.image,
+                      fit: BoxFit.contain,
+                      height: 100,
+                    ),
                   ),
                   Text(
                     award.name,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
+                      color: Colors.black87,
                     ),
                   ),
                   Text(
-                    '${award.category}: ${award.value}',
+                    '${award.category}: ${formatAwardValue(award)}', // Use the helper method here
                     style: TextStyle(
                       fontSize: 14,
+                      color: Colors.black54,
                     ),
                   ),
                   Text(
                     'Month: ${award.month}',
                     style: TextStyle(
                       fontSize: 14,
+                      color: Colors.black54,
                     ),
                   ),
                 ],
@@ -263,32 +320,38 @@ class _AwardsPageState extends State<AwardsPage> {
           return Card(
             elevation: 4.0,
             child: Container(
-              width: 160,
-              padding: EdgeInsets.all(8.0),
+              width: 200,
+              padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 8.0),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment:
+                    MainAxisAlignment.spaceEvenly, // Improved spacing
                 children: [
-                  Image.asset(
-                    'assets/images/power_level_3.png', // Replace with your asset
-                    height: 100,
+                  Expanded(
+                    child: Image.asset(
+                      'assets/images/award_diverse.png',
+                      fit: BoxFit.contain,
+                    ),
                   ),
                   Text(
                     award.name,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
+                      color: Colors.black87,
                     ),
                   ),
                   Text(
                     '${award.category}: ${award.value.toInt()} types',
                     style: TextStyle(
                       fontSize: 14,
+                      color: Colors.black54,
                     ),
                   ),
                   Text(
                     'Month: ${award.month}',
                     style: TextStyle(
                       fontSize: 14,
+                      color: Colors.black54,
                     ),
                   ),
                 ],
@@ -306,11 +369,13 @@ class AwardWinner {
   final String category;
   final String month;
   final double value;
+  final String image;
 
   AwardWinner({
     required this.name,
     required this.category,
     required this.month,
     required this.value,
+    required this.image,
   });
 }
