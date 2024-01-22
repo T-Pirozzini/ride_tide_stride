@@ -97,12 +97,13 @@ class _Snow2SurfResultsPageState extends State<Snow2SurfResultsPage> {
                       activityDistance >= widget.distance;
                 }).toList();
                 filteredSortedActivities.sort((a, b) {
-                  double totalTimeA = a['average_speed'] > 0
-                      ? (widget.distance * 1000) / a['average_speed']
-                      : double.infinity;
-                  double totalTimeB = b['average_speed'] > 0
-                      ? (widget.distance * 1000) / b['average_speed']
-                      : double.infinity;
+                  if (a['average_speed'] <= 0) return 1;
+                  if (b['average_speed'] <= 0) return -1;
+
+                  double totalTimeA =
+                      (widget.distance * 1000) / a['average_speed'];
+                  double totalTimeB =
+                      (widget.distance * 1000) / b['average_speed'];
                   return totalTimeA.compareTo(totalTimeB);
                 });
 
