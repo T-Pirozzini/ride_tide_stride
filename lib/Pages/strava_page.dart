@@ -860,81 +860,85 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
     final CollectionReference activitiesCollection =
         FirebaseFirestore.instance.collection('activities');
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        String localSportType = activity['sport_type'] == 'Run'
-            ? 'Road Run'
-            : 'Road Bike'; // Default value
+    if (activity['sport_type'] == 'Run' || activity['sport_type'] == 'Ride') {
+      showDialog(
+        context: context,
+        builder: (context) {
+          String localSportType = activity['sport_type'] == 'Run'
+              ? 'Road Run'
+              : 'Road Bike'; // Default value
 
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text(activity['sport_type'] == "Run"
-                  ? 'Road or Trail Run?'
-                  : 'Road or Mtn Bike?'),
-              content: SingleChildScrollView(
-                child: ListBody(
-                  children: <Widget>[
-                    Text(activity['name']),
-                    Text(
-                      DateFormat('MMM d, yyyy (EEE)')
-                          .format(DateTime.parse(activity['start_date_local'])),
-                    ),
-                    Text(
-                        'Please select the specific type of ${activity['sport_type'] == "Run" ? "run" : "ride"}.'),
-                    SizedBox(height: 10),
-                    DropdownButton<String>(
-                      value: localSportType,
-                      icon: const Icon(Icons.arrow_downward),
-                      iconSize: 24,
-                      elevation: 16,
-                      style: const TextStyle(color: Colors.teal),
-                      underline: Container(
-                        height: 2,
-                        color: Colors.tealAccent,
+          return StatefulBuilder(
+            builder: (context, setState) {
+              return AlertDialog(
+                title: Text(activity['sport_type'] == "Run"
+                    ? 'Road or Trail Run?'
+                    : 'Road or Mtn Bike?'),
+                content: SingleChildScrollView(
+                  child: ListBody(
+                    children: <Widget>[
+                      Text(activity['name']),
+                      Text(
+                        DateFormat('MMM d, yyyy (EEE)').format(
+                            DateTime.parse(activity['start_date_local'])),
                       ),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          localSportType = newValue!;
-                        });
-                      },
-                      items: (activity['sport_type'] == "Run"
-                              ? <String>['Road Run', 'Trail Run']
-                              : <String>['Road Bike', 'Mtn Bike'])
-                          .map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value,
-                              style: TextStyle(
-                                  color: Colors.teal.shade700, fontSize: 16)),
-                        );
-                      }).toList(),
-                    ),
-                  ],
+                      Text(
+                          'Please select the specific type of ${activity['sport_type'] == "Run" ? "run" : "ride"}.'),
+                      SizedBox(height: 10),
+                      DropdownButton<String>(
+                        value: localSportType,
+                        icon: const Icon(Icons.arrow_downward),
+                        iconSize: 24,
+                        elevation: 16,
+                        style: const TextStyle(color: Colors.teal),
+                        underline: Container(
+                          height: 2,
+                          color: Colors.tealAccent,
+                        ),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            localSportType = newValue!;
+                          });
+                        },
+                        items: (activity['sport_type'] == "Run"
+                                ? <String>['Road Run', 'Trail Run']
+                                : <String>['Road Bike', 'Mtn Bike'])
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value,
+                                style: TextStyle(
+                                    color: Colors.teal.shade700, fontSize: 16)),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              actions: <Widget>[
-                TextButton(
-                  child: Text('Cancel'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-                TextButton(
-                  child: Text('Submit'),
-                  onPressed: () {
-                    activity['sport_type'] = localSportType;
-                    Navigator.of(context).pop();
-                    _submitActivity(activity, athlete, activitiesCollection);
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
+                actions: <Widget>[
+                  TextButton(
+                    child: Text('Cancel'),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                  TextButton(
+                    child: Text('Submit'),
+                    onPressed: () {
+                      activity['sport_type'] = localSportType;
+                      Navigator.of(context).pop();
+                      _submitActivity(activity, athlete, activitiesCollection);
+                    },
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    } else {
+      _submitActivity(activity, athlete, activitiesCollection);
+    }
   }
 
   void _submitActivity(
