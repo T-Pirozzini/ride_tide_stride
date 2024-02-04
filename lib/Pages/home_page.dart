@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:ride_tide_stride/pages/competition_lobby.dart';
 import 'package:ride_tide_stride/pages/competition_page.dart';
 import 'package:ride_tide_stride/pages/leaderboard_page.dart';
 import 'package:ride_tide_stride/pages/strava_page.dart';
@@ -50,9 +51,11 @@ class _HomeState extends State<Home> {
           Builder(
             builder: (BuildContext context) => const Leaderboard(),
           ),
-          Builder(builder: (BuildContext context) => CompetitionPage(key: competitionPageKey)),
           Builder(
-            builder: (BuildContext context) => const TalkSmack(),
+              builder: (BuildContext context) =>
+                  CompetitionPage(key: competitionPageKey)),
+          Builder(
+            builder: (BuildContext context) => const CompetitionLobbyPage(),
           ),
         ],
       ),
