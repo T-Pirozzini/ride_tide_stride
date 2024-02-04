@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:ride_tide_stride/components/competition_dialog.dart';
 import 'package:ride_tide_stride/components/competition_tile.dart';
 
 class CompetitionLobbyPage extends StatefulWidget {
@@ -25,13 +26,13 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
   ];
 
   // add a new competition
-  void Function()? addCompetition() {
-    // Add your logic to create a new competition here
-
-    // show a dialog to get the competition details
-
-    // import the show dialog class
-
+  void addCompetition() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AddCompetitionDialog(); // Show the custom dialog
+      },
+    );
   }
 
   @override
@@ -76,9 +77,7 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
           ],
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            addCompetition;
-          },
+          onPressed: addCompetition,
           child: Icon(Icons.add),
         ));
   }
