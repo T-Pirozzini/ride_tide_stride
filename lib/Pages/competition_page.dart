@@ -9,7 +9,6 @@ import 'package:lottie/lottie.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
 import 'package:ride_tide_stride/pages/chat_widget.dart';
-import 'package:ride_tide_stride/pages/elevation_page.dart';
 import 'package:ride_tide_stride/pages/snow_2_surf_page.dart';
 
 class CompetitionPage extends StatefulWidget {
