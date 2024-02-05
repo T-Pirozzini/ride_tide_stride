@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ride_tide_stride/models/challenge.dart';
 
 class AddCompetitionDialog extends StatefulWidget {
   @override
@@ -6,69 +7,120 @@ class AddCompetitionDialog extends StatefulWidget {
 }
 
 class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
-  void onPressed() {
-    // Add your logic to handle the button press here
+  bool _isPublic = true;
+  bool _isVisible = true;
+  String _selectedChallenge = "Mtn Scramble";
+
+  final List<Challenge> _challenges = [
+    Challenge(name: "Mtn Scramble", assetPath: 'assets/images/mtn.png'),
+    Challenge(name: "Snow2Surf", assetPath: 'assets/images/snow2surf.png'),
+    Challenge(
+        name: "Team Traverse", assetPath: 'assets/images/teamTraverse.png'),
+  ];
+
+  void toggleVisibility() {
+    setState(() {
+      _isVisible = !_isVisible;
+    });
+  }
+
+  void togglePrivacy() {
+    setState(() {
+      _isPublic = !_isPublic;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Center(child: Text('Create A Competition')),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              CircleAvatar(
-                maxRadius: 40,
-                child: ClipOval(
-                  child: Image.asset(
-                    'assets/images/mtn.png',
-                  ),
+      title: Center(child: Text('Create a Challenge')),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: _challenges
+                  .map((challenge) => GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedChallenge = challenge.name;
+                          });
+                        },
+                        child: CircleAvatar(
+                          backgroundColor: _selectedChallenge == challenge.name
+                              ? Colors.blue
+                              : Colors.grey,
+                          maxRadius: 30,
+                          child: ClipOval(
+                            child: Image.asset(challenge.assetPath),
+                          ),
+                        ),
+                      ))
+                  .toList(),
+            ),
+            SizedBox(height: 20),
+            Text(_selectedChallenge,
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            TextFormField(
+              decoration: InputDecoration(labelText: 'Competition Name'),
+            ),
+            SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Column(
+                  children: [
+                    ButtonTheme(
+                      minWidth:
+                          64.0, // Ensure the buttons have a consistent width
+                      height: 64.0,
+                      child: OutlinedButton(
+                        onPressed: toggleVisibility,
+                        style: OutlinedButton.styleFrom(
+                          shape: CircleBorder(),
+                          padding: EdgeInsets.all(15),
+                        ),
+                        child: Icon(_isVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off),
+                      ),
+                    ),
+                    Text(_isVisible ? 'Spectators' : 'No Spectators'),
+                  ],
                 ),
-              ),
-              CircleAvatar(
-                maxRadius: 40,
-                child: ClipOval(
-                  child: Image.asset(
-                    'assets/images/snow2surf.png',
-                  ),
+                Column(
+                  children: [
+                    ButtonTheme(
+                      minWidth:
+                          64.0, // Ensure the buttons have a consistent width
+                      height: 64.0,
+                      child: OutlinedButton(
+                        onPressed: togglePrivacy,
+                        style: OutlinedButton.styleFrom(
+                          shape: CircleBorder(),
+                          padding: EdgeInsets.all(15),
+                        ),
+                        child: Icon(_isPublic ? Icons.lock_open : Icons.lock),
+                      ),
+                    ),
+                    Text(_isPublic ? 'Public' : 'Private'),
+                  ],
                 ),
-              ),
-              CircleAvatar(
-                maxRadius: 40,
-                child: ClipOval(
-                  child: Image.asset(
-                    'assets/images/teamTraverse.png',
-                  ),
-                ),
-              ),
-            ],
-          ),
-          // Add your form fields for competition details here
-          // You can use TextFormField, DropdownButton, etc. as needed
-          TextFormField(
-            decoration: InputDecoration(labelText: 'Competition Name'),
-          ),
-          SizedBox(height: 20),
-          // Add other fields and widgets for different competition types
-          // Customize this part based on your competition types
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
       actions: [
         TextButton(
           onPressed: () {
-            // Add your logic to handle the form submission here
-            // Create a new competition based on the entered details
-            // Close the dialog if the submission is successful
             Navigator.of(context).pop();
           },
           child: Text('Add'),
         ),
         TextButton(
           onPressed: () {
-            // Close the dialog if the user cancels
             Navigator.of(context).pop();
           },
           child: Text('Cancel'),
