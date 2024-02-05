@@ -36,6 +36,18 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
         ]),
   ];
 
+  final List<String> challengeNames = [
+    "P.E.I",
+    "Van Isle",
+    "Iceland",
+  ];
+
+  final List<String> challengeDistances = [
+    "280kms",
+    "456kms",
+    "1050kms",
+  ];
+
   final PageController _pageController = PageController(viewportFraction: 1);
   int _currentPage = 0;
 
@@ -75,7 +87,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
   @override
   Widget build(BuildContext context) {
     double contentWidth = MediaQuery.of(context).size.width * 0.7;
-    double contentHeight = MediaQuery.of(context).size.height * 0.6;
+    double contentHeight = MediaQuery.of(context).size.height * 0.7;
     // Find the currently selected challenge
     Challenge currentChallenge = _challenges.firstWhere(
       (challenge) => challenge.name == _selectedChallenge,
@@ -85,6 +97,16 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
     // Determine if we should use a PageView based on the selected challenge having multiple images
     bool usePageView = currentChallenge.name == "Team Traverse" &&
         currentChallenge.previewPaths.length > 1;
+
+    // Create a method to get the name and distance for the current challenge and page
+    String getNameAndDistance(int currentPage) {
+      if (currentChallenge.name == "Team Traverse" &&
+          currentPage < currentChallenge.previewPaths.length) {
+        return "${challengeNames[currentPage]}: ${challengeDistances[currentPage]}";
+      } else {
+        return "";
+      }
+    }
 
     return AlertDialog(
       title: Center(child: Text('Create a Challenge')),
@@ -120,27 +142,46 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                 ),
               ),
               Container(
-                height: 100,
+                height: 150,
                 child: usePageView
-                    ? Stack(
-                        alignment: AlignmentDirectional.bottomCenter,
+                    ? Column(
                         children: [
-                          PageView(
-                            controller: _pageController,
-                            onPageChanged: (int page) {
-                              setState(() {
-                                _currentPage = page;
-                              });
-                            },
-                            children: currentChallenge.previewPaths.map((path) {
-                              return Image.asset(path, fit: BoxFit.cover);
-                            }).toList(),
+                          Expanded(
+                            child: PageView(
+                              controller: _pageController,
+                              onPageChanged: (int page) {
+                                setState(() {
+                                  _currentPage = page;
+                                });
+                              },
+                              children:
+                                  currentChallenge.previewPaths.map((path) {
+                                return Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      getNameAndDistance(_currentPage),
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                        height:
+                                            10), // Adjust the spacing between Text and Image
+                                    Image.asset(
+                                      path,
+                                      fit: BoxFit.fitHeight,
+                                      height:
+                                          80, // Adjust the image height as needed
+                                    ),
+                                  ],
+                                );
+                              }).toList(),
+                            ),
                           ),
-                          Positioned(
-                            bottom: 10,
-                            child: _buildPageIndicators(
-                                currentChallenge.previewPaths.length,
-                                _currentPage),
+                          _buildPageIndicators(
+                            currentChallenge.previewPaths.length,
+                            _currentPage,
                           ),
                         ],
                       )
@@ -162,7 +203,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                   ],
                 ),
               ),
-              SizedBox(height: 15),
+              SizedBox(height: 5),
               TextFormField(
                 decoration: InputDecoration(
                     labelText: 'Name your challenge...',
@@ -182,8 +223,8 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                           children: [
                             ButtonTheme(
                               minWidth:
-                                  64.0, // Ensure the buttons have a consistent width
-                              height: 64.0,
+                                  32.0, // Ensure the buttons have a consistent width
+                              height: 32.0,
                               child: OutlinedButton(
                                 onPressed: toggleVisibility,
                                 style: OutlinedButton.styleFrom(
@@ -207,7 +248,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 20),
+                    SizedBox(height: 5),
                     Row(
                       children: [
                         Column(
