@@ -42,7 +42,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
   final List<String> challengeNames = [
     "P.E.I",
     "Van Isle",
-    "Iceland",
+    "Greenland",
   ];
 
   final List<String> challengeDistances = [
@@ -107,11 +107,23 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
 
     // If the selected challenge is "Team Traverse", add specific details
     if (selectedChallenge.name == "Team Traverse" &&
-        _currentPage < selectedChallenge.previewPaths.length) {      
+        _currentPage < selectedChallenge.previewPaths.length) {
       challengeData['currentMap'] =
           selectedChallenge.previewPaths[_currentPage];
       challengeData['mapName'] = challengeNames[_currentPage];
       challengeData['mapDistance'] = challengeDistances[_currentPage];
+    }
+
+    // If the selected challenge is "Mtn Scramble", add specific details
+    if (selectedChallenge.name == "Mtn Scramble") {
+      challengeData['currentMap'] =
+          selectedChallenge.previewPaths[_currentPage];
+    }
+
+    // If the selected challenge is "Snow2Surf", add specific details
+    if (selectedChallenge.name == "Snow2Surf") {
+      challengeData['currentMap'] =
+          selectedChallenge.previewPaths[_currentPage];
     }
 
     // Get a reference to the Firestore service
