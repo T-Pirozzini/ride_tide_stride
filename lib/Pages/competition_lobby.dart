@@ -25,6 +25,8 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
     // Add more competitions as needed
   ];
 
+  
+
   // add a new competition
   void addCompetition() {
     showDialog(

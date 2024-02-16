@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:ride_tide_stride/models/challenge.dart';
 
@@ -10,6 +11,8 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
   bool _isPublic = true;
   bool _isVisible = true;
   String _selectedChallenge = "Mtn Scramble";
+  TextEditingController _challengeNameController = TextEditingController();
+  TextEditingController _challengePasswordController = TextEditingController();
   String _selectedDescription =
       "Team based challenge where the most elevation gain wins!";
 
@@ -82,6 +85,44 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
         ),
       ),
     );
+  }
+
+  Future<void> saveChallengeToFirestore() async {
+    Challenge selectedChallenge = _challenges.firstWhere(
+      (challenge) => challenge.name == _selectedChallenge,
+      orElse: () => _challenges.first,
+    );
+
+    // Prepare data to be saved
+    Map<String, dynamic> challengeData = {
+      'type': selectedChallenge.name,
+      'name': _challengeNameController.text,
+      'description': selectedChallenge.description,
+      'isPublic': _isPublic,
+      'password': _isPublic ? '' : _challengePasswordController.text.trim(),
+      'isVisible': _isVisible,
+      'previewPaths': selectedChallenge.previewPaths,
+      // Add more fields as needed
+    };
+
+    // If the selected challenge is "Team Traverse", add specific details
+    if (selectedChallenge.name == "Team Traverse" &&
+        _currentPage < selectedChallenge.previewPaths.length) {      
+      challengeData['currentMap'] =
+          selectedChallenge.previewPaths[_currentPage];
+      challengeData['mapName'] = challengeNames[_currentPage];
+      challengeData['mapDistance'] = challengeDistances[_currentPage];
+    }
+
+    // Get a reference to the Firestore service
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    // Add the challenge to the 'Challenges' collection
+    await firestore.collection('Challenges').add(challengeData).then((docRef) {
+      print("Challenge added with ID: ${docRef.id}");
+    }).catchError((error) {
+      print("Error adding challenge: $error");
+    });
   }
 
   @override
@@ -205,6 +246,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
               ),
               SizedBox(height: 5),
               TextFormField(
+                controller: _challengeNameController,
                 decoration: InputDecoration(
                     labelText: 'Name your challenge...',
                     border: OutlineInputBorder(
@@ -285,6 +327,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
               SizedBox(height: 20),
               !_isPublic
                   ? TextFormField(
+                      controller: _challengePasswordController,
                       decoration: InputDecoration(
                           labelText: 'Enter a password...',
                           border: OutlineInputBorder(
@@ -299,9 +342,32 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
       actions: [
         TextButton(
           onPressed: () {
-            Navigator.of(context).pop();
+            // Call the method to save the challenge
+            saveChallengeToFirestore().then((_) {
+              // Close the dialog or show a confirmation message
+              Navigator.of(context).pop();
+              // Show a Snackbar
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Challenge created successfully'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }).catchError((error) {
+              // Optionally handle errors, e.g., show an error message
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Failed to create challenge'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            });
           },
-          child: Text('Add'),
+          child: Text('Create Challenge'),
+          style: TextButton.styleFrom(
+            primary: Colors.white,
+            backgroundColor: Theme.of(context).primaryColor,
+          ),
         ),
         TextButton(
           onPressed: () {
