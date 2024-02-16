@@ -1,4 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:ride_tide_stride/models/challenge.dart';
 
 class AddCompetitionDialog extends StatefulWidget {
   @override
@@ -6,69 +8,381 @@ class AddCompetitionDialog extends StatefulWidget {
 }
 
 class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
-  void onPressed() {
-    // Add your logic to handle the button press here
+  bool _isPublic = true;
+  bool _isVisible = true;
+  String _selectedChallenge = "Mtn Scramble";
+  TextEditingController _challengeNameController = TextEditingController();
+  TextEditingController _challengePasswordController = TextEditingController();
+  String _selectedDescription =
+      "Team based challenge where the most elevation gain wins!";
+
+  final List<Challenge> _challenges = [
+    Challenge(
+        name: "Mtn Scramble",
+        assetPath: 'assets/images/mtn.png',
+        description: "Team based challenge where the most elevation gain wins!",
+        previewPaths: ['assets/images/mtn.png']),
+    Challenge(
+        name: "Snow2Surf",
+        assetPath: 'assets/images/snow2surf.png',
+        description:
+            "Compete across multiple legs/activities from the mountain to the sea!",
+        previewPaths: ['assets/images/snow2surf.png']),
+    Challenge(
+        name: "Team Traverse",
+        assetPath: 'assets/images/teamTraverse.png',
+        description: "Cooperatively traverse across various landscapes!",
+        previewPaths: [
+          'assets/images/pei.png',
+          'assets/images/van_isle.png',
+          'assets/images/greenland.png'
+        ]),
+  ];
+
+  final List<String> challengeNames = [
+    "P.E.I",
+    "Van Isle",
+    "Greenland",
+  ];
+
+  final List<String> challengeDistances = [
+    "280kms",
+    "456kms",
+    "1050kms",
+  ];
+
+  final PageController _pageController = PageController(viewportFraction: 1);
+  int _currentPage = 0;
+
+  void toggleVisibility() {
+    setState(() {
+      _isVisible = !_isVisible;
+    });
+  }
+
+  void togglePrivacy() {
+    setState(() {
+      _isPublic = !_isPublic;
+    });
+  }
+
+  // Method to build page indicators
+  Widget _buildPageIndicators(int length, int currentPage) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(
+        length,
+        (index) => Container(
+          width: 8.0,
+          height: 8.0,
+          margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 2.0),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: currentPage == index
+                ? Theme.of(context).primaryColor
+                : Theme.of(context).primaryColor.withOpacity(0.3),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> saveChallengeToFirestore() async {
+    Challenge selectedChallenge = _challenges.firstWhere(
+      (challenge) => challenge.name == _selectedChallenge,
+      orElse: () => _challenges.first,
+    );
+
+    // Prepare data to be saved
+    Map<String, dynamic> challengeData = {
+      'type': selectedChallenge.name,
+      'name': _challengeNameController.text,
+      'description': selectedChallenge.description,
+      'isPublic': _isPublic,
+      'password': _isPublic ? '' : _challengePasswordController.text.trim(),
+      'isVisible': _isVisible,
+      'previewPaths': selectedChallenge.previewPaths,
+      // Add more fields as needed
+    };
+
+    // If the selected challenge is "Team Traverse", add specific details
+    if (selectedChallenge.name == "Team Traverse" &&
+        _currentPage < selectedChallenge.previewPaths.length) {
+      challengeData['currentMap'] =
+          selectedChallenge.previewPaths[_currentPage];
+      challengeData['mapName'] = challengeNames[_currentPage];
+      challengeData['mapDistance'] = challengeDistances[_currentPage];
+    }
+
+    // If the selected challenge is "Mtn Scramble", add specific details
+    if (selectedChallenge.name == "Mtn Scramble") {
+      challengeData['currentMap'] =
+          selectedChallenge.previewPaths[_currentPage];
+    }
+
+    // If the selected challenge is "Snow2Surf", add specific details
+    if (selectedChallenge.name == "Snow2Surf") {
+      challengeData['currentMap'] =
+          selectedChallenge.previewPaths[_currentPage];
+    }
+
+    // Get a reference to the Firestore service
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    // Add the challenge to the 'Challenges' collection
+    await firestore.collection('Challenges').add(challengeData).then((docRef) {
+      print("Challenge added with ID: ${docRef.id}");
+    }).catchError((error) {
+      print("Error adding challenge: $error");
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    double contentWidth = MediaQuery.of(context).size.width * 0.7;
+    double contentHeight = MediaQuery.of(context).size.height * 0.7;
+    // Find the currently selected challenge
+    Challenge currentChallenge = _challenges.firstWhere(
+      (challenge) => challenge.name == _selectedChallenge,
+      orElse: () => _challenges.first,
+    );
+
+    // Determine if we should use a PageView based on the selected challenge having multiple images
+    bool usePageView = currentChallenge.name == "Team Traverse" &&
+        currentChallenge.previewPaths.length > 1;
+
+    // Create a method to get the name and distance for the current challenge and page
+    String getNameAndDistance(int currentPage) {
+      if (currentChallenge.name == "Team Traverse" &&
+          currentPage < currentChallenge.previewPaths.length) {
+        return "${challengeNames[currentPage]}: ${challengeDistances[currentPage]}";
+      } else {
+        return "";
+      }
+    }
+
     return AlertDialog(
-      title: Center(child: Text('Create A Competition')),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      title: Center(child: Text('Create a Challenge')),
+      content: Container(
+        width: contentWidth,
+        height: contentHeight,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              CircleAvatar(
-                maxRadius: 40,
-                child: ClipOval(
-                  child: Image.asset(
-                    'assets/images/mtn.png',
-                  ),
+              Container(
+                height: 80,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: _challenges
+                      .map((challenge) => GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedChallenge = challenge.name;
+                                _selectedDescription = challenge.description;
+                              });
+                            },
+                            child: CircleAvatar(
+                              maxRadius: _selectedChallenge == challenge.name
+                                  ? 30.0
+                                  : 20.0,
+                              child: ClipOval(
+                                child: Image.asset(challenge.assetPath),
+                              ),
+                            ),
+                          ))
+                      .toList(),
                 ),
               ),
-              CircleAvatar(
-                maxRadius: 40,
-                child: ClipOval(
-                  child: Image.asset(
-                    'assets/images/snow2surf.png',
-                  ),
+              Container(
+                height: 150,
+                child: usePageView
+                    ? Column(
+                        children: [
+                          Expanded(
+                            child: PageView(
+                              controller: _pageController,
+                              onPageChanged: (int page) {
+                                setState(() {
+                                  _currentPage = page;
+                                });
+                              },
+                              children:
+                                  currentChallenge.previewPaths.map((path) {
+                                return Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      getNameAndDistance(_currentPage),
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                        height:
+                                            10), // Adjust the spacing between Text and Image
+                                    Image.asset(
+                                      path,
+                                      fit: BoxFit.fitHeight,
+                                      height:
+                                          80, // Adjust the image height as needed
+                                    ),
+                                  ],
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                          _buildPageIndicators(
+                            currentChallenge.previewPaths.length,
+                            _currentPage,
+                          ),
+                        ],
+                      )
+                    : Image.asset(
+                        currentChallenge.previewPaths.first,
+                        fit: BoxFit.cover,
+                      ),
+              ),
+              Container(
+                height: 50,
+                child: Column(
+                  children: [
+                    Text(_selectedChallenge,
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text(_selectedDescription,
+                        style: TextStyle(
+                            fontSize: 12, fontStyle: FontStyle.italic)),
+                  ],
                 ),
               ),
-              CircleAvatar(
-                maxRadius: 40,
-                child: ClipOval(
-                  child: Image.asset(
-                    'assets/images/teamTraverse.png',
-                  ),
+              SizedBox(height: 5),
+              TextFormField(
+                controller: _challengeNameController,
+                decoration: InputDecoration(
+                    labelText: 'Name your challenge...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    )),
+              ),
+              SizedBox(height: 15),
+              Container(
+                width: 250,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Column(
+                          children: [
+                            ButtonTheme(
+                              minWidth:
+                                  32.0, // Ensure the buttons have a consistent width
+                              height: 32.0,
+                              child: OutlinedButton(
+                                onPressed: toggleVisibility,
+                                style: OutlinedButton.styleFrom(
+                                  shape: CircleBorder(),
+                                  padding: EdgeInsets.all(15),
+                                ),
+                                child: Icon(_isVisible
+                                    ? Icons.visibility
+                                    : Icons.visibility_off),
+                              ),
+                            ),
+                            Text(_isVisible ? 'Visible' : 'Hidden'),
+                          ],
+                        ),
+                        Flexible(
+                          child: Text(
+                              _isVisible
+                                  ? 'Allow others to view your challenge'
+                                  : 'Keep your challenge private',
+                              style: TextStyle(fontSize: 12)),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 5),
+                    Row(
+                      children: [
+                        Column(
+                          children: [
+                            ButtonTheme(
+                              minWidth:
+                                  64.0, // Ensure the buttons have a consistent width
+                              height: 64.0,
+                              child: OutlinedButton(
+                                onPressed: togglePrivacy,
+                                style: OutlinedButton.styleFrom(
+                                  shape: CircleBorder(),
+                                  padding: EdgeInsets.all(15),
+                                ),
+                                child: Icon(
+                                    _isPublic ? Icons.lock_open : Icons.lock),
+                              ),
+                            ),
+                            Text(_isPublic ? 'Public' : 'Private'),
+                          ],
+                        ),
+                        Flexible(
+                          child: Text(
+                              _isPublic
+                                  ? 'Allow anyone to join your challenge'
+                                  : 'Only allow participants with a passcode',
+                              style: TextStyle(fontSize: 12)),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
+              SizedBox(height: 20),
+              !_isPublic
+                  ? TextFormField(
+                      controller: _challengePasswordController,
+                      decoration: InputDecoration(
+                          labelText: 'Enter a password...',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                          )),
+                    )
+                  : SizedBox(),
             ],
           ),
-          // Add your form fields for competition details here
-          // You can use TextFormField, DropdownButton, etc. as needed
-          TextFormField(
-            decoration: InputDecoration(labelText: 'Competition Name'),
-          ),
-          SizedBox(height: 20),
-          // Add other fields and widgets for different competition types
-          // Customize this part based on your competition types
-        ],
+        ),
       ),
       actions: [
         TextButton(
           onPressed: () {
-            // Add your logic to handle the form submission here
-            // Create a new competition based on the entered details
-            // Close the dialog if the submission is successful
-            Navigator.of(context).pop();
+            // Call the method to save the challenge
+            saveChallengeToFirestore().then((_) {
+              // Close the dialog or show a confirmation message
+              Navigator.of(context).pop();
+              // Show a Snackbar
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Challenge created successfully'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }).catchError((error) {
+              // Optionally handle errors, e.g., show an error message
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Failed to create challenge'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            });
           },
-          child: Text('Add'),
+          child: Text('Create Challenge'),
+          style: TextButton.styleFrom(
+            primary: Colors.white,
+            backgroundColor: Theme.of(context).primaryColor,
+          ),
         ),
         TextButton(
           onPressed: () {
-            // Close the dialog if the user cancels
             Navigator.of(context).pop();
           },
           child: Text('Cancel'),
