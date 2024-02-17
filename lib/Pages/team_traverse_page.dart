@@ -1,27 +1,71 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-class TeamTraversePage extends StatelessWidget {
+class TeamTraversePage extends StatefulWidget {
   final String challengeId;
+  final List<dynamic> participantsEmails;
+  final Timestamp startDate;
 
-  const TeamTraversePage({Key? key, required this.challengeId}) : super(key: key);
+  const TeamTraversePage(
+      {Key? key,
+      required this.challengeId,
+      required this.participantsEmails,
+      required this.startDate})
+      : super(key: key);
+
+  @override
+  State<TeamTraversePage> createState() => _TeamTraversePageState();
+}
+
+class _TeamTraversePageState extends State<TeamTraversePage> {
+  Future<Map<String, double>> fetchParticipantDistances() async {
+    Map<String, double> participantDistances = {};
+
+    // Calculate the end date as 30 days after the start date
+    DateTime startDate = widget.startDate.toDate();
+    DateTime adjustedStartDate =
+        DateTime(startDate.year, startDate.month, startDate.day);
+
+    DateTime endDate = adjustedStartDate.add(Duration(days: 30));
+
+    print("Challenge Start Date: $startDate");
+    print("Challenge End Date: $endDate");
+
+    for (String email in widget.participantsEmails) {
+      double totalDistance = 0.0;
+      var activitiesSnapshot = await FirebaseFirestore.instance
+          .collection('activities')
+          .where('user_email', isEqualTo: email)
+          .where('timestamp',
+              isGreaterThanOrEqualTo: Timestamp.fromDate(adjustedStartDate))
+          .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
+          .get();
+
+      // Check if activities are found
+      print("Found ${activitiesSnapshot.docs.length} activities for $email");
+
+      for (var doc in activitiesSnapshot.docs) {
+        DateTime activityDate = (doc.data()['timestamp'] as Timestamp).toDate();
+        print("Activity Timestamp for $email: $activityDate");
+        totalDistance += (doc.data()['distance'] as num).toDouble();
+      }
+      participantDistances[email] = totalDistance;
+    }
+    return participantDistances;
+  }
 
   @override
   Widget build(BuildContext context) {
-    // The Scaffold widget provides a consistent visual structure to your app.
     return Scaffold(
-      // AppBar displays information and actions relating to the current screen.
       appBar: AppBar(
         title: Text("Team Traverse Challenge"),
-        // Allows the user to return to the previous screen.
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      // The body of the screen is wrapped in a SingleChildScrollView to handle overflow
-      // and make the screen scrollable if needed.
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16.0), // Adds padding around the content.
+        padding: EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -29,12 +73,42 @@ class TeamTraversePage extends StatelessWidget {
               "Challenge ID:",
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 10), // Adds space between text widgets.
+            SizedBox(height: 10),
             Text(
-              challengeId, // Displays the challenge ID passed to the page.
+              widget.challengeId,
               style: TextStyle(fontSize: 20, color: Colors.grey[700]),
             ),
-            // Add more widgets here to display other challenge details.
+            FutureBuilder<Map<String, double>>(
+              future: fetchParticipantDistances(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                }
+                if (!snapshot.hasData) {
+                  return Text("No participant data available");
+                }
+                Map<String, double> distances = snapshot.data!;
+                double totalDistance =
+                    distances.values.fold(0.0, (a, b) => a + b);
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ...distances.keys.map((email) => ListTile(
+                          title: Text(email),
+                          subtitle: Text(
+                            'Distance: ${(distances[email]! / 1000).toStringAsFixed(2)} km',
+                          ),
+                        )),
+                    // Also format the total distance similarly
+                    Text(
+                        "Total Distance: ${(totalDistance / 1000).toStringAsFixed(2)}km",
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold)),
+                  ],
+                );
+              },
+            ),
           ],
         ),
       ),

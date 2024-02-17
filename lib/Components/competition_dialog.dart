@@ -105,8 +105,9 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
       'isVisible': _isVisible,
       'previewPaths': selectedChallenge.previewPaths,
       'timestamp': FieldValue.serverTimestamp(),
-      'userId': currentUser!.uid,
-      'participants': [currentUser!.uid],
+      'createdBy': currentUser!.uid,
+      'userEmail': currentUser!.email,
+      'participants': [currentUser!.email],
       // Add more fields as needed
     };
 

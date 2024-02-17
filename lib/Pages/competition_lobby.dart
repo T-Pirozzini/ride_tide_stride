@@ -18,14 +18,14 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   bool hasJoinedChallenge(List participants) {
-    String? currentUserId = _auth.currentUser?.uid;
-    return participants.contains(currentUserId);
+    String? currentUserEmail = _auth.currentUser?.email;
+    return participants.contains(currentUserEmail);
   }
 
 // Method to join a challenge
   Future<void> joinChallenge(String challengeId) async {
-    String? currentUserId = _auth.currentUser?.uid;
-    if (currentUserId == null) return;
+    String? currentUserEmail = _auth.currentUser?.email;
+    if (currentUserEmail == null) return;
 
     // Reference to the challenge document
     DocumentReference challengeRef =
@@ -38,8 +38,8 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
       }
 
       List participants = List.from(snapshot['participants'] ?? []);
-      if (!participants.contains(currentUserId)) {
-        participants.add(currentUserId);
+      if (!participants.contains(currentUserEmail)) {
+        participants.add(currentUserEmail);
         transaction.update(challengeRef, {'participants': participants});
       }
     }).catchError((error) {
@@ -117,9 +117,10 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                           String challengeId = challenges[index].id;
                           List participants =
                               challengeData['participants'] ?? [];
-                          String? currentUserId = _auth.currentUser?.uid;
+                          String? currentUserEmail = _auth.currentUser?.email;
                           // Determine if the current user has joined this challenge
-                          bool hasJoined = participants.contains(currentUserId);
+                          bool hasJoined =
+                              participants.contains(currentUserEmail);
 
                           String challengeName =
                               challengeData['name'] ?? 'Unnamed Challenge';
@@ -147,7 +148,11 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                               challengeId: challengeId);
                                         case 'Team Traverse':
                                           return TeamTraversePage(
-                                              challengeId: challengeId);
+                                            challengeId: challengeId,
+                                            participantsEmails: participants,
+                                            startDate: challengeData['timestamp'],
+
+                                          );
                                         default:
                                           // Handle unknown challenge type if necessary
                                           return Snow2Surf(
