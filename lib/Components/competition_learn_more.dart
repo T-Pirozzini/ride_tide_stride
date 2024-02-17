@@ -17,6 +17,10 @@ class CompetitionLearnMore extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    void spectateChallenge() {
+      print('Spectating $challengeName');
+    }
+
     return AlertDialog(
       title: Center(child: Text(challengeName)),
       content: SingleChildScrollView(
@@ -61,6 +65,17 @@ class CompetitionLearnMore extends StatelessWidget {
                       Text('Password Required'),
                     ],
                   ),
+            const SizedBox(height: 10),
+            TextButton(
+                onPressed: spectateChallenge,
+                style: ButtonStyle(
+                  backgroundColor: MaterialStateProperty.all(Colors.blue),
+                  maximumSize: MaterialStateProperty.all(Size(200, 50)),
+                ),
+                child: Text(
+                  'Spectate Challenge',
+                  style: TextStyle(fontSize: 16, color: Colors.white),
+                ))
           ],
         ),
       ),

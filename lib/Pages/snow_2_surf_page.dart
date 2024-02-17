@@ -7,7 +7,8 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:ride_tide_stride/pages/snow_2_surf_results_page.dart';
 
 class Snow2Surf extends StatefulWidget {
-  const Snow2Surf({super.key});
+  final challengeId;
+  const Snow2Surf({super.key, this.challengeId});
 
   @override
   State<Snow2Surf> createState() => _Snow2SurfState();
