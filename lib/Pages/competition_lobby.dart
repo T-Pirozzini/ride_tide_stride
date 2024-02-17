@@ -1,8 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ride_tide_stride/components/competition_dialog.dart';
 import 'package:ride_tide_stride/components/competition_learn_more.dart';
+import 'package:ride_tide_stride/pages/snow_2_surf_page.dart';
+import 'package:ride_tide_stride/pages/team_traverse_page.dart';
 
 class CompetitionLobbyPage extends StatefulWidget {
   const CompetitionLobbyPage({super.key});
@@ -12,6 +15,38 @@ class CompetitionLobbyPage extends StatefulWidget {
 }
 
 class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  bool hasJoinedChallenge(List participants) {
+    String? currentUserId = _auth.currentUser?.uid;
+    return participants.contains(currentUserId);
+  }
+
+// Method to join a challenge
+  Future<void> joinChallenge(String challengeId) async {
+    String? currentUserId = _auth.currentUser?.uid;
+    if (currentUserId == null) return;
+
+    // Reference to the challenge document
+    DocumentReference challengeRef =
+        FirebaseFirestore.instance.collection('Challenges').doc(challengeId);
+
+    FirebaseFirestore.instance.runTransaction((transaction) async {
+      DocumentSnapshot snapshot = await transaction.get(challengeRef);
+      if (!snapshot.exists) {
+        throw Exception("Challenge does not exist!");
+      }
+
+      List participants = List.from(snapshot['participants'] ?? []);
+      if (!participants.contains(currentUserId)) {
+        participants.add(currentUserId);
+        transaction.update(challengeRef, {'participants': participants});
+      }
+    }).catchError((error) {
+      print("Failed to join challenge: $error");
+    });
+  }
+
   // add a new competition
   void addCompetition() {
     showDialog(
@@ -79,6 +114,13 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                         (context, index) {
                           var challengeData =
                               challenges[index].data() as Map<String, dynamic>;
+                          String challengeId = challenges[index].id;
+                          List participants =
+                              challengeData['participants'] ?? [];
+                          String? currentUserId = _auth.currentUser?.uid;
+                          // Determine if the current user has joined this challenge
+                          bool hasJoined = participants.contains(currentUserId);
+
                           String challengeName =
                               challengeData['name'] ?? 'Unnamed Challenge';
                           String challengeImage = challengeData['currentMap'];
@@ -91,18 +133,43 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                             clipBehavior: Clip.antiAlias,
                             child: InkWell(
                               onTap: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return CompetitionLearnMore(
-                                      challengeName: challengeName,
-                                      challengeImage: challengeImage,
-                                      isPublic: isPublic,
-                                      isVisible: isVisible,
-                                      description: description,
-                                    );
-                                  },
-                                );
+                                if (hasJoined) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) {
+                                      // Determine which page to navigate to based on the challenge type
+                                      switch (challengeData['type']) {
+                                        case 'Snow2Surf':
+                                          return Snow2Surf(
+                                              challengeId: challengeId);
+                                        case 'Mtn Scramble':
+                                          return Snow2Surf(
+                                              challengeId: challengeId);
+                                        case 'Team Traverse':
+                                          return TeamTraversePage(
+                                              challengeId: challengeId);
+                                        default:
+                                          // Handle unknown challenge type if necessary
+                                          return Snow2Surf(
+                                              challengeId: challengeId);
+                                      }
+                                    }),
+                                  );
+                                } else {
+                                  // Show the learn more dialog if not joined
+                                  showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return CompetitionLearnMore(
+                                        challengeName: challengeName,
+                                        challengeImage: challengeImage,
+                                        isPublic: isPublic,
+                                        isVisible: isVisible,
+                                        description: description,
+                                      );
+                                    },
+                                  );
+                                }
                               },
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -147,20 +214,40 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                   ),
                                   Center(
                                     child: Text(
-                                      'Tap to learn more',
+                                      hasJoined
+                                          ? 'Tap to view'
+                                          : 'Tap to learn more',
                                       style: TextStyle(
-                                          color: Colors.grey,
-                                          fontSize: 12,
-                                          fontStyle: FontStyle.italic),
+                                          color: hasJoined
+                                              ? Colors.blueAccent
+                                              : Colors.grey,
+                                          fontSize: hasJoined ? 14 : 12,
+                                          fontStyle: hasJoined
+                                              ? FontStyle.normal
+                                              : FontStyle.italic),
                                     ),
                                   ),
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: ElevatedButton(
-                                      onPressed: () {
-                                        // Join challenge logic here
-                                      },
-                                      child: Text('Join'),
+                                      onPressed: hasJoined
+                                          ? null
+                                          : () => joinChallenge(challengeId),
+                                      child: Text(hasJoined
+                                          ? 'Challenge Active'
+                                          : 'Join'),
+                                      style: ButtonStyle(
+                                        backgroundColor: MaterialStateProperty
+                                            .resolveWith<Color>(
+                                          (Set<MaterialState> states) {
+                                            if (states.contains(
+                                                MaterialState.disabled))
+                                              return Colors.grey;
+                                            return Theme.of(context)
+                                                .primaryColor; // Use the default button color
+                                          },
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ],

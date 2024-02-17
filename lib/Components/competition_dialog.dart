@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:ride_tide_stride/models/challenge.dart';
 
@@ -8,6 +9,7 @@ class AddCompetitionDialog extends StatefulWidget {
 }
 
 class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
+  final currentUser = FirebaseAuth.instance.currentUser;
   bool _isPublic = true;
   bool _isVisible = true;
   String _selectedChallenge = "Mtn Scramble";
@@ -102,6 +104,9 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
       'password': _isPublic ? '' : _challengePasswordController.text.trim(),
       'isVisible': _isVisible,
       'previewPaths': selectedChallenge.previewPaths,
+      'timestamp': FieldValue.serverTimestamp(),
+      'userId': currentUser!.uid,
+      'participants': [currentUser!.uid],
       // Add more fields as needed
     };
 
