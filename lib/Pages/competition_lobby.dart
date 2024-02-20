@@ -151,6 +151,9 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                             challengeId: challengeId,
                                             participantsEmails: participants,
                                             startDate: challengeData['timestamp'],
+                                            challengeName: challengeName,
+                                            challengeType: challengeData['type'],
+                                            mapDistance: challengeData['mapDistance'],
 
                                           );
                                         default:

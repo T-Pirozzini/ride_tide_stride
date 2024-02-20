@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:ride_tide_stride/auth/auth_page.dart';
 import 'package:ride_tide_stride/firebase_options.dart';
 import 'package:flutter/material.dart';
@@ -39,11 +40,12 @@ class MyApp extends StatelessWidget {
             800: Color(0xFFA09A6A),
             900: Color(0xFFA09A6A),
           }),
+          fontFamily: GoogleFonts.openSans().fontFamily,
           buttonTheme: const ButtonThemeData(
             buttonColor: Color(0xFFD0B8A8),
           ),
         ),
-        title: 'Flutter Strava Plugin',
+        title: 'Ride.Tide.Stride',
         home: const AuthPage(),
         routes: {
           '/resultsPage': (context) => ResultsPage(),
