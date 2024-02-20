@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class TeamTraversePage extends StatefulWidget {
@@ -161,7 +162,15 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFDFD3C3),
       appBar: AppBar(
-        title: Text(widget.challengeType),
+        centerTitle: true,
+        title: Text(
+          widget.challengeType,
+          style: GoogleFonts.tektur(
+              textStyle: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w300,
+                  letterSpacing: 1.2)),
+        ),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -170,23 +179,34 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Center(
-            child: Text(
-              widget.challengeName,
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-          ),
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text(
-                '${DateFormat('MMMM dd, yyyy').format(widget.startDate.toDate())} - ${DateFormat('MMMM dd, yyyy').format(endDate!)}',
-                style: TextStyle(fontSize: 16),
-              ),
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.all(10),
+            child: Column(
+              children: [
+                Center(
+                  child: Text(
+                    widget.challengeName,
+                    style: GoogleFonts.roboto(
+                        textStyle: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w300,
+                            letterSpacing: 1.2)),
+                  ),
+                ),
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Text(
+                      '${DateFormat('MMMM dd, yyyy').format(widget.startDate.toDate())} - ${DateFormat('MMMM dd, yyyy').format(endDate!)}',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 5),
-          Divider(),
           Expanded(
             flex:
                 1, // Adjust flex to change how space is allocated between the map and participant list
@@ -329,6 +349,7 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
                       crossAxisSpacing: 2, // Spacing between items horizontally
                       mainAxisSpacing: 2, // Spacing between items vertically
                     ),
+                    physics: NeverScrollableScrollPhysics(),
                     itemCount: itemCount,
                     itemBuilder: (context, index) {
                       String email = index < widget.participantsEmails.length
