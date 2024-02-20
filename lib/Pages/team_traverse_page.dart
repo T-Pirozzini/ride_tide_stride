@@ -1,7 +1,7 @@
 import 'dart:math';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class TeamTraversePage extends StatefulWidget {
   final String challengeId;
@@ -26,8 +26,12 @@ class TeamTraversePage extends StatefulWidget {
 }
 
 class _TeamTraversePageState extends State<TeamTraversePage> {
+  Map<String, Color> participantColors = {};
+
   Future<Map<String, double>> fetchParticipantDistances() async {
     Map<String, double> participantDistances = {};
+    List<Color> colors = Colors.primaries;
+    int colorIndex = 0;
 
     // Calculate the end date as 30 days after the start date
     DateTime startDate = widget.startDate.toDate();
@@ -52,8 +56,40 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
         totalDistance += (doc.data()['distance'] as num).toDouble();
       }
       participantDistances[email] = totalDistance;
+
+      participantColors[email] = colors[colorIndex % colors.length];
+      colorIndex++;
     }
     return participantDistances;
+  }
+
+  Widget buildPieChart(Map<String, double> participantDistances) {
+    double totalDistance =
+        participantDistances.values.fold(0.0, (a, b) => a + b);
+    List<PieChartSectionData> sections =
+        participantDistances.entries.map((entry) {
+      final isLarge =
+          totalDistance > 0 ? (entry.value / totalDistance) > 0.1 : false;
+      Color color = participantColors[entry.key] ?? Colors.grey;
+      return PieChartSectionData(
+        color: color,
+        value: entry.value,
+        title: '${(entry.value / totalDistance * 100).toStringAsFixed(1)}%',
+        radius: isLarge ? 50 : 50,
+        titleStyle: TextStyle(
+            fontSize: isLarge ? 16 : 14,
+            fontWeight: FontWeight.bold,
+            color: Colors.white),
+      );
+    }).toList();
+
+    return PieChart(
+      PieChartData(
+        sections: sections,
+        centerSpaceRadius: 20,
+        sectionsSpace: 2,
+      ),
+    );
   }
 
   Future<Map<String, dynamic>> fetchChallengeMapDetails() async {
@@ -101,6 +137,7 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFDFD3C3),
       appBar: AppBar(
         title: Text(widget.challengeType),
         leading: IconButton(
@@ -127,45 +164,76 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
           Expanded(
             flex:
                 1, // Adjust flex to change how space is allocated between the map and participant list
-            child: FutureBuilder<Map<String, dynamic>>(
-              future: fetchChallengeDetailsAndTotalDistance(),
-              builder: (context, snapshot) {
-                // Handle loading and error states as before
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                }
-                if (!snapshot.hasData) {
-                  return Text("Details not available");
-                }
+            child: Stack(
+              children: [
+                FutureBuilder<Map<String, dynamic>>(
+                  future: fetchChallengeDetailsAndTotalDistance(),
+                  builder: (context, snapshot) {
+                    // Handle loading and error states as before
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+                    if (!snapshot.hasData) {
+                      return Text("Details not available");
+                    }
 
-                // Unchanged logic for handling fetched data
-                double totalDistanceKM = snapshot.data!['totalDistance'] / 1000;
-                double mapDistance = snapshot.data!['mapDistance'];
-                String mapAssetUrl = snapshot.data!['mapAssetUrl'];
-                double progress =
-                    (totalDistanceKM / mapDistance).clamp(0.0, 1.0);
+                    // Unchanged logic for handling fetched data
+                    double totalDistanceKM =
+                        snapshot.data!['totalDistance'] / 1000;
+                    double mapDistance = snapshot.data!['mapDistance'];
+                    String mapAssetUrl = snapshot.data!['mapAssetUrl'];
+                    double progress =
+                        (totalDistanceKM / mapDistance).clamp(0.0, 1.0);
 
-                return Column(
-                  children: [
-                    Expanded(
-                      child: Image.asset(mapAssetUrl,
-                          fit: BoxFit
-                              .cover), // Adjusted map to be within an Expanded widget
+                    return Column(
+                      children: [
+                        Expanded(
+                          child: Image.asset(mapAssetUrl,
+                              fit: BoxFit
+                                  .cover), // Adjusted map to be within an Expanded widget
+                        ),
+                        LinearProgressIndicator(
+                          value: progress,
+                          backgroundColor: Colors.grey[200],
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.blue),
+                        ),
+                        Text(
+                          "${(progress * 100).toStringAsFixed(2)}% Completed",
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                Positioned(
+                  top: 75, // Adjust as needed for padding from the top
+                  right: 75, // Adjust as needed for padding from the right
+                  child: Opacity(
+                    opacity: 0.6,
+                    child: FutureBuilder<Map<String, double>>(
+                      future: fetchParticipantDistances(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return CircularProgressIndicator();
+                        }
+                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                          return Text("No data available for chart");
+                        }
+                        return Container(
+                          width: 20, // Specify the width of the chart
+                          height: 20, // Specify the height of the chart
+                          child: buildPieChart(
+                              snapshot.data!), // Your method to build the chart
+                        );
+                      },
                     ),
-                    LinearProgressIndicator(
-                      value: progress,
-                      backgroundColor: Colors.grey[200],
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-                    ),
-                    Text(
-                      "${(progress * 100).toStringAsFixed(2)}% Completed",
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                );
-              },
+                  ),
+                ),
+              ],
             ),
-          ),          
+          ),
           Container(
             height: 400, // Adjust this value as needed
             child: FutureBuilder<Map<String, double>>(
@@ -196,23 +264,38 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
                         ? snapshot.data![email] ?? 0.0
                         : 0.0;
 
+                    Color avatarColor = participantColors[email] ?? Colors.grey;
+
                     return Card(
-                      // Using Card for better UI presentation
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Row(
                           children: [
+                            email != "Empty Slot"
+                                ? CircleAvatar(
+                                    backgroundColor: avatarColor,
+                                    radius:
+                                        10, // Adjust the size of the avatar as needed
+                                  )
+                                : SizedBox.shrink(),
+                            SizedBox(
+                                width:
+                                    8), // Provides some spacing between the avatar and the text
                             Expanded(
-                              child: getUserName(
-                                  email), // Username or "Empty Slot"
-                            ),
-                            Text(
-                              index < widget.participantsEmails.length
-                                  ? 'Distance: ${(distance / 1000).toStringAsFixed(2)} km'
-                                  : '',
-                              style: TextStyle(fontSize: 12),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  getUserName(
+                                      email), // Username or "Empty Slot"
+                                  Text(
+                                    index < widget.participantsEmails.length
+                                        ? 'Distance: ${(distance / 1000).toStringAsFixed(2)} km'
+                                        : '',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
