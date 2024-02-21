@@ -10,6 +10,7 @@ import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
 import 'package:ride_tide_stride/pages/chat_widget.dart';
 import 'package:ride_tide_stride/pages/snow_2_surf_page.dart';
+import 'package:ride_tide_stride/pages/talk_smack.dart';
 
 class CompetitionPage extends StatefulWidget {
   const CompetitionPage({super.key});
@@ -805,7 +806,7 @@ class CompetitionPageState extends State<CompetitionPage>
                       );
                     }),
               ),
-              Snow2Surf(),
+              TalkSmack(),
             ],
           ),
           // bottomNavigationBar: BottomAppBar(

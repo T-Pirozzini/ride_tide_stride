@@ -130,6 +130,9 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                           bool isPublic = challengeData['isPublic'];
                           String description =
                               challengeData['description'] ?? 'No description';
+                          String challengeType = challengeData['type'];
+                          String challengeDifficulty =
+                              challengeData['difficulty'] ?? 'No difficulty';
 
                           return Card(
                             clipBehavior: Clip.antiAlias,
@@ -144,6 +147,12 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                         case 'Snow2Surf':
                                           return Snow2Surf(
                                             challengeId: challengeId,
+                                            participantsEmails: participants,
+                                            startDate:
+                                                challengeData['timestamp'],
+                                            challengeName: challengeName,
+                                            challengeType:
+                                                challengeData['type'],
                                           );
                                         case 'Mtn Scramble':
                                           return MtnScramblePage(
@@ -172,7 +181,14 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                         default:
                                           // Handle unknown challenge type if necessary
                                           return Snow2Surf(
-                                              challengeId: challengeId);
+                                            challengeId: challengeId,
+                                            participantsEmails: participants,
+                                            startDate:
+                                                challengeData['timestamp'],
+                                            challengeName: challengeName,
+                                            challengeType:
+                                                challengeData['type'],
+                                          );
                                       }
                                     }),
                                   );
@@ -195,12 +211,30 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: <Widget>[
-                                  Expanded(
-                                    child: Image.asset(
-                                      challengeImage,
-                                      fit: BoxFit.contain,
-                                    ),
-                                  ),
+                                  challengeType == 'Snow2Surf'
+                                      ? Expanded(
+                                          child: Stack(
+                                            children: [
+                                              Image.asset(
+                                                challengeImage,
+                                                fit: BoxFit.contain,
+                                              ),
+                                              Text(
+                                                challengeDifficulty,
+                                                style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      : Expanded(
+                                          child: Image.asset(
+                                            challengeImage,
+                                            fit: BoxFit.contain,
+                                          ),
+                                        ),
                                   ListTile(
                                     title: Padding(
                                       padding: const EdgeInsets.all(8.0),

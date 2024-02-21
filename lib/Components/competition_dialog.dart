@@ -69,6 +69,18 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
     "8848",
   ];
 
+  String _selectedButton = 'Intro';
+  Map<String, bool> _selectedActivities = {
+    'Alpine Skiing': false,
+    'Nordic Skiing': false,
+    'Road Running': false,
+    'Trail Running': false,
+    'Mountain Biking': false,
+    'Kayaking': false,
+    'Road Cycling': false,
+    'Canoeing': false,
+  };
+
   final PageController _pageController = PageController(viewportFraction: 1);
   int _currentPage = 0;
 
@@ -145,12 +157,17 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
       challengeData['mapName'] = challengeNamesMtnScramble[_currentPage];
       challengeData['mapElevation'] =
           challengeElevationsMtnScramble[_currentPage];
-    }    
+    }
 
     // If the selected challenge is "Snow2Surf", add specific details
     if (selectedChallenge.name == "Snow2Surf") {
       challengeData['currentMap'] =
           selectedChallenge.previewPaths[_currentPage];
+      challengeData['difficulty'] = _selectedButton;
+      challengeData['legsSelected'] = _selectedActivities.entries
+          .where((element) => element.value == true)
+          .map((e) => e.key)
+          .toList();
     }
 
     // Get a reference to the Firestore service
@@ -162,6 +179,53 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
     }).catchError((error) {
       print("Error adding challenge: $error");
     });
+  }
+
+  void selectActivityLegs() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Select Legs'),
+          content: SingleChildScrollView(
+            child: StatefulBuilder(
+              // Add this wrapper
+              builder: (BuildContext context, StateSetter setState) {
+                return ListBody(
+                  children: _selectedActivities.keys.map((String key) {
+                    return CheckboxListTile(
+                      title: Text(key),
+                      value: _selectedActivities[key],
+                      onChanged: (bool? value) {
+                        setState(() {
+                          // This now calls the local setState
+                          _selectedActivities[key] = value!;
+                        });
+                      },
+                    );
+                  }).toList(),
+                );
+              },
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Done'),
+              onPressed: () {
+                // Process the selected activities as needed
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -228,7 +292,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                 ),
               ),
               Container(
-                height: 210,
+                height: 230,
                 child: usePageView
                     ? Column(
                         children: [
@@ -271,9 +335,71 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                           ),
                         ],
                       )
-                    : Image.asset(
-                        currentChallenge.previewPaths.first,
-                        fit: BoxFit.cover,
+                    : Column(
+                        children: [
+                          Expanded(
+                            child: Image.asset(
+                              currentChallenge.previewPaths.first,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _selectedButton = 'Intro';
+                                  });
+                                },
+                                child: Text('Intro'),
+                                style: _selectedButton == 'Intro'
+                                    ? TextButton.styleFrom(
+                                        primary: Colors.white,
+                                        backgroundColor: Theme.of(context)
+                                            .secondaryHeaderColor,
+                                      )
+                                    : null,
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _selectedButton = 'Advanced';
+                                  });
+                                },
+                                child: Text('Advanced'),
+                                style: _selectedButton == 'Advanced'
+                                    ? TextButton.styleFrom(
+                                        primary: Colors.white,
+                                        backgroundColor: Theme.of(context)
+                                            .secondaryHeaderColor,
+                                      )
+                                    : null,
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _selectedButton = 'Expert';
+                                  });
+                                },
+                                child: Text('Expert'),
+                                style: _selectedButton == 'Expert'
+                                    ? TextButton.styleFrom(
+                                        primary: Colors.white,
+                                        backgroundColor: Theme.of(context)
+                                            .secondaryHeaderColor,
+                                      )
+                                    : null,
+                              ),
+                            ],
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              selectActivityLegs();
+                            },
+                            child: Text('Select Activity Legs (4)'),
+                          ),
+                        ],
                       ),
               ),
               Container(

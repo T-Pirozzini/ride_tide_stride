@@ -7,8 +7,20 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:ride_tide_stride/pages/snow_2_surf_results_page.dart';
 
 class Snow2Surf extends StatefulWidget {
-  final challengeId;
-  const Snow2Surf({super.key, this.challengeId});
+  final String challengeId;
+  final List<dynamic> participantsEmails;
+  final Timestamp startDate;
+  final String challengeType;
+  final String challengeName;
+
+  const Snow2Surf({
+    super.key,
+    required this.challengeId,
+    required this.participantsEmails,
+    required this.startDate,
+    required this.challengeType,
+    required this.challengeName,
+  });
 
   @override
   State<Snow2Surf> createState() => _Snow2SurfState();
@@ -175,14 +187,6 @@ class _Snow2SurfState extends State<Snow2Surf> {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(
-          title,
-          style: GoogleFonts.syne(textStyle: TextStyle(fontSize: 20)),
-        ),
-        Text('Snow2Surf',
-            style: GoogleFonts.tektur(
-                textStyle:
-                    TextStyle(fontSize: 22, fontWeight: FontWeight.bold))),
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
             stream: getCurrentMonthData(),
@@ -368,14 +372,51 @@ class _Snow2SurfState extends State<Snow2Surf> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200],
+      backgroundColor: const Color(0xFFDFD3C3),
+      appBar: AppBar(
+        centerTitle: true,
+        title: Text(
+          widget.challengeType,
+          style: GoogleFonts.tektur(
+              textStyle: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w300,
+                  letterSpacing: 1.2)),
+        ),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: SafeArea(
         child: Container(
           width: MediaQuery.of(context).size.width,
           child: Column(
             children: [
+              Text('Advanced Challenge',
+                  style: GoogleFonts.tektur(
+                      textStyle: TextStyle(
+                          fontSize: 22, fontWeight: FontWeight.bold))),
               Expanded(
-                child: buildCategoryCard(categories, formattedCurrentMonth),
+                child: Row(
+                  children: [
+                    Expanded(
+                        flex: 5,
+                        child: buildCategoryCard(
+                            categories, formattedCurrentMonth)),
+                    Expanded(
+                      flex: 1,
+                      child: ListView.builder(
+                        itemCount: categories.length + 1,
+                        itemBuilder: (context, index) {
+                          return ListTile(
+                            title: Text('Hi'),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.all(8.0),
