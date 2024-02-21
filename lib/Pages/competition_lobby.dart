@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ride_tide_stride/components/competition_dialog.dart';
 import 'package:ride_tide_stride/components/competition_learn_more.dart';
+import 'package:ride_tide_stride/pages/mtn_scramble_page.dart';
 import 'package:ride_tide_stride/pages/snow_2_surf_page.dart';
 import 'package:ride_tide_stride/pages/team_traverse_page.dart';
 
@@ -129,6 +130,9 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                           bool isPublic = challengeData['isPublic'];
                           String description =
                               challengeData['description'] ?? 'No description';
+                          String challengeType = challengeData['type'];
+                          String challengeDifficulty =
+                              challengeData['difficulty'] ?? 'No difficulty';
 
                           return Card(
                             clipBehavior: Clip.antiAlias,
@@ -142,24 +146,55 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                       switch (challengeData['type']) {
                                         case 'Snow2Surf':
                                           return Snow2Surf(
-                                              challengeId: challengeId);
+                                            challengeId: challengeId,
+                                            participantsEmails: participants,
+                                            startDate:
+                                                challengeData['timestamp'],
+                                            challengeName: challengeName,
+                                            challengeType:
+                                                challengeData['type'],
+                                            challengeDifficulty:
+                                                challengeData['difficulty'] ??
+                                                    'No difficulty',
+                                          );
                                         case 'Mtn Scramble':
-                                          return Snow2Surf(
-                                              challengeId: challengeId);
+                                          return MtnScramblePage(
+                                            challengeId: challengeId,
+                                            participantsEmails: participants,
+                                            startDate:
+                                                challengeData['timestamp'],
+                                            challengeName: challengeName,
+                                            challengeType:
+                                                challengeData['type'],
+                                            mapElevation:
+                                                challengeData['mapElevation'],
+                                          );
                                         case 'Team Traverse':
                                           return TeamTraversePage(
                                             challengeId: challengeId,
                                             participantsEmails: participants,
-                                            startDate: challengeData['timestamp'],
+                                            startDate:
+                                                challengeData['timestamp'],
                                             challengeName: challengeName,
-                                            challengeType: challengeData['type'],
-                                            mapDistance: challengeData['mapDistance'],
-
+                                            challengeType:
+                                                challengeData['type'],
+                                            mapDistance:
+                                                challengeData['mapDistance'],
                                           );
                                         default:
                                           // Handle unknown challenge type if necessary
                                           return Snow2Surf(
-                                              challengeId: challengeId);
+                                            challengeId: challengeId,
+                                            participantsEmails: participants,
+                                            startDate:
+                                                challengeData['timestamp'],
+                                            challengeName: challengeName,
+                                            challengeType:
+                                                challengeData['type'],
+                                            challengeDifficulty:
+                                                challengeData['difficulty'] ??
+                                                    'No difficulty',
+                                          );
                                       }
                                     }),
                                   );
@@ -182,12 +217,30 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: <Widget>[
-                                  Expanded(
-                                    child: Image.asset(
-                                      challengeImage,
-                                      fit: BoxFit.contain,
-                                    ),
-                                  ),
+                                  challengeType == 'Snow2Surf'
+                                      ? Expanded(
+                                          child: Stack(
+                                            children: [
+                                              Image.asset(
+                                                challengeImage,
+                                                fit: BoxFit.contain,
+                                              ),
+                                              Text(
+                                                challengeDifficulty,
+                                                style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      : Expanded(
+                                          child: Image.asset(
+                                            challengeImage,
+                                            fit: BoxFit.contain,
+                                          ),
+                                        ),
                                   ListTile(
                                     title: Padding(
                                       padding: const EdgeInsets.all(8.0),
@@ -214,7 +267,8 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                         Row(
                                           children: [
                                             Icon(Icons.person),
-                                            Text('0'),
+                                            Text(
+                                                participants.length.toString()),
                                           ],
                                         ),
                                       ],

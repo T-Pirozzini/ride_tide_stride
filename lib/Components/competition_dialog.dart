@@ -23,13 +23,17 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
         name: "Mtn Scramble",
         assetPath: 'assets/images/mtn.png',
         description: "Team based challenge where the most elevation gain wins!",
-        previewPaths: ['assets/images/mtn.png']),
+        previewPaths: [
+          'assets/images/Fuji.png',
+          'assets/images/Kilimanjaro.png',
+          'assets/images/Everest.png'
+        ]),
     Challenge(
         name: "Snow2Surf",
         assetPath: 'assets/images/snow2surf.png',
         description:
             "Compete across multiple legs/activities from the mountain to the sea!",
-        previewPaths: ['assets/images/snow2surf.png']),
+        previewPaths: ['assets/images/snow2surf_preview.jpg']),
     Challenge(
         name: "Team Traverse",
         assetPath: 'assets/images/teamTraverse.png',
@@ -41,17 +45,41 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
         ]),
   ];
 
-  final List<String> challengeNames = [
+  final List<String> challengeNamesTeamTraverse = [
     "P.E.I",
     "Van Isle",
     "Greenland",
   ];
 
-  final List<String> challengeDistances = [
+  final List<String> challengeDistancesTeamTraverse = [
     "280kms",
     "456kms",
     "1050kms",
   ];
+
+  final List<String> challengeNamesMtnScramble = [
+    "Mount Fuji",
+    "Mount Kilimanjaro",
+    "Mount Everest",
+  ];
+
+  final List<String> challengeElevationsMtnScramble = [
+    "3775",
+    "5895",
+    "8848",
+  ];
+
+  String _selectedButton = 'Intro';
+  Map<String, bool> _selectedActivities = {
+    'Alpine Skiing': false,
+    'Nordic Skiing': false,
+    'Road Running': false,
+    'Trail Running': false,
+    'Mountain Biking': false,
+    'Kayaking': false,
+    'Road Cycling': false,
+    'Canoeing': false,
+  };
 
   final PageController _pageController = PageController(viewportFraction: 1);
   int _currentPage = 0;
@@ -116,20 +144,30 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
         _currentPage < selectedChallenge.previewPaths.length) {
       challengeData['currentMap'] =
           selectedChallenge.previewPaths[_currentPage];
-      challengeData['mapName'] = challengeNames[_currentPage];
-      challengeData['mapDistance'] = challengeDistances[_currentPage];
+      challengeData['mapName'] = challengeNamesTeamTraverse[_currentPage];
+      challengeData['mapDistance'] =
+          challengeDistancesTeamTraverse[_currentPage];
     }
 
     // If the selected challenge is "Mtn Scramble", add specific details
-    if (selectedChallenge.name == "Mtn Scramble") {
+    if (selectedChallenge.name == "Mtn Scramble" &&
+        _currentPage < selectedChallenge.previewPaths.length) {
       challengeData['currentMap'] =
           selectedChallenge.previewPaths[_currentPage];
+      challengeData['mapName'] = challengeNamesMtnScramble[_currentPage];
+      challengeData['mapElevation'] =
+          challengeElevationsMtnScramble[_currentPage];
     }
 
     // If the selected challenge is "Snow2Surf", add specific details
     if (selectedChallenge.name == "Snow2Surf") {
       challengeData['currentMap'] =
           selectedChallenge.previewPaths[_currentPage];
+      challengeData['difficulty'] = _selectedButton;
+      challengeData['legsSelected'] = _selectedActivities.entries
+          .where((element) => element.value == true)
+          .map((e) => e.key)
+          .toList();
     }
 
     // Get a reference to the Firestore service
@@ -143,6 +181,53 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
     });
   }
 
+  void selectActivityLegs() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Select Legs'),
+          content: SingleChildScrollView(
+            child: StatefulBuilder(
+              // Add this wrapper
+              builder: (BuildContext context, StateSetter setState) {
+                return ListBody(
+                  children: _selectedActivities.keys.map((String key) {
+                    return CheckboxListTile(
+                      title: Text(key),
+                      value: _selectedActivities[key],
+                      onChanged: (bool? value) {
+                        setState(() {
+                          // This now calls the local setState
+                          _selectedActivities[key] = value!;
+                        });
+                      },
+                    );
+                  }).toList(),
+                );
+              },
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Done'),
+              onPressed: () {
+                // Process the selected activities as needed
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     double contentWidth = MediaQuery.of(context).size.width * 0.7;
@@ -154,14 +239,18 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
     );
 
     // Determine if we should use a PageView based on the selected challenge having multiple images
-    bool usePageView = currentChallenge.name == "Team Traverse" &&
-        currentChallenge.previewPaths.length > 1;
+    bool usePageView = currentChallenge.name == "Team Traverse" ||
+        currentChallenge.name == "Mtn Scramble" &&
+            currentChallenge.previewPaths.length > 1;
 
     // Create a method to get the name and distance for the current challenge and page
     String getNameAndDistance(int currentPage) {
       if (currentChallenge.name == "Team Traverse" &&
           currentPage < currentChallenge.previewPaths.length) {
-        return "${challengeNames[currentPage]}: ${challengeDistances[currentPage]}";
+        return "${challengeNamesTeamTraverse[currentPage]}: ${challengeDistancesTeamTraverse[currentPage]}";
+      } else if (currentChallenge.name == 'Mtn Scramble' &&
+          currentPage < currentChallenge.previewPaths.length) {
+        return "${challengeNamesMtnScramble[currentPage]}: ${challengeElevationsMtnScramble[currentPage]}m";
       } else {
         return "";
       }
@@ -169,39 +258,41 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
 
     return AlertDialog(
       title: Center(child: Text('Create a Challenge')),
-      content: Container(
-        width: contentWidth,
-        height: contentHeight,
-        child: SingleChildScrollView(
+      content: SingleChildScrollView(
+        child: Container(
+          width: contentWidth,
+          height: contentHeight,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                height: 80,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: _challenges
-                      .map((challenge) => GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _selectedChallenge = challenge.name;
-                                _selectedDescription = challenge.description;
-                              });
-                            },
-                            child: CircleAvatar(
-                              maxRadius: _selectedChallenge == challenge.name
-                                  ? 30.0
-                                  : 20.0,
-                              child: ClipOval(
-                                child: Image.asset(challenge.assetPath),
+              Expanded(
+                child: Container(
+                  height: 80,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: _challenges
+                        .map((challenge) => GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedChallenge = challenge.name;
+                                  _selectedDescription = challenge.description;
+                                });
+                              },
+                              child: CircleAvatar(
+                                maxRadius: _selectedChallenge == challenge.name
+                                    ? 30.0
+                                    : 20.0,
+                                child: ClipOval(
+                                  child: Image.asset(challenge.assetPath),
+                                ),
                               ),
-                            ),
-                          ))
-                      .toList(),
+                            ))
+                        .toList(),
+                  ),
                 ),
               ),
               Container(
-                height: 150,
+                height: 230,
                 child: usePageView
                     ? Column(
                         children: [
@@ -231,7 +322,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                                       path,
                                       fit: BoxFit.fitHeight,
                                       height:
-                                          80, // Adjust the image height as needed
+                                          150, // Adjust the image height as needed
                                     ),
                                   ],
                                 );
@@ -244,13 +335,75 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                           ),
                         ],
                       )
-                    : Image.asset(
-                        currentChallenge.previewPaths.first,
-                        fit: BoxFit.cover,
+                    : Column(
+                        children: [
+                          Expanded(
+                            child: Image.asset(
+                              currentChallenge.previewPaths.first,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _selectedButton = 'Intro';
+                                  });
+                                },
+                                child: Text('Intro'),
+                                style: _selectedButton == 'Intro'
+                                    ? TextButton.styleFrom(
+                                        primary: Colors.white,
+                                        backgroundColor: Theme.of(context)
+                                            .secondaryHeaderColor,
+                                      )
+                                    : null,
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _selectedButton = 'Advanced';
+                                  });
+                                },
+                                child: Text('Advanced'),
+                                style: _selectedButton == 'Advanced'
+                                    ? TextButton.styleFrom(
+                                        primary: Colors.white,
+                                        backgroundColor: Theme.of(context)
+                                            .secondaryHeaderColor,
+                                      )
+                                    : null,
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _selectedButton = 'Expert';
+                                  });
+                                },
+                                child: Text('Expert'),
+                                style: _selectedButton == 'Expert'
+                                    ? TextButton.styleFrom(
+                                        primary: Colors.white,
+                                        backgroundColor: Theme.of(context)
+                                            .secondaryHeaderColor,
+                                      )
+                                    : null,
+                              ),
+                            ],
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              selectActivityLegs();
+                            },
+                            child: Text('Select Activity Legs (4)'),
+                          ),
+                        ],
                       ),
               ),
               Container(
-                height: 50,
+                height: 60,
                 child: Column(
                   children: [
                     Text(_selectedChallenge,
@@ -263,13 +416,15 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                 ),
               ),
               SizedBox(height: 5),
-              TextFormField(
-                controller: _challengeNameController,
-                decoration: InputDecoration(
-                    labelText: 'Name your challenge...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                    )),
+              Flexible(
+                child: TextFormField(
+                  controller: _challengeNameController,
+                  decoration: InputDecoration(
+                      labelText: 'Name your challenge...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                      )),
+                ),
               ),
               SizedBox(height: 15),
               Container(
@@ -277,6 +432,44 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Row(
+                      children: [
+                        Column(
+                          children: [
+                            ButtonTheme(
+                              minWidth:
+                                  32.0, // Ensure the buttons have a consistent width
+                              height: 32.0,
+                              child: OutlinedButton(
+                                onPressed: togglePrivacy,
+                                style: OutlinedButton.styleFrom(
+                                  shape: CircleBorder(),
+                                  padding: EdgeInsets.all(15),
+                                ),
+                                child: Icon(
+                                    _isPublic ? Icons.lock_open : Icons.lock),
+                              ),
+                            ),
+                            Text(_isPublic ? 'Public' : 'Private'),
+                          ],
+                        ),
+                        Flexible(
+                          child: _isPublic
+                              ? Text('Allow anyone to join your challenge',
+                                  style: TextStyle(fontSize: 12))
+                              : TextFormField(
+                                  controller: _challengePasswordController,
+                                  decoration: InputDecoration(
+                                      labelText: 'Enter a password...',
+                                      border: OutlineInputBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(10.0),
+                                      )),
+                                ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 5),
                     Row(
                       children: [
                         Column(
@@ -308,51 +501,9 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 5),
-                    Row(
-                      children: [
-                        Column(
-                          children: [
-                            ButtonTheme(
-                              minWidth:
-                                  64.0, // Ensure the buttons have a consistent width
-                              height: 64.0,
-                              child: OutlinedButton(
-                                onPressed: togglePrivacy,
-                                style: OutlinedButton.styleFrom(
-                                  shape: CircleBorder(),
-                                  padding: EdgeInsets.all(15),
-                                ),
-                                child: Icon(
-                                    _isPublic ? Icons.lock_open : Icons.lock),
-                              ),
-                            ),
-                            Text(_isPublic ? 'Public' : 'Private'),
-                          ],
-                        ),
-                        Flexible(
-                          child: Text(
-                              _isPublic
-                                  ? 'Allow anyone to join your challenge'
-                                  : 'Only allow participants with a passcode',
-                              style: TextStyle(fontSize: 12)),
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),
-              SizedBox(height: 20),
-              !_isPublic
-                  ? TextFormField(
-                      controller: _challengePasswordController,
-                      decoration: InputDecoration(
-                          labelText: 'Enter a password...',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10.0),
-                          )),
-                    )
-                  : SizedBox(),
             ],
           ),
         ),
