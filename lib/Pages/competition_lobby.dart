@@ -150,11 +150,13 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                           return TeamTraversePage(
                                             challengeId: challengeId,
                                             participantsEmails: participants,
-                                            startDate: challengeData['timestamp'],
+                                            startDate:
+                                                challengeData['timestamp'],
                                             challengeName: challengeName,
-                                            challengeType: challengeData['type'],
-                                            mapDistance: challengeData['mapDistance'],
-
+                                            challengeType:
+                                                challengeData['type'],
+                                            mapDistance:
+                                                challengeData['mapDistance'],
                                           );
                                         default:
                                           // Handle unknown challenge type if necessary
