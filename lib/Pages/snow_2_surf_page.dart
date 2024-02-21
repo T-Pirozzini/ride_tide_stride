@@ -12,6 +12,7 @@ class Snow2Surf extends StatefulWidget {
   final Timestamp startDate;
   final String challengeType;
   final String challengeName;
+  final String challengeDifficulty;
 
   const Snow2Surf({
     super.key,
@@ -20,6 +21,7 @@ class Snow2Surf extends StatefulWidget {
     required this.startDate,
     required this.challengeType,
     required this.challengeName,
+    required this.challengeDifficulty,
   });
 
   @override
@@ -129,6 +131,39 @@ class _Snow2SurfState extends State<Snow2Surf> {
     super.initState();
     getCurrentMonth();
   }
+
+  Map<String, dynamic> opponents = {
+    "Intro": {
+      "name": ["Mike", "Leo", "Raph", "Don"],
+      "image": [
+        "assets/images/mike.jpg",
+        "assets/images/leo.jpg",
+        "assets/images/raph.jpg",
+        "assets/images/don.jpg"
+      ],
+      "bestTime": ["0:00", "0:00", "0:00", "0:00"],
+    },
+    "Advanced": {
+      "name": ["Crash", "Todd", "Noise", "Baldy"],
+      "image": [
+        "assets/images/crash.png",
+        "assets/images/todd.png",
+        "assets/images/noise.png",
+        "assets/images/baldy.png"
+      ],
+      "bestTime": ["0:00", "0:00", "0:00", "0:00"],
+    },
+    "Expert": {
+      "name": ["Mike", "Leo", "Raph", "Don"],
+      "image": [
+        "assets/images/mike.jpg",
+        "assets/images/leo.jpg",
+        "assets/images/raph.jpg",
+        "assets/images/don.jpg"
+      ],
+      "bestTime": ["0:00", "0:00", "0:00", "0:00"],
+    },
+  };
 
   Widget buildCategoryCard(
     List<Map<String, dynamic>> categories,
@@ -393,7 +428,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
           width: MediaQuery.of(context).size.width,
           child: Column(
             children: [
-              Text('Advanced Challenge',
+              Text(widget.challengeDifficulty,
                   style: GoogleFonts.tektur(
                       textStyle: TextStyle(
                           fontSize: 22, fontWeight: FontWeight.bold))),
@@ -401,16 +436,58 @@ class _Snow2SurfState extends State<Snow2Surf> {
                 child: Row(
                   children: [
                     Expanded(
-                        flex: 5,
+                        flex: 3,
                         child: buildCategoryCard(
                             categories, formattedCurrentMonth)),
                     Expanded(
                       flex: 1,
                       child: ListView.builder(
-                        itemCount: categories.length + 1,
+                        itemCount:
+                            opponents[widget.challengeDifficulty]!["name"]
+                                .length,
                         itemBuilder: (context, index) {
-                          return ListTile(
-                            title: Text('Hi'),
+                          var difficulty =
+                              opponents[widget.challengeDifficulty];
+
+                          return Padding(
+                            padding: const EdgeInsets.all(1.0),
+                            child: ListTile(
+                              minLeadingWidth: 2,
+                              
+                              tileColor: Colors.white,
+                              visualDensity:
+                                  VisualDensity(horizontal: 0, vertical: -4),
+                              // dense: true,
+                              contentPadding: EdgeInsets.symmetric(
+                                  vertical: 0, horizontal: 2),
+                              leading: CircleAvatar(
+                                backgroundColor: Colors.grey.shade200,
+                                // Set the radius to limit the size of the CircleAvatar
+                                radius:
+                                    24, // Adjust the radius to fit within the ListTile properly
+                                child: ClipOval(
+                                  child: Image.asset(
+                                    difficulty["image"][index],
+                                    fit: BoxFit
+                                        .cover, // This ensures the image covers the clip area well
+                                    width:
+                                        48, // Match this width to the overall size constraint of the CircleAvatar
+                                    height: 48, // Match this height as well
+                                  ),
+                                ),
+                              ),
+
+                              title: Text(
+                                difficulty["name"]
+                                    [index], // Accessing the name by index
+                                style: TextStyle(
+                                    fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
+                              subtitle: Text(
+                                "${difficulty["bestTime"][index]}",
+                                style: TextStyle(fontSize: 10),
+                              ), // Accessing the best time by index
+                            ),
                           );
                         },
                       ),

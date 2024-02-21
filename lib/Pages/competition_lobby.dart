@@ -153,6 +153,9 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                             challengeName: challengeName,
                                             challengeType:
                                                 challengeData['type'],
+                                            challengeDifficulty:
+                                                challengeData['difficulty'] ??
+                                                    'No difficulty',
                                           );
                                         case 'Mtn Scramble':
                                           return MtnScramblePage(
@@ -188,6 +191,9 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                             challengeName: challengeName,
                                             challengeType:
                                                 challengeData['type'],
+                                            challengeDifficulty:
+                                                challengeData['difficulty'] ??
+                                                    'No difficulty',
                                           );
                                       }
                                     }),
