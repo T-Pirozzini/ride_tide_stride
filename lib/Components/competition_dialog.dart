@@ -143,13 +143,9 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
       challengeData['currentMap'] =
           selectedChallenge.previewPaths[_currentPage];
       challengeData['mapName'] = challengeNamesMtnScramble[_currentPage];
-      challengeData['mapDistance'] =
+      challengeData['mapElevation'] =
           challengeElevationsMtnScramble[_currentPage];
-    }
-    if (selectedChallenge.name == "Mtn Scramble") {
-      challengeData['currentMap'] =
-          selectedChallenge.previewPaths[_currentPage];
-    }
+    }    
 
     // If the selected challenge is "Snow2Surf", add specific details
     if (selectedChallenge.name == "Snow2Surf") {

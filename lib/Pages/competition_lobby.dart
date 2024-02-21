@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ride_tide_stride/components/competition_dialog.dart';
 import 'package:ride_tide_stride/components/competition_learn_more.dart';
+import 'package:ride_tide_stride/pages/mtn_scramble_page.dart';
 import 'package:ride_tide_stride/pages/snow_2_surf_page.dart';
 import 'package:ride_tide_stride/pages/team_traverse_page.dart';
 
@@ -142,10 +143,20 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                       switch (challengeData['type']) {
                                         case 'Snow2Surf':
                                           return Snow2Surf(
-                                              challengeId: challengeId);
+                                            challengeId: challengeId,
+                                          );
                                         case 'Mtn Scramble':
-                                          return Snow2Surf(
-                                              challengeId: challengeId);
+                                          return MtnScramblePage(
+                                            challengeId: challengeId,
+                                            participantsEmails: participants,
+                                            startDate:
+                                                challengeData['timestamp'],
+                                            challengeName: challengeName,
+                                            challengeType:
+                                                challengeData['type'],
+                                            mapElevation:
+                                                challengeData['mapElevation'],
+                                          );
                                         case 'Team Traverse':
                                           return TeamTraversePage(
                                             challengeId: challengeId,
@@ -216,7 +227,8 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                         Row(
                                           children: [
                                             Icon(Icons.person),
-                                            Text('0'),
+                                            Text(
+                                                participants.length.toString()),
                                           ],
                                         ),
                                       ],
