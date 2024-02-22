@@ -159,6 +159,62 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                           String challengeUserDescription =
                               challengeData['userDescription'] ?? '';
 
+                          void navigateToChallengeDetail(
+                              String challengeType, String challengeId) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  switch (challengeData['type']) {
+                                    case 'Snow2Surf':
+                                      return Snow2Surf(
+                                        challengeId: challengeId,
+                                        participantsEmails: participants,
+                                        startDate: challengeData['timestamp'],
+                                        challengeName: challengeName,
+                                        challengeType: challengeData['type'],
+                                        challengeDifficulty:
+                                            challengeData['difficulty'] ??
+                                                'No difficulty',
+                                      );
+                                    case 'Mtn Scramble':
+                                      return MtnScramblePage(
+                                        challengeId: challengeId,
+                                        participantsEmails: participants,
+                                        startDate: challengeData['timestamp'],
+                                        challengeName: challengeName,
+                                        challengeType: challengeData['type'],
+                                        mapElevation:
+                                            challengeData['mapElevation'],
+                                      );
+                                    case 'Team Traverse':
+                                      return TeamTraversePage(
+                                        challengeId: challengeId,
+                                        participantsEmails: participants,
+                                        startDate: challengeData['timestamp'],
+                                        challengeName: challengeName,
+                                        challengeType: challengeData['type'],
+                                        mapDistance:
+                                            challengeData['mapDistance'],
+                                      );
+                                    default:
+                                      // Handle unknown challenge type if necessary
+                                      return Snow2Surf(
+                                        challengeId: challengeId,
+                                        participantsEmails: participants,
+                                        startDate: challengeData['timestamp'],
+                                        challengeName: challengeName,
+                                        challengeType: challengeData['type'],
+                                        challengeDifficulty:
+                                            challengeData['difficulty'] ??
+                                                'No difficulty',
+                                      );
+                                  }
+                                },
+                              ),
+                            );
+                          }
+
                           return Card(
                             clipBehavior: Clip.antiAlias,
                             child: InkWell(
@@ -234,6 +290,9 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                         isPublic: isPublic,
                                         isVisible: isVisible,
                                         description: description,
+                                        onSpectate: () =>
+                                            navigateToChallengeDetail(
+                                                challengeType, challengeId),
                                       );
                                     },
                                   );
