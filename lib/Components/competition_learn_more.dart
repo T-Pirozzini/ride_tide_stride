@@ -69,7 +69,7 @@ class CompetitionLearnMore extends StatelessWidget {
               children: [
                 TextButton(
                   onPressed: () {
-                    if (isPublic) {
+                    if (isVisible) {
                       onSpectate();
                     } else {
                       showModalBottomSheet(
@@ -90,7 +90,7 @@ class CompetitionLearnMore extends StatelessWidget {
                       );
                     }
                   },
-                  style: isPublic
+                  style: isVisible
                       ? ButtonStyle(
                           backgroundColor: MaterialStateProperty.all(
                               Theme.of(context).primaryColor),
