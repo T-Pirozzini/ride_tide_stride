@@ -1,5 +1,4 @@
 import 'dart:math';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -38,6 +37,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
     DateTime adjustedStartDate =
         DateTime(startDate.year, startDate.month, startDate.day);
     endDate = adjustedStartDate.add(Duration(days: 30));
+    _maybeFinalizeChallenge();
   }
 
   Future<Map<String, double>> fetchParticipantElevations() async {
@@ -57,8 +57,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
     int colorIndex = 0;
 
     // Calculate the end date as 30 days after the start date
-    // REMOVE subtract 5 days from the start date BEFORE RELEASE
-    DateTime startDate = widget.startDate.toDate().subtract(Duration(days: 15));
+    DateTime startDate = widget.startDate.toDate();
     DateTime adjustedStartDate =
         DateTime(startDate.year, startDate.month, startDate.day);
 
@@ -158,6 +157,34 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
     };
   }
 
+  Future<void> _maybeFinalizeChallenge() async {
+    final now = DateTime.now();
+    if (endDate != null && now.isAfter(endDate!)) {
+      await checkAndFinalizeChallenge();
+    }
+  }
+
+  Future<void> checkAndFinalizeChallenge() async {
+    final challengeDetails = await fetchChallengeDetailsAndTotalElevation();
+    final double totalElevation = challengeDetails['totalElevation'];
+    final double goalElevation = challengeDetails['mapElevation'];
+
+    // If the goal has been met or exceeded
+    if (totalElevation >= goalElevation) {
+      // Update the challenge's active status to false
+      await FirebaseFirestore.instance
+          .collection('Challenges')
+          .doc(widget.challengeId)
+          .update({'active': false, 'success': true});
+    } else {
+      // Update the challenge's active status to false
+      await FirebaseFirestore.instance
+          .collection('Challenges')
+          .doc(widget.challengeId)
+          .update({'active': false, 'success': false});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -235,7 +262,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                       children: [
                         Expanded(
                           child: Padding(
-                            padding: const EdgeInsets.all(10.0),
+                            padding: const EdgeInsets.fromLTRB(15, 30, 15, 0),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(10),
                               child:
@@ -281,8 +308,8 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                   },
                 ),
                 Positioned(
-                  top: 75, // Adjust as needed for padding from the top
-                  right: 75, // Adjust as needed for padding from the right
+                  top: 75,
+                  right: 75,
                   child: Opacity(
                     opacity: 0.6,
                     child: FutureBuilder<Map<String, double>>(

@@ -113,6 +113,10 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
             StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('Challenges')
+                  .where(
+                    'active',
+                    isEqualTo: true,
+                  )
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {

@@ -38,6 +38,7 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
     DateTime adjustedStartDate =
         DateTime(startDate.year, startDate.month, startDate.day);
     endDate = adjustedStartDate.add(Duration(days: 30));
+    _maybeFinalizeChallenge();
   }
 
   Future<Map<String, double>> fetchParticipantDistances() async {
@@ -155,6 +156,34 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
       'mapDistance': mapDistance, // Numeric map distance
       'mapAssetUrl': mapDetails['mapAssetUrl'], // URL or asset path for the map
     };
+  }
+
+  Future<void> _maybeFinalizeChallenge() async {
+    final now = DateTime.now();
+    if (endDate != null && now.isAfter(endDate!)) {
+      await checkAndFinalizeChallenge();
+    }
+  }
+
+  Future<void> checkAndFinalizeChallenge() async {
+    final challengeDetails = await fetchChallengeDetailsAndTotalDistance();
+    final double totalDistance = challengeDetails['totalDistance'];
+    final double goalDistance = challengeDetails['mapDistance'];
+
+    // If the goal has been met or exceeded
+    if (totalDistance >= goalDistance) {
+      // Update the challenge's active status to false
+      await FirebaseFirestore.instance
+          .collection('Challenges')
+          .doc(widget.challengeId)
+          .update({'active': false, 'success': true});
+    } else {
+      // Update the challenge's active status to false
+      await FirebaseFirestore.instance
+          .collection('Challenges')
+          .doc(widget.challengeId)
+          .update({'active': false, 'success': false});
+    }
   }
 
   @override

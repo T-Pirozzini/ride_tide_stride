@@ -139,6 +139,8 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
       'createdBy': currentUser!.uid,
       'userEmail': currentUser!.email,
       'participants': [currentUser!.email],
+      'active': true,
+      'success': false,
       // Add more fields as needed
     };
 
