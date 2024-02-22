@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ride_tide_stride/components/competition_dialog.dart';
 import 'package:ride_tide_stride/components/competition_learn_more.dart';
+import 'package:ride_tide_stride/components/passwordDialog.dart';
 import 'package:ride_tide_stride/pages/mtn_scramble_page.dart';
 import 'package:ride_tide_stride/pages/snow_2_surf_page.dart';
 import 'package:ride_tide_stride/pages/team_traverse_page.dart';
@@ -24,9 +25,29 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
   }
 
 // Method to join a challenge
-  Future<void> joinChallenge(String challengeId) async {
+  Future<void> joinChallenge(
+      String challengeId, String challengePassword) async {
     String? currentUserEmail = _auth.currentUser?.email;
     if (currentUserEmail == null) return;
+
+    // If a password is required, prompt the user
+    if (challengePassword.isNotEmpty) {
+      // Show password dialog and wait for the result
+      bool isPasswordCorrect = await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) {
+              return PasswordDialog(challengePassword: challengePassword);
+            },
+          ) ??
+          false;
+
+      // If the password is incorrect, stop the process
+      if (!isPasswordCorrect) {
+        print("Incorrect password");
+        return;
+      }
+    }
 
     // Reference to the challenge document
     DocumentReference challengeRef =
@@ -61,6 +82,7 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        backgroundColor: const Color(0xFFDFD3C3),
         body: CustomScrollView(
           slivers: [
             SliverAppBar(
@@ -133,6 +155,65 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                           String challengeType = challengeData['type'];
                           String challengeDifficulty =
                               challengeData['difficulty'] ?? 'No difficulty';
+                          String challengePassword = challengeData['password'];
+                          String challengeUserDescription =
+                              challengeData['userDescription'] ?? '';
+
+                          void navigateToChallengeDetail(
+                              String challengeType, String challengeId) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  switch (challengeData['type']) {
+                                    case 'Snow2Surf':
+                                      return Snow2Surf(
+                                        challengeId: challengeId,
+                                        participantsEmails: participants,
+                                        startDate: challengeData['timestamp'],
+                                        challengeName: challengeName,
+                                        challengeType: challengeData['type'],
+                                        challengeDifficulty:
+                                            challengeData['difficulty'] ??
+                                                'No difficulty',
+                                      );
+                                    case 'Mtn Scramble':
+                                      return MtnScramblePage(
+                                        challengeId: challengeId,
+                                        participantsEmails: participants,
+                                        startDate: challengeData['timestamp'],
+                                        challengeName: challengeName,
+                                        challengeType: challengeData['type'],
+                                        mapElevation:
+                                            challengeData['mapElevation'],
+                                      );
+                                    case 'Team Traverse':
+                                      return TeamTraversePage(
+                                        challengeId: challengeId,
+                                        participantsEmails: participants,
+                                        startDate: challengeData['timestamp'],
+                                        challengeName: challengeName,
+                                        challengeType: challengeData['type'],
+                                        mapDistance:
+                                            challengeData['mapDistance'],
+                                      );
+                                    default:
+                                      // Handle unknown challenge type if necessary
+                                      return Snow2Surf(
+                                        challengeId: challengeId,
+                                        participantsEmails: participants,
+                                        startDate: challengeData['timestamp'],
+                                        challengeName: challengeName,
+                                        challengeType: challengeData['type'],
+                                        challengeDifficulty:
+                                            challengeData['difficulty'] ??
+                                                'No difficulty',
+                                      );
+                                  }
+                                },
+                              ),
+                            );
+                          }
 
                           return Card(
                             clipBehavior: Clip.antiAlias,
@@ -209,6 +290,9 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                         isPublic: isPublic,
                                         isVisible: isVisible,
                                         description: description,
+                                        onSpectate: () =>
+                                            navigateToChallengeDetail(
+                                                challengeType, challengeId),
                                       );
                                     },
                                   );
@@ -221,29 +305,40 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                       ? Expanded(
                                           child: Stack(
                                             children: [
-                                              Image.asset(
-                                                challengeImage,
-                                                fit: BoxFit.contain,
+                                              Center(
+                                                child: Image.asset(
+                                                  challengeImage,
+                                                  fit: BoxFit.contain,
+                                                ),
                                               ),
-                                              Text(
-                                                challengeDifficulty,
-                                                style: TextStyle(
-                                                    fontSize: 12,
-                                                    fontWeight:
-                                                        FontWeight.bold),
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 4.0),
+                                                child: Text(
+                                                  challengeDifficulty,
+                                                  style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
                                               ),
                                             ],
                                           ),
                                         )
                                       : Expanded(
-                                          child: Image.asset(
-                                            challengeImage,
-                                            fit: BoxFit.contain,
+                                          child: Padding(
+                                            padding:
+                                                const EdgeInsets.only(top: 8.0),
+                                            child: Image.asset(
+                                              challengeImage,
+                                              fit: BoxFit.contain,
+                                            ),
                                           ),
                                         ),
                                   ListTile(
                                     title: Padding(
-                                      padding: const EdgeInsets.all(8.0),
+                                      padding: const EdgeInsets.only(top: 8.0),
                                       child: Center(
                                         child: Text(
                                           challengeName,
@@ -253,22 +348,40 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                         ),
                                       ),
                                     ),
-                                    subtitle: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceAround,
-                                      mainAxisSize: MainAxisSize.min,
+                                    subtitle: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
                                       children: [
-                                        isPublic
-                                            ? Icon(Icons.lock_open)
-                                            : Icon(Icons.lock),
-                                        isVisible
-                                            ? Icon(Icons.visibility)
-                                            : Icon(Icons.visibility_off),
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                              bottom: 4.0),
+                                          child: Center(
+                                            child: Text(
+                                              challengeUserDescription,
+                                              style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontStyle: FontStyle.italic),
+                                            ),
+                                          ),
+                                        ),
                                         Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceAround,
+                                          mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Icon(Icons.person),
-                                            Text(
-                                                participants.length.toString()),
+                                            isPublic
+                                                ? Icon(Icons.lock_open)
+                                                : Icon(Icons.lock),
+                                            isVisible
+                                                ? Icon(Icons.visibility)
+                                                : Icon(Icons.visibility_off),
+                                            Row(
+                                              children: [
+                                                Icon(Icons.person),
+                                                Text(participants.length
+                                                    .toString()),
+                                              ],
+                                            ),
                                           ],
                                         ),
                                       ],
@@ -277,11 +390,11 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                   Center(
                                     child: Text(
                                       hasJoined
-                                          ? 'Tap to view'
+                                          ? 'Active Challenge'
                                           : 'Tap to learn more',
                                       style: TextStyle(
                                           color: hasJoined
-                                              ? Colors.blueAccent
+                                              ? Theme.of(context).primaryColor
                                               : Colors.grey,
                                           fontSize: hasJoined ? 14 : 12,
                                           fontStyle: hasJoined
@@ -294,17 +407,20 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                     child: ElevatedButton(
                                       onPressed: hasJoined
                                           ? null
-                                          : () => joinChallenge(challengeId),
-                                      child: Text(hasJoined
-                                          ? 'Challenge Active'
-                                          : 'Join'),
+                                          : () => joinChallenge(
+                                              challengeId, challengePassword),
+                                      child: Text(
+                                        hasJoined ? 'Tap to View' : 'Join',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
                                       style: ButtonStyle(
                                         backgroundColor: MaterialStateProperty
                                             .resolveWith<Color>(
                                           (Set<MaterialState> states) {
                                             if (states.contains(
                                                 MaterialState.disabled))
-                                              return Colors.grey;
+                                              return Theme.of(context)
+                                                  .secondaryHeaderColor; // Use the default button color
                                             return Theme.of(context)
                                                 .primaryColor; // Use the default button color
                                           },

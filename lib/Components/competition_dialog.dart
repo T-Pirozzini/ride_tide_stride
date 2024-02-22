@@ -15,6 +15,8 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
   String _selectedChallenge = "Mtn Scramble";
   TextEditingController _challengeNameController = TextEditingController();
   TextEditingController _challengePasswordController = TextEditingController();
+  TextEditingController _challengeDescriptionController =
+      TextEditingController();
   String _selectedDescription =
       "Team based challenge where the most elevation gain wins!";
 
@@ -128,6 +130,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
       'type': selectedChallenge.name,
       'name': _challengeNameController.text,
       'description': selectedChallenge.description,
+      'userDescription': _challengeDescriptionController.text,
       'isPublic': _isPublic,
       'password': _isPublic ? '' : _challengePasswordController.text.trim(),
       'isVisible': _isVisible,
@@ -181,8 +184,8 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
     });
   }
 
-  void selectActivityLegs() {
-    showDialog(
+  Future<void> selectActivityLegs() async {
+    await showDialog<void>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
@@ -197,10 +200,33 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                       title: Text(key),
                       value: _selectedActivities[key],
                       onChanged: (bool? value) {
-                        setState(() {
-                          // This now calls the local setState
-                          _selectedActivities[key] = value!;
-                        });
+                        int selectedCount =
+                            _selectedActivities.values.where((v) => v).length;
+                        // Check if trying to select more than 4 activities
+                        if (value == true && selectedCount >= 4) {
+                          // Optionally, show a dialog or toast to inform the user
+                          showModalBottomSheet(
+                            context: context,
+                            builder: (BuildContext bc) {
+                              return Container(
+                                child: Wrap(
+                                  children: <Widget>[
+                                    ListTile(
+                                      leading: new Icon(Icons.warning),
+                                      title: new Text(
+                                          'You must select only 4 activities.'),
+                                      onTap: () => {},
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+                        } else {
+                          setState(() {
+                            _selectedActivities[key] = value!;
+                          });
+                        }
                       },
                     );
                   }).toList(),
@@ -258,256 +284,275 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
 
     return AlertDialog(
       title: Center(child: Text('Create a Challenge')),
-      content: SingleChildScrollView(
-        child: Container(
-          width: contentWidth,
-          height: contentHeight,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Expanded(
-                child: Container(
-                  height: 80,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: _challenges
-                        .map((challenge) => GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _selectedChallenge = challenge.name;
-                                  _selectedDescription = challenge.description;
-                                });
-                              },
-                              child: CircleAvatar(
-                                maxRadius: _selectedChallenge == challenge.name
-                                    ? 30.0
-                                    : 20.0,
-                                child: ClipOval(
-                                  child: Image.asset(challenge.assetPath),
+      content: Builder(builder: (context) {
+        return SingleChildScrollView(
+          child: Container(
+            width: contentWidth,
+            height: contentHeight,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 80,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: _challenges
+                          .map((challenge) => GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _selectedChallenge = challenge.name;
+                                    _selectedDescription =
+                                        challenge.description;
+                                  });
+                                },
+                                child: CircleAvatar(
+                                  maxRadius:
+                                      _selectedChallenge == challenge.name
+                                          ? 30.0
+                                          : 20.0,
+                                  child: ClipOval(
+                                    child: Image.asset(challenge.assetPath),
+                                  ),
                                 ),
-                              ),
-                            ))
-                        .toList(),
+                              ))
+                          .toList(),
+                    ),
                   ),
                 ),
-              ),
-              Container(
-                height: 230,
-                child: usePageView
-                    ? Column(
-                        children: [
-                          Expanded(
-                            child: PageView(
-                              controller: _pageController,
-                              onPageChanged: (int page) {
-                                setState(() {
-                                  _currentPage = page;
-                                });
-                              },
-                              children:
-                                  currentChallenge.previewPaths.map((path) {
-                                return Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      getNameAndDistance(_currentPage),
-                                      style: TextStyle(
-                                        fontSize: 16,
+                Container(
+                  height: 230,
+                  child: usePageView
+                      ? Column(
+                          children: [
+                            Expanded(
+                              child: PageView(
+                                controller: _pageController,
+                                onPageChanged: (int page) {
+                                  setState(() {
+                                    _currentPage = page;
+                                  });
+                                },
+                                children:
+                                    currentChallenge.previewPaths.map((path) {
+                                  return Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        getNameAndDistance(_currentPage),
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                        ),
                                       ),
-                                    ),
-                                    SizedBox(
-                                        height:
-                                            10), // Adjust the spacing between Text and Image
-                                    Image.asset(
-                                      path,
-                                      fit: BoxFit.fitHeight,
-                                      height:
-                                          150, // Adjust the image height as needed
-                                    ),
-                                  ],
-                                );
-                              }).toList(),
+                                      SizedBox(height: 10),
+                                      Image.asset(
+                                        path,
+                                        fit: BoxFit.fitHeight,
+                                        height: 150,
+                                      ),
+                                    ],
+                                  );
+                                }).toList(),
+                              ),
                             ),
-                          ),
-                          _buildPageIndicators(
-                            currentChallenge.previewPaths.length,
-                            _currentPage,
-                          ),
-                        ],
-                      )
-                    : Column(
+                            _buildPageIndicators(
+                              currentChallenge.previewPaths.length,
+                              _currentPage,
+                            ),
+                          ],
+                        )
+                      : Column(
+                          children: [
+                            Expanded(
+                              child: Image.asset(
+                                currentChallenge.previewPaths.first,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _selectedButton = 'Intro';
+                                    });
+                                  },
+                                  child: Text('Intro'),
+                                  style: _selectedButton == 'Intro'
+                                      ? TextButton.styleFrom(
+                                          primary: Colors.white,
+                                          backgroundColor: Theme.of(context)
+                                              .secondaryHeaderColor,
+                                        )
+                                      : null,
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _selectedButton = 'Advanced';
+                                    });
+                                  },
+                                  child: Text('Advanced'),
+                                  style: _selectedButton == 'Advanced'
+                                      ? TextButton.styleFrom(
+                                          primary: Colors.white,
+                                          backgroundColor: Theme.of(context)
+                                              .secondaryHeaderColor,
+                                        )
+                                      : null,
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _selectedButton = 'Expert';
+                                    });
+                                  },
+                                  child: Text('Expert'),
+                                  style: _selectedButton == 'Expert'
+                                      ? TextButton.styleFrom(
+                                          primary: Colors.white,
+                                          backgroundColor: Theme.of(context)
+                                              .secondaryHeaderColor,
+                                        )
+                                      : null,
+                                ),
+                              ],
+                            ),
+                            TextButton(
+                              onPressed: () async {
+                                await selectActivityLegs();
+                                setState(() {});
+                              },
+                              style: TextButton.styleFrom(
+                                primary: Colors.white,
+                                backgroundColor:
+                                    Theme.of(context).secondaryHeaderColor,
+                              ),
+                              child: Text(
+                                  'Select Activity Legs (${_selectedActivities.values.where((v) => v).length} of 4)'),
+                            ),
+                          ],
+                        ),
+                ),
+                Container(
+                  height: 60,
+                  child: Column(
+                    children: [
+                      Text(_selectedChallenge,
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
+                      Text(_selectedDescription,
+                          style: TextStyle(
+                              fontSize: 12, fontStyle: FontStyle.italic)),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 5),
+                Flexible(
+                  child: TextFormField(
+                    controller: _challengeNameController,
+                    decoration: InputDecoration(
+                        labelText: 'Name Your Team...',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                        )),
+                  ),
+                ),
+                SizedBox(height: 5),
+                Flexible(
+                  child: TextFormField(
+                    controller: _challengeDescriptionController,
+                    decoration: InputDecoration(
+                        labelText: 'Add a description (optional)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                        )),
+                  ),
+                ),
+                SizedBox(height: 15),
+                Container(
+                  width: 250,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          Expanded(
-                            child: Image.asset(
-                              currentChallenge.previewPaths.first,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          Column(
                             children: [
-                              TextButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _selectedButton = 'Intro';
-                                  });
-                                },
-                                child: Text('Intro'),
-                                style: _selectedButton == 'Intro'
-                                    ? TextButton.styleFrom(
-                                        primary: Colors.white,
-                                        backgroundColor: Theme.of(context)
-                                            .secondaryHeaderColor,
-                                      )
-                                    : null,
+                              ButtonTheme(
+                                minWidth:
+                                    32.0, // Ensure the buttons have a consistent width
+                                height: 32.0,
+                                child: OutlinedButton(
+                                  onPressed: togglePrivacy,
+                                  style: OutlinedButton.styleFrom(
+                                    shape: CircleBorder(),
+                                    padding: EdgeInsets.all(15),
+                                  ),
+                                  child: Icon(
+                                      _isPublic ? Icons.lock_open : Icons.lock),
+                                ),
                               ),
-                              TextButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _selectedButton = 'Advanced';
-                                  });
-                                },
-                                child: Text('Advanced'),
-                                style: _selectedButton == 'Advanced'
-                                    ? TextButton.styleFrom(
-                                        primary: Colors.white,
-                                        backgroundColor: Theme.of(context)
-                                            .secondaryHeaderColor,
-                                      )
-                                    : null,
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _selectedButton = 'Expert';
-                                  });
-                                },
-                                child: Text('Expert'),
-                                style: _selectedButton == 'Expert'
-                                    ? TextButton.styleFrom(
-                                        primary: Colors.white,
-                                        backgroundColor: Theme.of(context)
-                                            .secondaryHeaderColor,
-                                      )
-                                    : null,
-                              ),
+                              Text(_isPublic ? 'Public' : 'Private'),
                             ],
                           ),
-                          TextButton(
-                            onPressed: () {
-                              selectActivityLegs();
-                            },
-                            child: Text('Select Activity Legs (4)'),
+                          Flexible(
+                            child: _isPublic
+                                ? Text('Allow anyone to join your challenge',
+                                    style: TextStyle(fontSize: 12))
+                                : TextFormField(
+                                    controller: _challengePasswordController,
+                                    decoration: InputDecoration(
+                                        labelText: 'Enter a password...',
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(10.0),
+                                        )),
+                                  ),
                           ),
                         ],
                       ),
-              ),
-              Container(
-                height: 60,
-                child: Column(
-                  children: [
-                    Text(_selectedChallenge,
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
-                    Text(_selectedDescription,
-                        style: TextStyle(
-                            fontSize: 12, fontStyle: FontStyle.italic)),
-                  ],
-                ),
-              ),
-              SizedBox(height: 5),
-              Flexible(
-                child: TextFormField(
-                  controller: _challengeNameController,
-                  decoration: InputDecoration(
-                      labelText: 'Name your challenge...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10.0),
-                      )),
-                ),
-              ),
-              SizedBox(height: 15),
-              Container(
-                width: 250,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Column(
-                          children: [
-                            ButtonTheme(
-                              minWidth:
-                                  32.0, // Ensure the buttons have a consistent width
-                              height: 32.0,
-                              child: OutlinedButton(
-                                onPressed: togglePrivacy,
-                                style: OutlinedButton.styleFrom(
-                                  shape: CircleBorder(),
-                                  padding: EdgeInsets.all(15),
+                      SizedBox(height: 5),
+                      Row(
+                        children: [
+                          Column(
+                            children: [
+                              ButtonTheme(
+                                minWidth:
+                                    32.0, // Ensure the buttons have a consistent width
+                                height: 32.0,
+                                child: OutlinedButton(
+                                  onPressed: toggleVisibility,
+                                  style: OutlinedButton.styleFrom(
+                                    shape: CircleBorder(),
+                                    padding: EdgeInsets.all(15),
+                                  ),
+                                  child: Icon(_isVisible
+                                      ? Icons.visibility
+                                      : Icons.visibility_off),
                                 ),
-                                child: Icon(
-                                    _isPublic ? Icons.lock_open : Icons.lock),
                               ),
-                            ),
-                            Text(_isPublic ? 'Public' : 'Private'),
-                          ],
-                        ),
-                        Flexible(
-                          child: _isPublic
-                              ? Text('Allow anyone to join your challenge',
-                                  style: TextStyle(fontSize: 12))
-                              : TextFormField(
-                                  controller: _challengePasswordController,
-                                  decoration: InputDecoration(
-                                      labelText: 'Enter a password...',
-                                      border: OutlineInputBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(10.0),
-                                      )),
-                                ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 5),
-                    Row(
-                      children: [
-                        Column(
-                          children: [
-                            ButtonTheme(
-                              minWidth:
-                                  32.0, // Ensure the buttons have a consistent width
-                              height: 32.0,
-                              child: OutlinedButton(
-                                onPressed: toggleVisibility,
-                                style: OutlinedButton.styleFrom(
-                                  shape: CircleBorder(),
-                                  padding: EdgeInsets.all(15),
-                                ),
-                                child: Icon(_isVisible
-                                    ? Icons.visibility
-                                    : Icons.visibility_off),
-                              ),
-                            ),
-                            Text(_isVisible ? 'Visible' : 'Hidden'),
-                          ],
-                        ),
-                        Flexible(
-                          child: Text(
-                              _isVisible
-                                  ? 'Allow others to view your challenge'
-                                  : 'Keep your challenge private',
-                              style: TextStyle(fontSize: 12)),
-                        ),
-                      ],
-                    ),
-                  ],
+                              Text(_isVisible ? 'Visible' : 'Hidden'),
+                            ],
+                          ),
+                          Flexible(
+                            child: Text(
+                                _isVisible
+                                    ? 'Allow others to view your challenge'
+                                    : 'Keep your challenge private',
+                                style: TextStyle(fontSize: 12)),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      }),
       actions: [
         TextButton(
           onPressed: () {

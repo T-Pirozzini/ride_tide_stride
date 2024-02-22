@@ -6,6 +6,7 @@ class CompetitionLearnMore extends StatelessWidget {
   final bool isPublic;
   final bool isVisible;
   final String description;
+  final VoidCallback onSpectate;
 
   CompetitionLearnMore(
       {super.key,
@@ -13,14 +14,11 @@ class CompetitionLearnMore extends StatelessWidget {
       required this.challengeImage,
       required this.isPublic,
       required this.isVisible,
-      required this.description});
+      required this.description,
+      required this.onSpectate});
 
   @override
   Widget build(BuildContext context) {
-    void spectateChallenge() {
-      print('Spectating $challengeName');
-    }
-
     return AlertDialog(
       title: Center(child: Text(challengeName)),
       content: SingleChildScrollView(
@@ -66,16 +64,68 @@ class CompetitionLearnMore extends StatelessWidget {
                     ],
                   ),
             const SizedBox(height: 10),
-            TextButton(
-                onPressed: spectateChallenge,
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all(Colors.blue),
-                  maximumSize: MaterialStateProperty.all(Size(200, 50)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    if (isVisible) {
+                      onSpectate();
+                    } else {
+                      showModalBottomSheet(
+                        context: context,
+                        builder: (BuildContext bc) {
+                          return Container(
+                            child: Wrap(
+                              children: <Widget>[
+                                ListTile(
+                                  leading: Icon(Icons.warning),
+                                  title: Text('Sorry, no spectators allowed.'),
+                                  onTap: () => {},
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    }
+                  },
+                  style: isVisible
+                      ? ButtonStyle(
+                          backgroundColor: MaterialStateProperty.all(
+                              Theme.of(context).primaryColor),
+                          maximumSize: MaterialStateProperty.all(Size(200, 50)),
+                        )
+                      : ButtonStyle(
+                          backgroundColor: MaterialStateProperty.all(
+                              Theme.of(context).primaryColor.withOpacity(0.5)),
+                          maximumSize: MaterialStateProperty.all(Size(200, 50)),
+                        ),
+                  child: Text(
+                    'Spectate Challenge',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
-                child: Text(
-                  'Spectate Challenge',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
-                ))
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  style: ButtonStyle(
+                    maximumSize: MaterialStateProperty.all(Size(200, 50)),
+                  ),
+                  child: Text(
+                    'Close',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
