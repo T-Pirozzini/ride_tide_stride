@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
 
 class TeamTraversePage extends StatefulWidget {
   final String challengeId;
@@ -38,7 +39,7 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
     DateTime adjustedStartDate =
         DateTime(startDate.year, startDate.month, startDate.day);
     endDate = adjustedStartDate.add(Duration(days: 30));
-    _maybeFinalizeChallenge();
+    checkAndFinalizeChallenge();
   }
 
   Future<Map<String, double>> fetchParticipantDistances() async {
@@ -156,27 +157,29 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
       'mapDistance': mapDistance, // Numeric map distance
       'mapAssetUrl': mapDetails['mapAssetUrl'], // URL or asset path for the map
     };
-  }
-
-  Future<void> _maybeFinalizeChallenge() async {
-    final now = DateTime.now();
-    if (endDate != null && now.isAfter(endDate!)) {
-      await checkAndFinalizeChallenge();
-    }
-  }
+  }  
 
   Future<void> checkAndFinalizeChallenge() async {
     final challengeDetails = await fetchChallengeDetailsAndTotalDistance();
     final double totalDistance = challengeDetails['totalDistance'];
     final double goalDistance = challengeDetails['mapDistance'];
+    final now = DateTime.now();
 
     // If the goal has been met or exceeded
     if (totalDistance >= goalDistance) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showSuccessDialog();
+      });
+    }
+
+    if (endDate != null &&
+        now.isAfter(endDate!) &&
+        totalDistance >= goalDistance) {
       // Update the challenge's active status to false
       await FirebaseFirestore.instance
           .collection('Challenges')
           .doc(widget.challengeId)
-          .update({'active': false, 'success': true});
+          .update({'active': false, 'success': true}).then((_) {});
     } else {
       // Update the challenge's active status to false
       await FirebaseFirestore.instance
@@ -184,6 +187,47 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
           .doc(widget.challengeId)
           .update({'active': false, 'success': false});
     }
+  }
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Challenge Completed!"),
+          content: Stack(
+            children: <Widget>[
+              Lottie.asset(
+                'assets/lottie/win_animation.json',
+                frameRate: FrameRate.max,
+                repeat: true,
+                reverse: false,
+                animate: true,
+              ),
+              Lottie.asset(
+                'assets/lottie/firework_animation.json',
+                frameRate: FrameRate.max,
+                repeat: true,
+                reverse: false,
+                animate: true,
+              ),
+              const Text(
+                "Congratulations! You have successfully completed the challenge.",
+                style: TextStyle(fontSize: 14),
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override

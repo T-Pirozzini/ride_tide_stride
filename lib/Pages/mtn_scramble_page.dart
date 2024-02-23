@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
 
 class MtnScramblePage extends StatefulWidget {
   final String challengeId;
@@ -37,7 +38,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
     DateTime adjustedStartDate =
         DateTime(startDate.year, startDate.month, startDate.day);
     endDate = adjustedStartDate.add(Duration(days: 30));
-    _maybeFinalizeChallenge();
+    checkAndFinalizeChallenge();
   }
 
   Future<Map<String, double>> fetchParticipantElevations() async {
@@ -168,14 +169,23 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
     final challengeDetails = await fetchChallengeDetailsAndTotalElevation();
     final double totalElevation = challengeDetails['totalElevation'];
     final double goalElevation = challengeDetails['mapElevation'];
+    final now = DateTime.now();
+
+    if (totalElevation >= goalElevation) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showSuccessDialog();
+      });
+    }
 
     // If the goal has been met or exceeded
-    if (totalElevation >= goalElevation) {
+    if (endDate != null &&
+        now.isAfter(endDate!) &&
+        totalElevation >= goalElevation) {
       // Update the challenge's active status to false
       await FirebaseFirestore.instance
           .collection('Challenges')
           .doc(widget.challengeId)
-          .update({'active': false, 'success': true});
+          .update({'active': false, 'success': true}).then((_) {});
     } else {
       // Update the challenge's active status to false
       await FirebaseFirestore.instance
@@ -183,6 +193,47 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
           .doc(widget.challengeId)
           .update({'active': false, 'success': false});
     }
+  }
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Challenge Completed!"),
+          content: Stack(
+            children: <Widget>[
+              Lottie.asset(
+                'assets/lottie/win_animation.json',
+                frameRate: FrameRate.max,
+                repeat: true,
+                reverse: false,
+                animate: true,
+              ),
+              Lottie.asset(
+                'assets/lottie/firework_animation.json',
+                frameRate: FrameRate.max,
+                repeat: true,
+                reverse: false,
+                animate: true,
+              ),
+              const Text(
+                "Congratulations! You have successfully completed the challenge.",
+                style: TextStyle(fontSize: 14),
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override

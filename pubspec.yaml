@@ -93,6 +93,7 @@ flutter:
     - assets/
     - assets/images/
     - assets/lottie/win_animation.json
+    - assets/lottie/
     
   #   - images/a_dot_ham.jpeg
 
