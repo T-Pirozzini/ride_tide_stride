@@ -13,6 +13,7 @@ class Snow2Surf extends StatefulWidget {
   final String challengeType;
   final String challengeName;
   final String challengeDifficulty;
+  final List challengeLegs;
 
   const Snow2Surf({
     super.key,
@@ -22,6 +23,7 @@ class Snow2Surf extends StatefulWidget {
     required this.challengeType,
     required this.challengeName,
     required this.challengeDifficulty,
+    required this.challengeLegs,
   });
 
   @override
@@ -33,56 +35,56 @@ class _Snow2SurfState extends State<Snow2Surf> {
 
   List<Map<String, dynamic>> categories = [
     {
-      'name': 'Alpine Ski',
+      'name': 'Alpine Skiing',
       'type': ['Snowboard', 'AlpineSki'],
       'icon': Icons.downhill_skiing_outlined,
       'distance': 2.0,
       'bestTime': '0:00',
     },
     {
-      'name': 'Cross Country Ski',
+      'name': 'Nordic Skiing',
       'type': ['NordicSki'],
       'icon': Symbols.nordic_walking,
       'distance': 8.0,
       'bestTime': '0:00',
     },
     {
-      'name': 'Road Run',
+      'name': 'Road Running',
       'type': ['VirtualRun', 'Road Run', 'Run'],
       'icon': Symbols.sprint,
       'distance': 7.0,
       'bestTime': '0:00',
     },
     {
-      'name': 'Trail Run',
+      'name': 'Trail Running',
       'type': ['Trail Run'],
       'icon': Icons.directions_run_outlined,
       'distance': 6.0,
       'bestTime': '0:00',
     },
     {
-      'name': 'Mountain Bike',
+      'name': 'Mountain Biking',
       'type': ['Mtn Bike'],
       'icon': Icons.directions_bike_outlined,
       'distance': 15.0,
       'bestTime': '0:00',
     },
     {
-      'name': 'Kayak',
+      'name': 'Kayaking',
       'type': ['Kayaking'],
       'icon': Icons.kayaking_outlined,
       'distance': 5.0,
       'bestTime': '0:00',
     },
     {
-      'name': 'Road Bike',
+      'name': 'Road Cycling',
       'type': ['VirtualRide', 'Road Bike', 'Ride'],
       'icon': Icons.directions_bike_outlined,
       'distance': 25.0,
       'bestTime': '0:00',
     },
     {
-      'name': 'Canoe',
+      'name': 'Canoeing',
       'type': ['Canoeing'],
       'icon': Icons.rowing_outlined,
       'distance': 5.0,
@@ -169,6 +171,15 @@ class _Snow2SurfState extends State<Snow2Surf> {
     List<Map<String, dynamic>> categories,
     String title,
   ) {
+    // Filter categories to only include selected legs
+    List<Map<String, dynamic>> selectedCategories =
+        categories.where((category) {
+      print("Checking category: ${category['name']}");
+      return widget.challengeLegs.contains(category['name']);
+    }).toList();
+
+    print("Selected categories: $selectedCategories");
+
     Icon getNumberIcon(int index) {
       switch (index) {
         case 0:
@@ -189,26 +200,6 @@ class _Snow2SurfState extends State<Snow2Surf> {
         case 3:
           return Icon(
             Symbols.counter_4_rounded,
-            size: 32,
-          );
-        case 4:
-          return Icon(
-            Symbols.counter_5_rounded,
-            size: 32,
-          );
-        case 5:
-          return Icon(
-            Symbols.counter_6_rounded,
-            size: 32,
-          );
-        case 6:
-          return Icon(
-            Symbols.counter_7_rounded,
-            size: 32,
-          );
-        case 7:
-          return Icon(
-            Symbols.counter_8_rounded,
             size: 32,
           );
         default:
@@ -272,39 +263,46 @@ class _Snow2SurfState extends State<Snow2Surf> {
               return Column(
                 children: [
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: categories.length + 1,
+                    child: GridView.builder(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 1,
+                        childAspectRatio: MediaQuery.of(context).size.width /
+                            (MediaQuery.of(context).size.height / 2),
+                      ),
+                      itemCount: selectedCategories.length + 1,
                       itemBuilder: (context, index) {
                         // Check if this index is for the total time display
-                        if (index == categories.length) {
+                        if (index == selectedCategories.length) {
                           // Calculate the total time
                           double totalTime = bestTimesInSeconds.fold(
                               0, (prev, curr) => prev + curr);
 
                           // Return a widget to display the total time
-                          return ListTile(
-                            title: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Total Time: ',
-                                  style: GoogleFonts.syne(
-                                      textStyle: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold)),
-                                ),
-                                Text(
-                                  '${formatTime(totalTime)}',
-                                  style: GoogleFonts.syne(
-                                      textStyle: TextStyle(fontSize: 18)),
-                                ),
-                              ],
+                          return Card(
+                            child: ListTile(
+                              title: Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Total Time: ',
+                                    style: GoogleFonts.syne(
+                                        textStyle: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold)),
+                                  ),
+                                  Text(
+                                    '${formatTime(totalTime)}',
+                                    style: GoogleFonts.syne(
+                                        textStyle: TextStyle(fontSize: 18)),
+                                  ),
+                                ],
+                              ),
+                              // Adjust the styling as needed
                             ),
-                            // Adjust the styling as needed
                           );
                         } else {
-                          var category = categories[index];
+                          var category = selectedCategories[index];
                           List<String> sportTypes =
                               List<String>.from(category['type']);
 
@@ -366,27 +364,44 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                   ),
                                 );
                               },
-                              child: ListTile(
-                                tileColor: Colors.white,
-
-                                visualDensity:
-                                    VisualDensity(horizontal: 0, vertical: -4),
-                                leading: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    getNumberIcon(index),
-                                    SizedBox(width: 8),
-                                    Icon(categories[index]['icon']),
-                                  ],
-                                ), // Replace with actual icon
-                                title: Text(categories[index]['name']),
-                                subtitle: Text(displayName),
-                                trailing: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(displayTime),
-                                    Text(categoryDistance.toString() + " km"),
-                                  ],
+                              child: Card(
+                                elevation: 2,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Column(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: <Widget>[
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Icon(selectedCategories[index]
+                                              ['icon']),
+                                          Text(
+                                            selectedCategories[index]['name'],
+                                            style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                        ],
+                                      ),
+                                      Text(
+                                        displayName.split(
+                                            ' ')[0], // Display the first name
+                                        style: TextStyle(fontSize: 18),
+                                      ),
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text('Best Time: $displayTime'),
+                                          Text(
+                                              "Min Distance: ${categoryDistance.toString()} km"),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -406,6 +421,9 @@ class _Snow2SurfState extends State<Snow2Surf> {
 
   @override
   Widget build(BuildContext context) {
+    double aspectRatio = MediaQuery.of(context).size.width /
+        (MediaQuery.of(context).size.height / 2);
+
     return Scaffold(
       backgroundColor: const Color(0xFFDFD3C3),
       appBar: AppBar(
@@ -436,12 +454,44 @@ class _Snow2SurfState extends State<Snow2Surf> {
                 child: Row(
                   children: [
                     Expanded(
-                        flex: 3,
+                        flex: 2,
                         child: buildCategoryCard(
                             categories, formattedCurrentMonth)),
                     Expanded(
+                      // If you want the middle column to be narrower, use a smaller flex value.
                       flex: 1,
-                      child: ListView.builder(
+                      child: GridView.builder(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 1,
+                          childAspectRatio: aspectRatio,
+                        ),
+                        itemCount:
+                            opponents[widget.challengeDifficulty]!["name"]
+                                .length,
+                        itemBuilder: (context, index) {
+                          return Container(
+                            // Adjust padding or margins if necessary
+                            padding: const EdgeInsets.all(1.0),
+                            child: Center(
+                              child: Text(
+                                'VS',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: GridView.builder(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 1,
+                          childAspectRatio: aspectRatio,
+                        ),
                         itemCount:
                             opponents[widget.challengeDifficulty]!["name"]
                                 .length,
@@ -451,42 +501,45 @@ class _Snow2SurfState extends State<Snow2Surf> {
 
                           return Padding(
                             padding: const EdgeInsets.all(1.0),
-                            child: ListTile(
-                              minLeadingWidth: 2,
-                              
-                              tileColor: Colors.white,
-                              visualDensity:
-                                  VisualDensity(horizontal: 0, vertical: -4),
-                              // dense: true,
-                              contentPadding: EdgeInsets.symmetric(
-                                  vertical: 0, horizontal: 2),
-                              leading: CircleAvatar(
-                                backgroundColor: Colors.grey.shade200,
-                                // Set the radius to limit the size of the CircleAvatar
-                                radius:
-                                    24, // Adjust the radius to fit within the ListTile properly
-                                child: ClipOval(
-                                  child: Image.asset(
-                                    difficulty["image"][index],
-                                    fit: BoxFit
-                                        .cover, // This ensures the image covers the clip area well
-                                    width:
-                                        48, // Match this width to the overall size constraint of the CircleAvatar
-                                    height: 48, // Match this height as well
-                                  ),
+                            child: Card(
+                              elevation: 2,
+                              child: Padding(
+                                padding: EdgeInsets.all(8),
+                                child: Column(
+                                  children: <Widget>[
+                                    Expanded(
+                                      child: CircleAvatar(
+                                        backgroundColor: Colors.grey.shade400,
+                                        // Set the radius to limit the size of the CircleAvatar
+                                        radius:
+                                            52, // Adjust the radius to fit within the ListTile properly
+                                        child: ClipOval(
+                                          child: Image.asset(
+                                            difficulty["image"][index],
+                                            fit: BoxFit
+                                                .fill, // This ensures the image covers the clip area well
+                                            width:
+                                                100, // Match this width to the overall size constraint of the CircleAvatar
+                                            height:
+                                                100, // Match this height as well
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      difficulty["name"][
+                                          index], // Accessing the name by index
+                                      style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    Text(
+                                      "${difficulty["bestTime"][index]}",
+                                      style: TextStyle(fontSize: 12),
+                                    ), // Accessing the best time by index
+                                  ],
                                 ),
                               ),
-
-                              title: Text(
-                                difficulty["name"]
-                                    [index], // Accessing the name by index
-                                style: TextStyle(
-                                    fontSize: 10, fontWeight: FontWeight.bold),
-                              ),
-                              subtitle: Text(
-                                "${difficulty["bestTime"][index]}",
-                                style: TextStyle(fontSize: 10),
-                              ), // Accessing the best time by index
                             ),
                           );
                         },
