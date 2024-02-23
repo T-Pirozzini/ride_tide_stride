@@ -157,31 +157,27 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
       'mapDistance': mapDistance, // Numeric map distance
       'mapAssetUrl': mapDetails['mapAssetUrl'], // URL or asset path for the map
     };
-  }  
+  }
 
   Future<void> checkAndFinalizeChallenge() async {
     final challengeDetails = await fetchChallengeDetailsAndTotalDistance();
-    final double totalDistance = challengeDetails['totalDistance'];
+    final double totalDistance = challengeDetails['totalDistance'] / 1000;
     final double goalDistance = challengeDetails['mapDistance'];
     final now = DateTime.now();
 
-    // If the goal has been met or exceeded
+    // Check if the goal has been met or exceeded
     if (totalDistance >= goalDistance) {
+      // Show success dialog if the goal is met
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showSuccessDialog();
       });
-    }
-
-    if (endDate != null &&
-        now.isAfter(endDate!) &&
-        totalDistance >= goalDistance) {
-      // Update the challenge's active status to false
-      await FirebaseFirestore.instance
-          .collection('Challenges')
-          .doc(widget.challengeId)
-          .update({'active': false, 'success': true}).then((_) {});
-    } else {
-      // Update the challenge's active status to false
+      if (endDate != null && now.isAfter(endDate!)) {
+        await FirebaseFirestore.instance
+            .collection('Challenges')
+            .doc(widget.challengeId)
+            .update({'active': false, 'success': true});
+      }
+    } else if (endDate != null && now.isAfter(endDate!)) {
       await FirebaseFirestore.instance
           .collection('Challenges')
           .doc(widget.challengeId)

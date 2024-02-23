@@ -158,36 +158,27 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
     };
   }
 
-  Future<void> _maybeFinalizeChallenge() async {
-    final now = DateTime.now();
-    if (endDate != null && now.isAfter(endDate!)) {
-      await checkAndFinalizeChallenge();
-    }
-  }
-
   Future<void> checkAndFinalizeChallenge() async {
     final challengeDetails = await fetchChallengeDetailsAndTotalElevation();
     final double totalElevation = challengeDetails['totalElevation'];
     final double goalElevation = challengeDetails['mapElevation'];
     final now = DateTime.now();
-
+    
     if (totalElevation >= goalElevation) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showSuccessDialog();
       });
-    }
 
-    // If the goal has been met or exceeded
-    if (endDate != null &&
-        now.isAfter(endDate!) &&
-        totalElevation >= goalElevation) {
-      // Update the challenge's active status to false
-      await FirebaseFirestore.instance
-          .collection('Challenges')
-          .doc(widget.challengeId)
-          .update({'active': false, 'success': true}).then((_) {});
-    } else {
-      // Update the challenge's active status to false
+      // If the goal has been met or exceeded
+      if (endDate != null &&
+          now.isAfter(endDate!) &&
+          totalElevation >= goalElevation) {       
+        await FirebaseFirestore.instance
+            .collection('Challenges')
+            .doc(widget.challengeId)
+            .update({'active': false, 'success': true});
+      }
+    } else if (endDate != null && now.isAfter(endDate!)) {      
       await FirebaseFirestore.instance
           .collection('Challenges')
           .doc(widget.challengeId)
