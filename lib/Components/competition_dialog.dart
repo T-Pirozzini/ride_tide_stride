@@ -717,6 +717,24 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                   );
                 },
               );
+            } else if (!_isPublic &&
+                _challengePasswordController.text.trim().isEmpty) {
+              showModalBottomSheet(
+                context: context,
+                builder: (BuildContext bc) {
+                  return Container(
+                    child: Wrap(
+                      children: <Widget>[
+                        ListTile(
+                          leading: new Icon(Icons.warning),
+                          title: new Text('Please enter a password.'),
+                          onTap: () => {},
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
             } else {
               // Call the method to save the challenge
               saveChallengeToFirestore().then((_) {

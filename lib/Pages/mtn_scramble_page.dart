@@ -13,6 +13,8 @@ class MtnScramblePage extends StatefulWidget {
   final String challengeType;
   final String challengeName;
   final String mapElevation;
+  final String challengeCategory;
+  final String challengeActivity;
 
   const MtnScramblePage(
       {super.key,
@@ -21,7 +23,9 @@ class MtnScramblePage extends StatefulWidget {
       required this.startDate,
       required this.challengeType,
       required this.challengeName,
-      required this.mapElevation});
+      required this.mapElevation,
+      required this.challengeCategory,
+      required this.challengeActivity});
 
   @override
   State<MtnScramblePage> createState() => _MtnScramblePageState();
@@ -57,33 +61,61 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
     ];
     int colorIndex = 0;
 
-    // Calculate the end date as 30 days after the start date
+    // Mapping challenge activities to Firestore activity types
+    Map<String, List<String>> activityTypeMappings = {
+      'Running': ['Run', 'VirtualRun'],
+      'Cycling': ['EBikeRide', 'Ride', 'VirtualRide'],
+      'Paddling': ['Canoeing', 'Rowing', 'Kayaking', 'StandUpPaddling'],
+    };
+
     DateTime startDate = widget.startDate.toDate();
     DateTime adjustedStartDate =
         DateTime(startDate.year, startDate.month, startDate.day);
-
     DateTime endDate = adjustedStartDate.add(Duration(days: 30));
 
     for (String email in widget.participantsEmails) {
       double totalElevation = 0.0;
-      var activitiesSnapshot = await FirebaseFirestore.instance
+
+      Query query = FirebaseFirestore.instance
           .collection('activities')
           .where('user_email', isEqualTo: email)
           .where('timestamp',
               isGreaterThanOrEqualTo: Timestamp.fromDate(adjustedStartDate))
-          .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
-          .get();
+          .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endDate));
 
-      for (var doc in activitiesSnapshot.docs) {
-        DateTime activityDate = (doc.data()['timestamp'] as Timestamp).toDate();
-        print("Activity Timestamp for $email: $activityDate");
-        totalElevation += (doc.data()['elevation_gain'] as num).toDouble();
+      // Adjust query for Competitive challenges
+      if (widget.challengeCategory == "Competitive" &&
+          activityTypeMappings.containsKey(widget.challengeActivity)) {
+        List<String> relevantActivityTypes =
+            activityTypeMappings[widget.challengeActivity]!;
+        for (String activityType in relevantActivityTypes) {          
+          var activitiesSnapshot =
+              await query.where('type', isEqualTo: activityType).get();
+          activitiesSnapshot.docs.forEach((doc) {
+            Map<String, dynamic>? data = doc.data() as Map<String, dynamic>?;
+            if (data != null) {
+              totalElevation +=
+                  (data['elevation_gain'] as num?)?.toDouble() ?? 0.0;
+            }
+          });
+        }
+      } else {
+        // For non-competitive, fetch all activities without filtering by type
+        var activitiesSnapshot = await query.get();
+        activitiesSnapshot.docs.forEach((doc) {
+          Map<String, dynamic>? data = doc.data() as Map<String, dynamic>?;
+          if (data != null) {
+            totalElevation +=
+                (data['elevation_gain'] as num?)?.toDouble() ?? 0.0;
+          }
+        });
       }
-      participantElevations[email] = totalElevation;
 
+      participantElevations[email] = totalElevation;
       participantColors[email] = colors[colorIndex % colors.length];
       colorIndex++;
     }
+
     return participantElevations;
   }
 
@@ -163,7 +195,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
     final double totalElevation = challengeDetails['totalElevation'];
     final double goalElevation = challengeDetails['mapElevation'];
     final now = DateTime.now();
-    
+
     if (totalElevation >= goalElevation) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showSuccessDialog();
@@ -172,13 +204,13 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
       // If the goal has been met or exceeded
       if (endDate != null &&
           now.isAfter(endDate!) &&
-          totalElevation >= goalElevation) {       
+          totalElevation >= goalElevation) {
         await FirebaseFirestore.instance
             .collection('Challenges')
             .doc(widget.challengeId)
             .update({'active': false, 'success': true});
       }
-    } else if (endDate != null && now.isAfter(endDate!)) {      
+    } else if (endDate != null && now.isAfter(endDate!)) {
       await FirebaseFirestore.instance
           .collection('Challenges')
           .doc(widget.challengeId)
@@ -233,13 +265,30 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
       backgroundColor: const Color(0xFFDFD3C3),
       appBar: AppBar(
         centerTitle: true,
-        title: Text(
-          widget.challengeType,
-          style: GoogleFonts.tektur(
-              textStyle: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w300,
-                  letterSpacing: 1.2)),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              widget.challengeType,
+              style: GoogleFonts.tektur(
+                  textStyle: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w300,
+                      letterSpacing: 1.2)),
+            ),
+            const SizedBox(width: 10),
+            widget.challengeCategory == "Competitive"
+                ? Icon(
+                    widget.challengeActivity == "Running"
+                        ? Icons.directions_run
+                        : widget.challengeActivity == "Cycling"
+                            ? Icons.directions_bike
+                            : widget.challengeActivity == "Paddling"
+                                ? Icons.kayaking
+                                : Icons.directions_walk, // Default icon
+                  )
+                : SizedBox.shrink(),
+          ],
         ),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
@@ -481,8 +530,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
   Widget getUserName(String email) {
     // Check if email is "Empty Slot", and avoid fetching from Firestore
     if (email == "Empty Slot") {
-      return Text(
-          email); // Or return SizedBox.shrink() if you don't want to show anything
+      return Text(email);
     }
 
     // Proceed with fetching the username
@@ -490,15 +538,13 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
       future: FirebaseFirestore.instance.collection('Users').doc(email).get(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Text("Loading..."); // Show loading text or a spinner
+          return Text("Loading...");
         }
         if (!snapshot.hasData || snapshot.data?.data() == null) {
-          return Text(email); // Fallback to email if user data is not available
+          return Text(email);
         }
-        var data = snapshot.data!.data()
-            as Map<String, dynamic>; // Cast the data to the correct type
-        return Text(
-            data['username'] ?? email); // Show username or email as a fallback
+        var data = snapshot.data!.data() as Map<String, dynamic>;
+        return Text(data['username'] ?? email);
       },
     );
   }

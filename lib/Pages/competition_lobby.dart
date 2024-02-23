@@ -159,6 +159,7 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                           String challengeType = challengeData['type'];
                           String challengeDifficulty =
                               challengeData['difficulty'] ?? 'No difficulty';
+                          String challengeCategory = challengeData['category'];
                           String challengePassword = challengeData['password'];
                           String challengeUserDescription =
                               challengeData['userDescription'] ?? '';
@@ -190,6 +191,11 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                         challengeType: challengeData['type'],
                                         mapElevation:
                                             challengeData['mapElevation'],
+                                        challengeCategory:
+                                            challengeData['category'],
+                                        challengeActivity:
+                                            challengeData['categoryActivity'] ??
+                                                'No activity',
                                       );
                                     case 'Team Traverse':
                                       return TeamTraversePage(
@@ -200,6 +206,11 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                         challengeType: challengeData['type'],
                                         mapDistance:
                                             challengeData['mapDistance'],
+                                        challengeCategory:
+                                            challengeData['category'],
+                                        challengeActivity:
+                                            challengeData['categoryActivity'] ??
+                                                'No activity',
                                       );
                                     default:
                                       // Handle unknown challenge type if necessary
@@ -253,6 +264,11 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                                 challengeData['type'],
                                             mapElevation:
                                                 challengeData['mapElevation'],
+                                            challengeCategory:
+                                                challengeData['category'],
+                                            challengeActivity: challengeData[
+                                                    'categoryActivity'] ??
+                                                'No activity',
                                           );
                                         case 'Team Traverse':
                                           return TeamTraversePage(
@@ -265,6 +281,11 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                                 challengeData['type'],
                                             mapDistance:
                                                 challengeData['mapDistance'],
+                                            challengeCategory:
+                                                challengeData['category'],
+                                            challengeActivity: challengeData[
+                                                    'categoryActivity'] ??
+                                                'No activity',
                                           );
                                         default:
                                           // Handle unknown challenge type if necessary
@@ -305,41 +326,34 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: <Widget>[
-                                  challengeType == 'Snow2Surf'
-                                      ? Expanded(
-                                          child: Stack(
-                                            children: [
-                                              Center(
-                                                child: Image.asset(
-                                                  challengeImage,
-                                                  fit: BoxFit.contain,
-                                                ),
-                                              ),
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 4.0),
-                                                child: Text(
-                                                  challengeDifficulty,
-                                                  style: TextStyle(
-                                                      fontSize: 12,
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        )
-                                      : Expanded(
-                                          child: Padding(
-                                            padding:
-                                                const EdgeInsets.only(top: 8.0),
+                                  Expanded(
+                                    child: Stack(
+                                      children: [
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 18.0),
+                                          child: Center(
                                             child: Image.asset(
                                               challengeImage,
                                               fit: BoxFit.contain,
                                             ),
                                           ),
                                         ),
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 4.0, vertical: 2.0),
+                                          child: Text(
+                                            challengeType == 'Snow2Surf'
+                                                ? challengeDifficulty
+                                                : challengeCategory,
+                                            style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                   ListTile(
                                     title: Padding(
                                       padding: const EdgeInsets.only(top: 8.0),
