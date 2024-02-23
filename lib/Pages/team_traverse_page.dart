@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
 
 class TeamTraversePage extends StatefulWidget {
   final String challengeId;
@@ -12,6 +13,8 @@ class TeamTraversePage extends StatefulWidget {
   final String challengeType;
   final String challengeName;
   final String mapDistance;
+  final String challengeCategory;
+  final String challengeActivity;
 
   const TeamTraversePage(
       {Key? key,
@@ -20,7 +23,9 @@ class TeamTraversePage extends StatefulWidget {
       required this.startDate,
       required this.challengeType,
       required this.challengeName,
-      required this.mapDistance})
+      required this.mapDistance,
+      required this.challengeCategory,
+      required this.challengeActivity})
       : super(key: key);
 
   @override
@@ -38,6 +43,7 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
     DateTime adjustedStartDate =
         DateTime(startDate.year, startDate.month, startDate.day);
     endDate = adjustedStartDate.add(Duration(days: 30));
+    checkAndFinalizeChallenge();
   }
 
   Future<Map<String, double>> fetchParticipantDistances() async {
@@ -56,35 +62,82 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
     ];
     int colorIndex = 0;
 
-    // Calculate the end date as 30 days after the start date
+    // Mapping challenge activities to Firestore activity types
+    Map<String, List<String>> activityTypeMappings = {
+      'Running': ['Run', 'VirtualRun'],
+      'Cycling': ['EBikeRide', 'Ride', 'VirtualRide'],
+      'Paddling': ['Canoeing', 'Rowing', 'Kayaking', 'StandUpPaddling'],
+    };
+
     DateTime startDate = widget.startDate.toDate();
     DateTime adjustedStartDate =
         DateTime(startDate.year, startDate.month, startDate.day);
-
     DateTime endDate = adjustedStartDate.add(Duration(days: 30));
 
     for (String email in widget.participantsEmails) {
       double totalDistance = 0.0;
-      var activitiesSnapshot = await FirebaseFirestore.instance
+
+      Query query = FirebaseFirestore.instance
           .collection('activities')
           .where('user_email', isEqualTo: email)
           .where('timestamp',
               isGreaterThanOrEqualTo: Timestamp.fromDate(adjustedStartDate))
-          .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
-          .get();
+          .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endDate));
 
-      for (var doc in activitiesSnapshot.docs) {
-        DateTime activityDate = (doc.data()['timestamp'] as Timestamp).toDate();
-        print("Activity Timestamp for $email: $activityDate");
-        totalDistance += (doc.data()['distance'] as num).toDouble();
+      // Adjust query for Competitive challenges
+      if (widget.challengeCategory == "Competitive" &&
+          activityTypeMappings.containsKey(widget.challengeActivity)) {
+        List<String> relevantActivityTypes =
+            activityTypeMappings[widget.challengeActivity]!;
+        for (String activityType in relevantActivityTypes) {
+          var activitiesSnapshot =
+              await query.where('type', isEqualTo: activityType).get();
+          activitiesSnapshot.docs.forEach((doc) {
+            Map<String, dynamic>? data = doc.data() as Map<String, dynamic>?;
+            if (data != null) {
+              totalDistance += (data['distance'] as num?)?.toDouble() ?? 0.0;
+            }
+          });
+        }
+      } else {
+        // For non-competitive, fetch all activities without filtering by type
+        var activitiesSnapshot = await query.get();
+        activitiesSnapshot.docs.forEach((doc) {
+          Map<String, dynamic>? data = doc.data() as Map<String, dynamic>?;
+          if (data != null) {
+            totalDistance += (data['distance'] as num?)?.toDouble() ?? 0.0;
+          }
+        });
       }
-      participantDistances[email] = totalDistance;
 
+      participantDistances[email] = totalDistance;
       participantColors[email] = colors[colorIndex % colors.length];
       colorIndex++;
     }
+
     return participantDistances;
   }
+
+  //     var activitiesSnapshot = await FirebaseFirestore.instance
+  //         .collection('activities')
+  //         .where('user_email', isEqualTo: email)
+  //         .where('timestamp',
+  //             isGreaterThanOrEqualTo: Timestamp.fromDate(adjustedStartDate))
+  //         .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
+  //         .get();
+
+  //     for (var doc in activitiesSnapshot.docs) {
+  //       DateTime activityDate = (doc.data()['timestamp'] as Timestamp).toDate();
+  //       print("Activity Timestamp for $email: $activityDate");
+  //       totalDistance += (doc.data()['distance'] as num).toDouble();
+  //     }
+  //     participantDistances[email] = totalDistance;
+
+  //     participantColors[email] = colors[colorIndex % colors.length];
+  //     colorIndex++;
+  //   }
+  //   return participantDistances;
+  // }
 
   Widget buildPieChart(Map<String, double> participantDistances) {
     double totalDistance =
@@ -157,19 +210,103 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
     };
   }
 
+  Future<void> checkAndFinalizeChallenge() async {
+    final challengeDetails = await fetchChallengeDetailsAndTotalDistance();
+    final double totalDistance = challengeDetails['totalDistance'] / 1000;
+    final double goalDistance = challengeDetails['mapDistance'];
+    final now = DateTime.now();
+
+    // Check if the goal has been met or exceeded
+    if (totalDistance >= goalDistance) {
+      // Show success dialog if the goal is met
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showSuccessDialog();
+      });
+      if (endDate != null && now.isAfter(endDate!)) {
+        await FirebaseFirestore.instance
+            .collection('Challenges')
+            .doc(widget.challengeId)
+            .update({'active': false, 'success': true});
+      }
+    } else if (endDate != null && now.isAfter(endDate!)) {
+      await FirebaseFirestore.instance
+          .collection('Challenges')
+          .doc(widget.challengeId)
+          .update({'active': false, 'success': false});
+    }
+  }
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Challenge Completed!"),
+          content: Stack(
+            children: <Widget>[
+              Lottie.asset(
+                'assets/lottie/win_animation.json',
+                frameRate: FrameRate.max,
+                repeat: true,
+                reverse: false,
+                animate: true,
+              ),
+              Lottie.asset(
+                'assets/lottie/firework_animation.json',
+                frameRate: FrameRate.max,
+                repeat: true,
+                reverse: false,
+                animate: true,
+              ),
+              const Text(
+                "Congratulations! You have successfully completed the challenge.",
+                style: TextStyle(fontSize: 14),
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFDFD3C3),
       appBar: AppBar(
         centerTitle: true,
-        title: Text(
-          widget.challengeType,
-          style: GoogleFonts.tektur(
-              textStyle: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w300,
-                  letterSpacing: 1.2)),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              widget.challengeType,
+              style: GoogleFonts.tektur(
+                  textStyle: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w300,
+                      letterSpacing: 1.2)),
+            ),
+            const SizedBox(width: 10),
+            widget.challengeCategory == "Competitive"
+                ? Icon(
+                    widget.challengeActivity == "Running"
+                        ? Icons.directions_run
+                        : widget.challengeActivity == "Cycling"
+                            ? Icons.directions_bike
+                            : widget.challengeActivity == "Paddling"
+                                ? Icons.kayaking
+                                : Icons.directions_walk, // Default icon
+                  )
+                : SizedBox.shrink(),
+          ],
         ),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),

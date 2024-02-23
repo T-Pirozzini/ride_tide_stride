@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -71,7 +73,9 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
     "8848",
   ];
 
-  String _selectedButton = 'Intro';
+  String _selectedDifficultyButton = 'Intro';
+  String _selectedCategoryButton = 'Open';
+  String _selectedActivityButton = 'Running';
   Map<String, bool> _selectedActivities = {
     'Alpine Skiing': false,
     'Nordic Skiing': false,
@@ -139,6 +143,8 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
       'createdBy': currentUser!.uid,
       'userEmail': currentUser!.email,
       'participants': [currentUser!.email],
+      'active': true,
+      'success': false,
       // Add more fields as needed
     };
 
@@ -147,6 +153,8 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
         _currentPage < selectedChallenge.previewPaths.length) {
       challengeData['currentMap'] =
           selectedChallenge.previewPaths[_currentPage];
+      challengeData['category'] = _selectedCategoryButton;
+      challengeData['categoryActivity'] = _selectedActivityButton;
       challengeData['mapName'] = challengeNamesTeamTraverse[_currentPage];
       challengeData['mapDistance'] =
           challengeDistancesTeamTraverse[_currentPage];
@@ -157,6 +165,8 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
         _currentPage < selectedChallenge.previewPaths.length) {
       challengeData['currentMap'] =
           selectedChallenge.previewPaths[_currentPage];
+      challengeData['category'] = _selectedCategoryButton;
+      challengeData['categoryActivity'] = _selectedActivityButton;
       challengeData['mapName'] = challengeNamesMtnScramble[_currentPage];
       challengeData['mapElevation'] =
           challengeElevationsMtnScramble[_currentPage];
@@ -166,7 +176,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
     if (selectedChallenge.name == "Snow2Surf") {
       challengeData['currentMap'] =
           selectedChallenge.previewPaths[_currentPage];
-      challengeData['difficulty'] = _selectedButton;
+      challengeData['difficulty'] = _selectedDifficultyButton;
       challengeData['legsSelected'] = _selectedActivities.entries
           .where((element) => element.value == true)
           .map((e) => e.key)
@@ -345,10 +355,12 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                                         ),
                                       ),
                                       SizedBox(height: 10),
-                                      Image.asset(
-                                        path,
-                                        fit: BoxFit.fitHeight,
-                                        height: 150,
+                                      Expanded(
+                                        child: Image.asset(
+                                          path,
+                                          fit: BoxFit.fitHeight,
+                                          height: 150,
+                                        ),
                                       ),
                                     ],
                                   );
@@ -359,6 +371,137 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                               currentChallenge.previewPaths.length,
                               _currentPage,
                             ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _selectedCategoryButton = 'Open';
+                                    });
+                                  },
+                                  child: Text('Open'),
+                                  style: _selectedCategoryButton == 'Open'
+                                      ? TextButton.styleFrom(
+                                          primary: Colors.white,
+                                          backgroundColor: Theme.of(context)
+                                              .secondaryHeaderColor,
+                                        )
+                                      : null,
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _selectedCategoryButton = 'Competitive';
+                                    });
+                                  },
+                                  child: Text('Competitive'),
+                                  style:
+                                      _selectedCategoryButton == 'Competitive'
+                                          ? TextButton.styleFrom(
+                                              primary: Colors.white,
+                                              backgroundColor: Theme.of(context)
+                                                  .secondaryHeaderColor,
+                                            )
+                                          : null,
+                                ),
+                              ],
+                            ),
+                            _selectedCategoryButton == "Competitive"
+                                ? Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      GestureDetector(
+                                        onTap: () {
+                                          setState(() {
+                                            _selectedActivityButton = 'Running';
+                                          });
+                                        },
+                                        child: Container(
+                                          padding: EdgeInsets.all(
+                                              8), // Padding around the icon
+                                          decoration: BoxDecoration(
+                                            color: _selectedActivityButton ==
+                                                    'Running'
+                                                ? Theme.of(context)
+                                                    .secondaryHeaderColor // Selected Color
+                                                : Colors
+                                                    .transparent, // Default Color
+                                            shape: BoxShape
+                                                .circle, // Circular shape
+                                          ),
+                                          child: Icon(
+                                            Icons.directions_run,
+                                            color: _selectedActivityButton ==
+                                                    'Running'
+                                                ? Colors.white
+                                                : Colors.black,
+                                          ),
+                                        ),
+                                      ),
+                                      GestureDetector(
+                                        onTap: () {
+                                          setState(() {
+                                            _selectedActivityButton = 'Cycling';
+                                          });
+                                        },
+                                        child: Container(
+                                          padding: EdgeInsets.all(
+                                              8), // Padding around the icon
+                                          decoration: BoxDecoration(
+                                            color: _selectedActivityButton ==
+                                                    'Cycling'
+                                                ? Theme.of(context)
+                                                    .secondaryHeaderColor // Selected Color
+                                                : Colors
+                                                    .transparent, // Default Color
+                                            shape: BoxShape
+                                                .circle, // Circular shape
+                                          ),
+                                          child: Icon(
+                                            Icons.directions_bike,
+                                            color: _selectedActivityButton ==
+                                                    'Cycling'
+                                                ? Colors.white
+                                                : Colors.black,
+                                          ),
+                                        ),
+                                      ),
+                                      if (currentChallenge.name !=
+                                          "Mtn Scramble")
+                                        GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              _selectedActivityButton =
+                                                  'Paddling';
+                                            });
+                                          },
+                                          child: Container(
+                                            padding: EdgeInsets.all(
+                                                8), // Padding around the icon
+                                            decoration: BoxDecoration(
+                                              color: _selectedActivityButton ==
+                                                      'Paddling'
+                                                  ? Theme.of(context)
+                                                      .secondaryHeaderColor // Selected Color
+                                                  : Colors
+                                                      .transparent, // Default Color
+                                              shape: BoxShape
+                                                  .circle, // Circular shape
+                                            ),
+                                            child: Icon(
+                                              Icons.kayaking_outlined,
+                                              color: _selectedActivityButton ==
+                                                      'Paddling'
+                                                  ? Colors.white
+                                                  : Colors.black,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  )
+                                : Container(),
                           ],
                         )
                       : Column(
@@ -375,11 +518,11 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                                 TextButton(
                                   onPressed: () {
                                     setState(() {
-                                      _selectedButton = 'Intro';
+                                      _selectedDifficultyButton = 'Intro';
                                     });
                                   },
                                   child: Text('Intro'),
-                                  style: _selectedButton == 'Intro'
+                                  style: _selectedDifficultyButton == 'Intro'
                                       ? TextButton.styleFrom(
                                           primary: Colors.white,
                                           backgroundColor: Theme.of(context)
@@ -390,11 +533,11 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                                 TextButton(
                                   onPressed: () {
                                     setState(() {
-                                      _selectedButton = 'Advanced';
+                                      _selectedDifficultyButton = 'Advanced';
                                     });
                                   },
                                   child: Text('Advanced'),
-                                  style: _selectedButton == 'Advanced'
+                                  style: _selectedDifficultyButton == 'Advanced'
                                       ? TextButton.styleFrom(
                                           primary: Colors.white,
                                           backgroundColor: Theme.of(context)
@@ -405,11 +548,11 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                                 TextButton(
                                   onPressed: () {
                                     setState(() {
-                                      _selectedButton = 'Expert';
+                                      _selectedDifficultyButton = 'Expert';
                                     });
                                   },
                                   child: Text('Expert'),
-                                  style: _selectedButton == 'Expert'
+                                  style: _selectedDifficultyButton == 'Expert'
                                       ? TextButton.styleFrom(
                                           primary: Colors.white,
                                           backgroundColor: Theme.of(context)
@@ -453,10 +596,11 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                   child: TextFormField(
                     controller: _challengeNameController,
                     decoration: InputDecoration(
-                        labelText: 'Name Your Team...',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.0),
-                        )),
+                      labelText: 'Name Your Team...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                    ),
                   ),
                 ),
                 SizedBox(height: 5),
@@ -556,26 +700,66 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
       actions: [
         TextButton(
           onPressed: () {
-            // Call the method to save the challenge
-            saveChallengeToFirestore().then((_) {
-              // Close the dialog or show a confirmation message
-              Navigator.of(context).pop();
-              // Show a Snackbar
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Challenge created successfully'),
-                  duration: Duration(seconds: 2),
-                ),
+            if (_challengeNameController.text.trim().isEmpty) {
+              showModalBottomSheet(
+                context: context,
+                builder: (BuildContext bc) {
+                  return Container(
+                    child: Wrap(
+                      children: <Widget>[
+                        ListTile(
+                          leading: new Icon(Icons.warning),
+                          title: new Text('Please create a team name.'),
+                          onTap: () => {},
+                        ),
+                      ],
+                    ),
+                  );
+                },
               );
-            }).catchError((error) {
-              // Optionally handle errors, e.g., show an error message
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Failed to create challenge'),
-                  backgroundColor: Colors.red,
-                ),
+            } else if (!_isPublic &&
+                _challengePasswordController.text.trim().isEmpty) {
+              showModalBottomSheet(
+                context: context,
+                builder: (BuildContext bc) {
+                  return Container(
+                    child: Wrap(
+                      children: <Widget>[
+                        ListTile(
+                          leading: new Icon(Icons.warning),
+                          title: new Text('Please enter a password.'),
+                          onTap: () => {},
+                        ),
+                      ],
+                    ),
+                  );
+                },
               );
-            });
+            } else {
+              // Call the method to save the challenge
+              saveChallengeToFirestore().then((_) {
+                // Close the dialog or show a confirmation message
+                Navigator.of(context).pop();
+                // Show a Snackbar
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Challenge created successfully'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }).catchError(
+                (error) {
+                  // Optionally handle errors, e.g., show an error message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to create challenge'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                },
+              );
+            }
+            ;
           },
           child: Text('Create Challenge'),
           style: TextButton.styleFrom(
