@@ -41,30 +41,6 @@ class _Snow2SurfState extends State<Snow2Surf> {
     endDate = adjustedStartDate.add(Duration(days: 30));
   }
 
-  // Future<double> fetchParticipantBestSpeed(
-  //     String email, List<String> activityTypes) async {
-  //   final query = FirebaseFirestore.instance
-  //       .collection('activities')
-  //       .where('user_email', isEqualTo: email)
-  //       .where('type', whereIn: activityTypes)
-  //       .where('start_date', isGreaterThanOrEqualTo: widget.startDate)
-  //       .where('start_date', isLessThanOrEqualTo: endDate)
-  //       .orderBy(
-  //           'start_date') // First, order by the field used in the range query
-  //       .orderBy('average_speed',
-  //           descending: true); // Then, you can order by average_speed
-
-  //   final querySnapshot = await query.limit(1).get();
-  //   if (querySnapshot.docs.isNotEmpty) {
-  //     // Assuming higher speed is better and it's stored in a way that can be directly compared
-  //     final bestSpeed =
-  //         querySnapshot.docs.first.data()['average_speed'] as double;
-  //     return bestSpeed;
-  //   } else {
-  //     return 0.0; // Default value in case there is no matching activity
-  //   }
-  // }
-
   List<Map<String, dynamic>> categories = [
     {
       'name': 'Alpine Skiing',
@@ -124,6 +100,40 @@ class _Snow2SurfState extends State<Snow2Surf> {
     },
   ];
 
+  Map<String, dynamic> opponents = {
+    "Intro": {
+      "name": ["Mike", "Leo", "Raph", "Don"],
+      "image": [
+        "assets/images/mike.jpg",
+        "assets/images/leo.jpg",
+        "assets/images/raph.jpg",
+        "assets/images/don.jpg"
+      ],
+      "bestTime": ["0:00", "0:00", "0:00", "0:00"],
+    },
+    "Advanced": {
+      "name": ["Crash", "Todd", "Noise", "Baldy"],
+      "image": [
+        "assets/images/crash.png",
+        "assets/images/todd.png",
+        "assets/images/noise.png",
+        "assets/images/baldy.png"
+      ],
+      "bestTime": ["0:00", "0:00", "0:00", "0:00"],
+    },
+    "Expert": {
+      "name": ["Mike", "Leo", "Raph", "Don"],
+      "image": [
+        "assets/images/mike.jpg",
+        "assets/images/leo.jpg",
+        "assets/images/raph.jpg",
+        "assets/images/don.jpg"
+      ],
+      "bestTime": ["0:00", "0:00", "0:00", "0:00"],
+    },
+  };
+
+  String formattedCurrentMonth = '';
   bool hasJoined = false;
   String joinedLeg = '';
 
@@ -173,16 +183,13 @@ class _Snow2SurfState extends State<Snow2Surf> {
     }
   }
 
-  String formattedCurrentMonth = '';
-
   void joinTeam(String legName) async {
-    final String? participantEmail =
-        currentUser?.email; // Notice the `?` which safely accesses `email`.
+    final String? participantEmail = currentUser?.email;
 
     // Check for null email
     if (participantEmail == null) {
       print("User email is null. Cannot join leg.");
-      return; // Early return if email is null
+      return;
     }
 
     final DocumentReference challengeRef = FirebaseFirestore.instance
@@ -217,74 +224,6 @@ class _Snow2SurfState extends State<Snow2Surf> {
     }
   }
 
-  void getCurrentMonth() {
-    final DateTime currentDateTime = DateTime.now();
-    String formattedCurrentMonth =
-        DateFormat('MMMM yyyy').format(currentDateTime);
-    setState(() {
-      this.formattedCurrentMonth = formattedCurrentMonth;
-    });
-  }
-
-  String formatTime(double totalTime) {
-    int totalTimeInSeconds = totalTime.toInt();
-    int hours = totalTimeInSeconds ~/ 3600;
-    int minutes = (totalTimeInSeconds % 3600) ~/ 60;
-    int seconds = totalTimeInSeconds % 60;
-    return totalTimeInSeconds > 0
-        ? "${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}"
-        : "0:00";
-  }
-
-  Stream<QuerySnapshot> getCurrentMonthData() {
-    final currentMonth = DateTime.now().month;
-    final currentYear = DateTime.now().year;
-    final firstDayOfMonth = DateTime(currentYear, currentMonth, 1);
-    final lastDayOfMonth = DateTime(currentYear, currentMonth + 1, 0);
-
-    // Fetch activities for the current month
-    return FirebaseFirestore.instance
-        .collection('activities')
-        .where('start_date',
-            isGreaterThanOrEqualTo: firstDayOfMonth.toUtc().toIso8601String())
-        .where('start_date',
-            isLessThanOrEqualTo: lastDayOfMonth.toUtc().toIso8601String())
-        .snapshots();
-  }
-
-  Map<String, dynamic> opponents = {
-    "Intro": {
-      "name": ["Mike", "Leo", "Raph", "Don"],
-      "image": [
-        "assets/images/mike.jpg",
-        "assets/images/leo.jpg",
-        "assets/images/raph.jpg",
-        "assets/images/don.jpg"
-      ],
-      "bestTime": ["0:00", "0:00", "0:00", "0:00"],
-    },
-    "Advanced": {
-      "name": ["Crash", "Todd", "Noise", "Baldy"],
-      "image": [
-        "assets/images/crash.png",
-        "assets/images/todd.png",
-        "assets/images/noise.png",
-        "assets/images/baldy.png"
-      ],
-      "bestTime": ["0:00", "0:00", "0:00", "0:00"],
-    },
-    "Expert": {
-      "name": ["Mike", "Leo", "Raph", "Don"],
-      "image": [
-        "assets/images/mike.jpg",
-        "assets/images/leo.jpg",
-        "assets/images/raph.jpg",
-        "assets/images/don.jpg"
-      ],
-      "bestTime": ["0:00", "0:00", "0:00", "0:00"],
-    },
-  };
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -307,134 +246,153 @@ class _Snow2SurfState extends State<Snow2Surf> {
         ),
       ),
       body: SafeArea(
-        child: StreamBuilder<DocumentSnapshot>(
-          stream: getChallengeData(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError) {
-              return Center(child: Text("Error: ${snapshot.error}"));
-            }
-            if (!snapshot.hasData || !snapshot.data!.exists) {
-              return Center(child: Text("Challenge not found"));
-            }
-
-            // Extract the data once from the snapshot
-            Map<String, dynamic> challengeData =
-                snapshot.data?.data() as Map<String, dynamic>;
-            Map<String, dynamic> legParticipants =
-                challengeData['legParticipants'] ?? {};
-            bool isAlreadyInAMatchup = isUserInAnyLeg(legParticipants);
-
-            return Container(
-              width: MediaQuery.of(context).size.width,
+        child: Column(
+          children: [
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.all(10),
               child: Column(
                 children: [
-                  // Header, etc.
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: widget.challengeLegs.length,
-                      itemBuilder: (context, index) {
-                        var currentLeg = widget.challengeLegs[index];
-                        var category = categories.firstWhere(
-                          (cat) => cat['name'] == currentLeg,
-                          orElse: () =>
-                              {'name': 'Unknown', 'icon': Icons.error},
-                        );
-
-                        var opponent = opponents[widget.challengeDifficulty]!;
-
-                        bool isUserInThisLeg = legParticipants[currentLeg]
-                                ?.contains(currentUser?.email) ??
-                            false;
-
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            // User Card with challenge leg icon and name
-                            Expanded(
-                              flex: 2,
-                              child: Card(
-                                child: Padding(
-                                  padding: EdgeInsets.all(8),
-                                  child: Column(
-                                    children: <Widget>[
-                                      Icon(category['icon'], size: 52),
-                                      Text(category['name']),
-                                      if (isUserInThisLeg)
-                                        FutureBuilder<double>(
-                                          future: fetchParticipantBestSpeed(
-                                              currentUser!.email!,
-                                              category['type']),
-                                          builder: (context, snapshot) {
-                                            if (snapshot.connectionState ==
-                                                ConnectionState.waiting) {
-                                              return CircularProgressIndicator();
-                                            }
-                                            if (snapshot.hasData) {
-                                              return Text(
-                                                  "Best Speed: ${snapshot.data!.toStringAsFixed(2)}"); // Display the best speed
-                                            } else {
-                                              return Text('No best time found');
-                                            }
-                                          },
-                                        ),
-                                      if (!isUserInThisLeg &&
-                                          !isAlreadyInAMatchup)
-                                        ElevatedButton(
-                                          onPressed: () => joinTeam(currentLeg),
-                                          child: Text('Join'),
-                                        ),
-                                      if (isAlreadyInAMatchup)
-                                        Text('Best Time: 0:00'),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            // "VS" text
-                            Expanded(
-                              flex: 1,
-                              child: Center(
-                                child: Text(
-                                  'VS',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            // Opponent Card
-                            Expanded(
-                              flex: 2,
-                              child: Card(
-                                child: Padding(
-                                  padding: EdgeInsets.all(8),
-                                  child: Column(
-                                    children: <Widget>[
-                                      CircleAvatar(
-                                        backgroundImage: AssetImage(
-                                            opponent["image"][index]),
-                                      ),
-                                      Text(opponent["name"][index]),
-                                      Text(
-                                          "Best Time: ${opponent["bestTime"][index]}"),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
+                  Center(
+                    child: Text(
+                      widget.challengeName,
+                      style: GoogleFonts.roboto(
+                          textStyle: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w300,
+                              letterSpacing: 1.2)),
+                    ),
+                  ),
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: Text(
+                        '${DateFormat('MMMM dd, yyyy').format(widget.startDate.toDate())} - ${DateFormat('MMMM dd, yyyy').format(endDate!)}',
+                        style: TextStyle(fontSize: 16),
+                      ),
                     ),
                   ),
                 ],
               ),
-            );
-          },
+            ),
+            const SizedBox(height: 5),
+            Expanded(
+              child: StreamBuilder<DocumentSnapshot>(
+                stream: getChallengeData(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(child: Text("Error: ${snapshot.error}"));
+                  }
+                  if (!snapshot.hasData || !snapshot.data!.exists) {
+                    return Center(child: Text("Challenge not found"));
+                  }
+
+                  // Extract the data once from the snapshot
+                  Map<String, dynamic> challengeData =
+                      snapshot.data?.data() as Map<String, dynamic>;
+                  Map<String, dynamic> legParticipants =
+                      challengeData['legParticipants'] ?? {};
+                  bool isAlreadyInAMatchup = isUserInAnyLeg(legParticipants);
+
+                  return Container(
+                    width: MediaQuery.of(context).size.width,
+                    child: Column(
+                      children: [
+                        // Header, etc.
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: widget.challengeLegs.length,
+                            itemBuilder: (context, index) {
+                              var currentLeg = widget.challengeLegs[index];
+                              var category = categories.firstWhere(
+                                (cat) => cat['name'] == currentLeg,
+                                orElse: () =>
+                                    {'name': 'Unknown', 'icon': Icons.error},
+                              );
+
+                              var opponent =
+                                  opponents[widget.challengeDifficulty]!;
+
+                              bool isUserInThisLeg = legParticipants[currentLeg]
+                                      ?.contains(currentUser?.email) ??
+                                  false;
+
+                              return Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  // User Card with challenge leg icon and name
+                                  Expanded(
+                                    flex: 2,
+                                    child: Card(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(8),
+                                        child: Column(
+                                          children: <Widget>[
+                                            Icon(category['icon'], size: 52),
+                                            Text(category['name']),
+                                            if (!isUserInThisLeg &&
+                                                !isAlreadyInAMatchup)
+                                              ElevatedButton(
+                                                onPressed: () =>
+                                                    joinTeam(currentLeg),
+                                                child: Text('Join'),
+                                              ),
+                                            if (isAlreadyInAMatchup)
+                                              Text('Best Time: 0:00'),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  // "VS" text
+                                  Expanded(
+                                    flex: 1,
+                                    child: Center(
+                                      child: Text(
+                                        'VS',
+                                        style: TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  // Opponent Card
+                                  Expanded(
+                                    flex: 2,
+                                    child: Card(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(8),
+                                        child: Column(
+                                          children: <Widget>[
+                                            CircleAvatar(
+                                              backgroundImage: AssetImage(
+                                                  opponent["image"][index]),
+                                            ),
+                                            Text(opponent["name"][index]),
+                                            Text(
+                                                "Best Time: ${opponent["bestTime"][index]}"),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -442,229 +400,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
 }
 
 
-//   @override
-//   Widget build(BuildContext context) {
-//     double aspectRatio = MediaQuery.of(context).size.width /
-//         (MediaQuery.of(context).size.height / 2);
 
-//     return Scaffold(
-//       backgroundColor: const Color(0xFFDFD3C3),
-//       appBar: AppBar(
-//         centerTitle: true,
-//         title: Text(
-//           widget.challengeType,
-//           style: GoogleFonts.tektur(
-//               textStyle: TextStyle(
-//                   fontSize: 24,
-//                   fontWeight: FontWeight.w300,
-//                   letterSpacing: 1.2)),
-//         ),
-//         leading: IconButton(
-//           icon: Icon(Icons.arrow_back),
-//           onPressed: () => Navigator.pop(context),
-//         ),
-//       ),
-//       body: SafeArea(
-//         child: Container(
-//           width: MediaQuery.of(context).size.width,
-//           child: Column(
-//             children: [
-//               Text(widget.challengeDifficulty,
-//                   style: GoogleFonts.tektur(
-//                       textStyle: TextStyle(
-//                           fontSize: 22, fontWeight: FontWeight.bold))),
-//               Expanded(
-//                 child: Row(
-//                   children: [
-//                     Expanded(
-//                         flex: 2,
-//                         child: buildCategoryCard(
-//                             categories, formattedCurrentMonth)),
-//                     Expanded(
-//                       // If you want the middle column to be narrower, use a smaller flex value.
-//                       flex: 1,
-//                       child: GridView.builder(
-//                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-//                           crossAxisCount: 1,
-//                           childAspectRatio: aspectRatio,
-//                         ),
-//                         itemCount:
-//                             opponents[widget.challengeDifficulty]!["name"]
-//                                 .length,
-//                         itemBuilder: (context, index) {
-//                           return Container(
-//                             // Adjust padding or margins if necessary
-//                             padding: const EdgeInsets.all(1.0),
-//                             child: Center(
-//                               child: Text(
-//                                 'VS',
-//                                 style: TextStyle(
-//                                   fontSize: 24,
-//                                   fontWeight: FontWeight.bold,
-//                                 ),
-//                               ),
-//                             ),
-//                           );
-//                         },
-//                       ),
-//                     ),
-//                     Expanded(
-//                       flex: 2,
-//                       child: GridView.builder(
-//                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-//                           crossAxisCount: 1,
-//                           childAspectRatio: aspectRatio,
-//                         ),
-//                         itemCount:
-//                             opponents[widget.challengeDifficulty]!["name"]
-//                                 .length,
-//                         itemBuilder: (context, index) {
-//                           var difficulty =
-//                               opponents[widget.challengeDifficulty];
-
-//                           return Padding(
-//                             padding: const EdgeInsets.all(1.0),
-//                             child: Card(
-//                               elevation: 2,
-//                               child: Padding(
-//                                 padding: EdgeInsets.all(8),
-//                                 child: Column(
-//                                   children: <Widget>[
-//                                     Expanded(
-//                                       child: CircleAvatar(
-//                                         backgroundColor: Colors.grey.shade400,
-//                                         // Set the radius to limit the size of the CircleAvatar
-//                                         radius:
-//                                             52, // Adjust the radius to fit within the ListTile properly
-//                                         child: ClipOval(
-//                                           child: Image.asset(
-//                                             difficulty["image"][index],
-//                                             fit: BoxFit
-//                                                 .fill, // This ensures the image covers the clip area well
-//                                             width:
-//                                                 100, // Match this width to the overall size constraint of the CircleAvatar
-//                                             height:
-//                                                 100, // Match this height as well
-//                                           ),
-//                                         ),
-//                                       ),
-//                                     ),
-//                                     Text(
-//                                       difficulty["name"][
-//                                           index], // Accessing the name by index
-//                                       style: TextStyle(
-//                                           fontSize: 14,
-//                                           fontWeight: FontWeight.bold),
-//                                     ),
-//                                     Text(
-//                                       "${difficulty["bestTime"][index]}",
-//                                       style: TextStyle(fontSize: 12),
-//                                     ), // Accessing the best time by index
-//                                   ],
-//                                 ),
-//                               ),
-//                             ),
-//                           );
-//                         },
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//               Padding(
-//                 padding: const EdgeInsets.all(8.0),
-//                 child: Row(
-//                   mainAxisAlignment: MainAxisAlignment.center,
-//                   children: [
-//                     Icon(Icons.info_outline, color: Colors.grey, size: 32),
-//                     SizedBox(width: 8),
-//                     Text(
-//                       'To Qualify: Current month & min distance (as posted).',
-//                       style: TextStyle(
-//                           fontStyle: FontStyle.italic,
-//                           fontSize: 14,
-//                           overflow: null),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             ],
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-// }
-
-
-
-//  Widget buildCategoryCard(
-//     List<Map<String, dynamic>> categories,
-//     String title,
-//   ) {
-//     // Filter categories to only include selected legs
-//     List<Map<String, dynamic>> selectedCategories =
-//         categories.where((category) {
-//       print("Checking category: ${category['name']}");
-//       return widget.challengeLegs.contains(category['name']);
-//     }).toList();
-
-//     print("Selected categories: $selectedCategories");
-
-//     Icon getNumberIcon(int index) {
-//       switch (index) {
-//         case 0:
-//           return Icon(
-//             Symbols.counter_1_rounded,
-//             size: 32,
-//           );
-//         case 1:
-//           return Icon(
-//             Symbols.counter_2_rounded,
-//             size: 32,
-//           );
-//         case 2:
-//           return Icon(
-//             Symbols.counter_3_rounded,
-//             size: 32,
-//           );
-//         case 3:
-//           return Icon(
-//             Symbols.counter_4_rounded,
-//             size: 32,
-//           );
-//         default:
-//           return Icon(Icons.looks_one);
-//       }
-//     }
-
-//     List<double> bestTimesInSeconds = [];
-
-//     return Column(
-//       mainAxisAlignment: MainAxisAlignment.center,
-//       crossAxisAlignment: CrossAxisAlignment.center,
-//       children: [
-//         Expanded(
-//           child: StreamBuilder<QuerySnapshot>(
-//             stream: getCurrentMonthData(),
-//             builder: (context, snapshot) {
-//               if (snapshot.connectionState == ConnectionState.waiting) {
-//                 return const CircularProgressIndicator();
-//               }
-
-//               if (snapshot.hasError) {
-//                 return Text('Error: ${snapshot.error}');
-//               }
-//               final activityDocs = snapshot.data?.docs ?? [];
-//               Map<String, Map<String, dynamic>> bestTimes = {};
-
-//               Map<String, double> typeToDistanceMap = {};
-//               categories.forEach((category) {
-//                 category['type'].forEach((type) {
-//                   typeToDistanceMap[type] = category['distance'];
-//                 });
-//               });
-//               print("type to distance map: $typeToDistanceMap");
 
 //               for (final doc in activityDocs) {
 //                 var data = doc.data() as Map<String, dynamic>;
