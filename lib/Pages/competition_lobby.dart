@@ -159,7 +159,8 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                           String challengeType = challengeData['type'];
                           String challengeDifficulty =
                               challengeData['difficulty'] ?? 'No difficulty';
-                          String challengeCategory = challengeData['category'];
+                          String challengeCategory =
+                              challengeData['category'] ?? 'No category';
                           String challengePassword = challengeData['password'];
                           String challengeUserDescription =
                               challengeData['userDescription'] ?? '';
@@ -173,15 +174,16 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                   switch (challengeData['type']) {
                                     case 'Snow2Surf':
                                       return Snow2Surf(
-                                        challengeId: challengeId,
-                                        participantsEmails: participants,
-                                        startDate: challengeData['timestamp'],
-                                        challengeName: challengeName,
-                                        challengeType: challengeData['type'],
-                                        challengeDifficulty:
-                                            challengeData['difficulty'] ??
-                                                'No difficulty',
-                                      );
+                                          challengeId: challengeId,
+                                          participantsEmails: participants,
+                                          startDate: challengeData['timestamp'],
+                                          challengeName: challengeName,
+                                          challengeType: challengeData['type'],
+                                          challengeDifficulty:
+                                              challengeData['difficulty'] ??
+                                                  'No difficulty',
+                                          challengeLegs:
+                                              challengeData['legsSelected']);
                                     case 'Mtn Scramble':
                                       return MtnScramblePage(
                                         challengeId: challengeId,
@@ -215,15 +217,15 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                     default:
                                       // Handle unknown challenge type if necessary
                                       return Snow2Surf(
-                                        challengeId: challengeId,
-                                        participantsEmails: participants,
-                                        startDate: challengeData['timestamp'],
-                                        challengeName: challengeName,
-                                        challengeType: challengeData['type'],
-                                        challengeDifficulty:
-                                            challengeData['difficulty'] ??
-                                                'No difficulty',
-                                      );
+                                          challengeId: challengeId,
+                                          participantsEmails: participants,
+                                          startDate: challengeData['timestamp'],
+                                          challengeName: challengeName,
+                                          challengeType: challengeData['type'],
+                                          challengeDifficulty:
+                                              challengeData['difficulty'] ??
+                                                  'No difficulty',
+                                          challengeLegs: challengeData['legsSelected']);
                                   }
                                 },
                               ),
@@ -252,6 +254,7 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                             challengeDifficulty:
                                                 challengeData['difficulty'] ??
                                                     'No difficulty',
+                                            challengeLegs: challengeData['legsSelected'],
                                           );
                                         case 'Mtn Scramble':
                                           return MtnScramblePage(
@@ -300,6 +303,7 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                             challengeDifficulty:
                                                 challengeData['difficulty'] ??
                                                     'No difficulty',
+                                            challengeLegs: challengeData['legsSelected'],
                                           );
                                       }
                                     }),
