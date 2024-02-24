@@ -31,6 +31,39 @@ class Snow2Surf extends StatefulWidget {
 
 class _Snow2SurfState extends State<Snow2Surf> {
   final currentUser = FirebaseAuth.instance.currentUser;
+  DateTime? endDate;
+
+  initState() {
+    super.initState();
+    DateTime startDate = widget.startDate.toDate();
+    DateTime adjustedStartDate =
+        DateTime(startDate.year, startDate.month, startDate.day);
+    endDate = adjustedStartDate.add(Duration(days: 30));
+  }
+
+  // Future<double> fetchParticipantBestSpeed(
+  //     String email, List<String> activityTypes) async {
+  //   final query = FirebaseFirestore.instance
+  //       .collection('activities')
+  //       .where('user_email', isEqualTo: email)
+  //       .where('type', whereIn: activityTypes)
+  //       .where('start_date', isGreaterThanOrEqualTo: widget.startDate)
+  //       .where('start_date', isLessThanOrEqualTo: endDate)
+  //       .orderBy(
+  //           'start_date') // First, order by the field used in the range query
+  //       .orderBy('average_speed',
+  //           descending: true); // Then, you can order by average_speed
+
+  //   final querySnapshot = await query.limit(1).get();
+  //   if (querySnapshot.docs.isNotEmpty) {
+  //     // Assuming higher speed is better and it's stored in a way that can be directly compared
+  //     final bestSpeed =
+  //         querySnapshot.docs.first.data()['average_speed'] as double;
+  //     return bestSpeed;
+  //   } else {
+  //     return 0.0; // Default value in case there is no matching activity
+  //   }
+  // }
 
   List<Map<String, dynamic>> categories = [
     {
@@ -219,11 +252,6 @@ class _Snow2SurfState extends State<Snow2Surf> {
         .snapshots();
   }
 
-  void initState() {
-    super.initState();
-    getCurrentMonth();
-  }
-
   Map<String, dynamic> opponents = {
     "Intro": {
       "name": ["Mike", "Leo", "Raph", "Don"],
@@ -317,10 +345,6 @@ class _Snow2SurfState extends State<Snow2Surf> {
 
                         var opponent = opponents[widget.challengeDifficulty]!;
 
-                        // Determine if the current user is in participants
-                        bool hasJoined = legParticipants[currentLeg]
-                                ?.contains(currentUser?.email) ??
-                            false;
                         bool isUserInThisLeg = legParticipants[currentLeg]
                                 ?.contains(currentUser?.email) ??
                             false;
@@ -339,8 +363,23 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                       Icon(category['icon'], size: 52),
                                       Text(category['name']),
                                       if (isUserInThisLeg)
-                                        Text(
-                                            currentUser?.email ?? 'Loading...'),
+                                        FutureBuilder<double>(
+                                          future: fetchParticipantBestSpeed(
+                                              currentUser!.email!,
+                                              category['type']),
+                                          builder: (context, snapshot) {
+                                            if (snapshot.connectionState ==
+                                                ConnectionState.waiting) {
+                                              return CircularProgressIndicator();
+                                            }
+                                            if (snapshot.hasData) {
+                                              return Text(
+                                                  "Best Speed: ${snapshot.data!.toStringAsFixed(2)}"); // Display the best speed
+                                            } else {
+                                              return Text('No best time found');
+                                            }
+                                          },
+                                        ),
                                       if (!isUserInThisLeg &&
                                           !isAlreadyInAMatchup)
                                         ElevatedButton(
