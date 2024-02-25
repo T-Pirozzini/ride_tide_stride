@@ -111,14 +111,23 @@ class _Snow2SurfState extends State<Snow2Surf> {
 
   Map<String, dynamic> opponents = {
     "Intro": {
-      "name": ["Mike", "Leo", "Raph", "Don"],
+      "name": ["Dipsy", "La La", "Poe", "Tinky"],
       "image": [
-        "assets/images/mike.jpg",
-        "assets/images/leo.jpg",
-        "assets/images/raph.jpg",
-        "assets/images/don.jpg"
+        "assets/images/dipsy.jpg",
+        "assets/images/lala.jpg",
+        "assets/images/poe.jpg",
+        "assets/images/tinky.jpg"
       ],
-      "bestTime": ["0:00", "0:00", "0:00", "0:00"],
+      "bestTimes": {
+        "Alpine Skiing": "0:32:00",
+        "Nordic Skiing": "0:48:00",
+        "Road Running": "0:35:00",
+        "Trail Running": "0:40:00",
+        "Mountain Biking": "1:20:00",
+        "Kayaking": "0:45:00",
+        "Road Cycling": "1:30:00",
+        "Canoeing": "0:45:00",
+      },
     },
     "Advanced": {
       "name": ["Crash", "Todd", "Noise", "Baldy"],
@@ -128,7 +137,16 @@ class _Snow2SurfState extends State<Snow2Surf> {
         "assets/images/noise.png",
         "assets/images/baldy.png"
       ],
-      "bestTime": ["0:00", "0:00", "0:00", "0:00"],
+      "bestTimes": {
+        "Alpine Skiing": "0:30:00",
+        "Nordic Skiing": "0:40:00",
+        "Road Running": "0:30:00",
+        "Trail Running": "0:30:00",
+        "Mountain Biking": "1:10:00",
+        "Kayaking": "0:40:00",
+        "Road Cycling": "1:20:00",
+        "Canoeing": "0:40:00",
+      },
     },
     "Expert": {
       "name": ["Mike", "Leo", "Raph", "Don"],
@@ -138,7 +156,16 @@ class _Snow2SurfState extends State<Snow2Surf> {
         "assets/images/raph.jpg",
         "assets/images/don.jpg"
       ],
-      "bestTime": ["0:00", "0:00", "0:00", "0:00"],
+      "bestTimes": {
+        "Alpine Skiing": "0:20:00",
+        "Nordic Skiing": "0:35:00",
+        "Road Running": "0:25:00",
+        "Trail Running": "0:20:00",
+        "Mountain Biking": "1:00:00",
+        "Kayaking": "0:25:00",
+        "Road Cycling": "1:10:00",
+        "Canoeing": "0:25:00",
+      },
     },
   };
 
@@ -356,6 +383,33 @@ class _Snow2SurfState extends State<Snow2Surf> {
     }
   }
 
+  Duration parseBestTime(String bestTime) {
+    List<String> parts = bestTime.split(':');
+    return Duration(
+        hours: int.parse(parts[0]),
+        minutes: int.parse(parts[1]),
+        seconds: int.parse(parts[2]));
+  }
+
+  Widget timeDifferenceWidget(
+      String participantBestTime, String opponentBestTime) {
+    Duration participantDuration = parseBestTime(participantBestTime);
+    Duration opponentDuration = parseBestTime(opponentBestTime);
+
+    Duration difference = opponentDuration - participantDuration;
+    String differenceFormatted = difference.isNegative
+        ? '- ${difference.inHours.abs()}:${difference.inMinutes.remainder(60).abs().toString().padLeft(2, '0')}:${difference.inSeconds.remainder(60).abs().toString().padLeft(2, '0')}'
+        : '+ ${difference.inHours}:${difference.inMinutes.remainder(60).toString().padLeft(2, '0')}:${difference.inSeconds.remainder(60).toString().padLeft(2, '0')}';
+
+    return Text(
+      differenceFormatted,
+      style: TextStyle(
+        color: difference.isNegative ? Colors.red : Colors.green,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -379,6 +433,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
       ),
       body: SafeArea(
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Container(
               color: Colors.white,
@@ -429,109 +484,150 @@ class _Snow2SurfState extends State<Snow2Surf> {
                   Map<String, dynamic> legParticipants =
                       challengeData['legParticipants'] ?? {};
 
-                  return Container(
-                    width: MediaQuery.of(context).size.width,
-                    child: ListView.builder(
-                      itemCount: widget.challengeLegs.length,
-                      itemBuilder: (context, index) {
-                        var currentLeg = widget.challengeLegs[index];
-                        var category = categories.firstWhere(
-                          (cat) => cat['name'] == currentLeg,
-                          orElse: () =>
-                              {'name': 'Unknown', 'icon': Icons.error},
-                        );
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: ListView.builder(
+                        itemCount: widget.challengeLegs.length,
+                        itemBuilder: (context, index) {
+                          var currentLeg = widget.challengeLegs[index];
+                          var category = categories.firstWhere(
+                            (cat) => cat['name'] == currentLeg,
+                            orElse: () =>
+                                {'name': 'Unknown', 'icon': Icons.error},
+                          );
 
-                        var opponent = opponents[widget.challengeDifficulty]!;
-                        Map<String, dynamic> participantsForLeg =
-                            legParticipants[currentLeg] ?? {};
-                        String bestTime =
-                            participantsForLeg['best_time'] ?? 'N/A';
-                        String participant =
-                            participantsForLeg['participant'] ?? 'N/A';
+                          var opponent = opponents[widget.challengeDifficulty]!;
+                          var difficultyLevel = widget.challengeDifficulty;
+                          var opponentBestTime = opponents[difficultyLevel]
+                                  ["bestTimes"][currentLeg] ??
+                              "N/A";
 
-                        bool isUserInThisLeg =
-                            participant == (currentUser?.email ?? '');
+                          String participantBestTime =
+                              legParticipants[currentLeg] != null
+                                  ? legParticipants[currentLeg]['best_time'] ??
+                                      'N/A'
+                                  : 'N/A';
 
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: Card(
-                                child: Padding(
-                                  padding: EdgeInsets.all(8),
-                                  child: Column(
-                                    children: <Widget>[
-                                      Icon(category['icon'], size: 52),
-                                      Text(category['name']),
-                                      if (isUserInThisLeg) ...[
-                                        SizedBox(height: 8),
-                                        FutureBuilder<String>(
-                                          future:
-                                              getUsername(currentUser!.email!),
-                                          builder: (context, snapshot) {
-                                            if (snapshot.connectionState ==
-                                                ConnectionState.waiting) {
-                                              return CircularProgressIndicator();
-                                            }
-                                            if (snapshot.hasError ||
-                                                !snapshot.hasData ||
-                                                snapshot.data!.isEmpty) {
-                                              return Text(
-                                                  'Error loading username');
-                                            }
-                                            return Text(snapshot.data!,
-                                                style: TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold));
-                                          },
+                          Map<String, dynamic> participantsForLeg =
+                              legParticipants[currentLeg] ?? {};
+                          String bestTime =
+                              participantsForLeg['best_time'] ?? 'N/A';
+                          String participant =
+                              participantsForLeg['participant'] ?? 'N/A';
+
+                          bool isUserInThisLeg =
+                              participant == (currentUser?.email ?? '');
+
+                          return Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: IntrinsicHeight(
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Card(
+                                          child: Padding(
+                                            padding: EdgeInsets.all(8),
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: <Widget>[
+                                                Icon(category['icon']),
+                                                Text(category['name']),
+                                                if (isUserInThisLeg) ...[
+                                                  SizedBox(height: 8),
+                                                  FutureBuilder<String>(
+                                                    future: getUsername(
+                                                        currentUser!.email!),
+                                                    builder:
+                                                        (context, snapshot) {
+                                                      if (snapshot
+                                                              .connectionState ==
+                                                          ConnectionState
+                                                              .waiting) {
+                                                        return CircularProgressIndicator();
+                                                      }
+                                                      if (snapshot.hasError ||
+                                                          !snapshot.hasData ||
+                                                          snapshot
+                                                              .data!.isEmpty) {
+                                                        return Text(
+                                                            'Error loading username');
+                                                      }
+                                                      return Text(
+                                                          snapshot.data!,
+                                                          style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold));
+                                                    },
+                                                  ),
+                                                  Text('Best Time: $bestTime'),
+                                                ] else ...[
+                                                  ElevatedButton(
+                                                    onPressed: () =>
+                                                        joinTeam(currentLeg),
+                                                    child: Text('Join'),
+                                                  ),
+                                                ],
+                                              ],
+                                            ),
+                                          ),
                                         ),
-                                        Text('Best Time: $bestTime'),
-                                      ] else ...[
-                                        ElevatedButton(
-                                          onPressed: () => joinTeam(currentLeg),
-                                          child: Text('Join'),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              flex: 1,
-                              child: Center(
-                                child: Text(
-                                  'VS',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: Card(
-                                child: Padding(
-                                  padding: EdgeInsets.all(8),
-                                  child: Column(
-                                    children: <Widget>[
-                                      CircleAvatar(
-                                        backgroundImage: AssetImage(
-                                            opponent["image"][index]),
                                       ),
-                                      Text(opponent["name"][index]),
-                                      Text(
-                                          "Best Time: ${opponent["bestTime"][index]}"),
                                     ],
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
-                        );
-                      },
+                              Expanded(
+                                flex: 1,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Center(
+                                      child: Text(
+                                        'VS',
+                                        style: TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    if (participantBestTime != "N/A" &&
+                                        opponentBestTime !=
+                                            "N/A") // Only display if times are valid
+                                      timeDifferenceWidget(participantBestTime,
+                                          opponentBestTime),
+                                  ],
+                                ),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Card(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(8),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: <Widget>[
+                                        CircleAvatar(
+                                          backgroundImage: AssetImage(
+                                              opponent["image"][index]),
+                                        ),
+                                        Text(opponent["name"][index]),
+                                        Text("Best Time: ${opponentBestTime}"),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
                     ),
                   );
                 },
