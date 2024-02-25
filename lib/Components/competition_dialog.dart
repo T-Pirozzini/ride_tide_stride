@@ -181,16 +181,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
           .where((element) => element.value == true)
           .map((e) => e.key)
           .toList();
-      challengeData['legParticipants'] = {
-        'Alpine Skiing': [],
-        'Nordic Skiing': [],
-        'Road Running': [],
-        'Trail Running': [],
-        'Mountain Biking': [],
-        'Kayaking': [],
-        'Road Cycling': [],
-        'Canoeing': [],
-      };
+      challengeData['legParticipants'] = {};
     }
 
     // Get a reference to the Firestore service
