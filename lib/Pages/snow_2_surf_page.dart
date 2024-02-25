@@ -44,6 +44,10 @@ class _Snow2SurfState extends State<Snow2Surf> {
     DateTime adjustedStartDate =
         DateTime(startDate.year, startDate.month, startDate.day);
     endDate = adjustedStartDate.add(Duration(days: 30));
+
+    getActivitiesWithinDateRange().listen((activities) {
+      processActivities(activities);
+    });
   }
 
   List<Map<String, dynamic>> categories = [
@@ -251,7 +255,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
         allDocuments.addAll(snapshot.docs);
 
         // Add the updated allDocuments list to the stream.
-        controller.add(allDocuments);        
+        controller.add(allDocuments);
       });
     }
 
@@ -550,9 +554,17 @@ class _Snow2SurfState extends State<Snow2Surf> {
 
                 // Once activities are fetched
                 List<DocumentSnapshot> activities = snapshot.data!;
-                return TextButton(
-                  onPressed: () => processActivities(activities),
-                  child: Text('Process'),
+                return Container(
+                  margin: EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    shape: BoxShape.circle,
+                  ),
+                  padding: EdgeInsets.all(2),
+                  child: IconButton(
+                    icon: Icon(Icons.refresh, size: 20),
+                    onPressed: () => processActivities(activities),
+                  ),
                 );
               },
             ),
