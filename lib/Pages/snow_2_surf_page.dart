@@ -120,13 +120,13 @@ class _Snow2SurfState extends State<Snow2Surf> {
       ],
       "bestTimes": {
         "Alpine Skiing": "0:15:00",
-        "Nordic Skiing": "0:40:00",
-        "Road Running": "0:40:00",
-        "Trail Running": "0:45:00",
-        "Mountain Biking": "00:50:00",
-        "Kayaking": "0:40:00",
-        "Road Cycling": "00:55:00",
-        "Canoeing": "0:55:00",
+        "Nordic Skiing": "0:50:00",
+        "Road Running": "0:45:00",
+        "Trail Running": "0:50:00",
+        "Mountain Biking": "01:10:00",
+        "Kayaking": "0:50:00",
+        "Road Cycling": "01:15:00",
+        "Canoeing": "1:15:00",
       },
     },
     "Advanced": {
@@ -139,13 +139,13 @@ class _Snow2SurfState extends State<Snow2Surf> {
       ],
       "bestTimes": {
         "Alpine Skiing": "0:10:00",
-        "Nordic Skiing": "0:30:00",
-        "Road Running": "0:30:00",
-        "Trail Running": "0:35:00",
-        "Mountain Biking": "0:40:00",
-        "Kayaking": "0:30:00",
-        "Road Cycling": "00:45:00",
-        "Canoeing": "0:45:00",
+        "Nordic Skiing": "0:40:00",
+        "Road Running": "0:35:00",
+        "Trail Running": "0:40:00",
+        "Mountain Biking": "0:50:00",
+        "Kayaking": "0:40:00",
+        "Road Cycling": "00:50:00",
+        "Canoeing": "0:55:00",
       },
     },
     "Expert": {
@@ -158,13 +158,13 @@ class _Snow2SurfState extends State<Snow2Surf> {
       ],
       "bestTimes": {
         "Alpine Skiing": "0:07:00",
-        "Nordic Skiing": "0:20:00",
-        "Road Running": "0:20:00",
-        "Trail Running": "0:25:00",
-        "Mountain Biking": "0:30:00",
-        "Kayaking": "0:20:00",
-        "Road Cycling": "0:35:00",
-        "Canoeing": "0:35:00",
+        "Nordic Skiing": "0:30:00",
+        "Road Running": "0:25:00",
+        "Trail Running": "0:30:00",
+        "Mountain Biking": "0:40:00",
+        "Kayaking": "0:30:00",
+        "Road Cycling": "0:40:00",
+        "Canoeing": "0:45:00",
       },
     },
   };
@@ -471,6 +471,22 @@ class _Snow2SurfState extends State<Snow2Surf> {
     };
   }
 
+  String calculateTimeDifference(
+      Duration participantTime, String formattedOpponentTime) {
+    Duration opponentTime = parseBestTime(formattedOpponentTime);
+    Duration timeDifference = participantTime - opponentTime;
+
+    // Format time difference
+    String formattedTimeDifference = formatDuration(timeDifference.abs());
+
+    // Determine the color and sign based on if the participant is winning or losing
+    bool participantIsWinning = timeDifference.isNegative;
+    String sign = participantIsWinning ? '-' : '+';
+    String colorCode = participantIsWinning ? 'red' : 'green';
+
+    return '$sign$formattedTimeDifference';
+  }
+
   String formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
     return "${twoDigits(duration.inHours)}:${twoDigits(duration.inMinutes.remainder(60))}:${twoDigits(duration.inSeconds.remainder(60))}";
@@ -488,7 +504,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
   Widget build(BuildContext context) {
     final Duration totalOpponentTime =
         getTotalOpponentTime(widget.challengeDifficulty, widget.challengeLegs);
-    final String formattedTotalTime =
+    final String formattedOpponentTotalTime =
         formatTime(totalOpponentTime.inSeconds.toDouble());
 
     return Scaffold(
@@ -521,7 +537,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
                 children: [
                   Center(
                     child: Text(
-                      widget.challengeName,
+                      widget.challengeDifficulty,
                       style: GoogleFonts.roboto(
                         textStyle: TextStyle(
                           fontSize: 24,
@@ -544,6 +560,18 @@ class _Snow2SurfState extends State<Snow2Surf> {
               ),
             ),
             const SizedBox(height: 5),
+            Center(
+              child: Text(
+                widget.challengeName,
+                style: GoogleFonts.roboto(
+                  textStyle: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w300,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+            ),
             Expanded(
               child: StreamBuilder<DocumentSnapshot>(
                 stream: getChallengeData(),
@@ -726,45 +754,70 @@ class _Snow2SurfState extends State<Snow2Surf> {
                 if (snapshot.hasData) {
                   // Extract the necessary data
                   final Duration totalTime = snapshot.data!['totalTime'];
-                  final int legsCompleted = snapshot.data!['legsCompleted'];
-                  final int legsRemaining = snapshot.data!['legsRemaining'];
 
-                  // Decide what to display based on the legsCompleted
-                  if (legsCompleted == 4) {
-                    // All legs have times
-                    final String formattedTotalParticipantTime =
-                        formatDuration(totalTime);
-                    return Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        'Total Participant Time: $formattedTotalParticipantTime',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
+                  // All legs have times
+                  final String formattedTotalParticipantTime =
+                      formatDuration(totalTime);
+                  final String timeDifferenceDisplay = calculateTimeDifference(
+                      totalTime, formattedOpponentTotalTime);
+
+                  return Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                '$formattedTotalParticipantTime',
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                          Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                '$formattedOpponentTotalTime',
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    );
-                  } else {
-                    // Some legs are still missing times
-                    return Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        '$legsRemaining more legs still require a best time',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: RichText(
+                            text: TextSpan(
+                              text: 'Time Difference: ',
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black),
+                              children: <TextSpan>[
+                                TextSpan(
+                                  text: timeDifferenceDisplay,
+                                  style: TextStyle(
+                                      color:
+                                          timeDifferenceDisplay.startsWith('-')
+                                              ? Colors.red
+                                              : Colors.green),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
-                    );
-                  }
+                    ],
+                  );
                 } else {
-                  return Text(
-                      "No data available"); // Handle case when there's no data
+                  return Text("No data available");
                 }
               },
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                'Total Opponent Time: $formattedTotalTime',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
             ),
             StreamBuilder<List<DocumentSnapshot>>(
               stream: getActivitiesWithinDateRange(),
