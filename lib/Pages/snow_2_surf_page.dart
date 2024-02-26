@@ -90,7 +90,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
       'name': 'Kayaking',
       'type': ['Kayaking'],
       'icon': Icons.kayaking_outlined,
-      'distance': 5.0,
+      'distance': 3.0,
       'bestTime': '0:00',
     },
     {
@@ -119,14 +119,14 @@ class _Snow2SurfState extends State<Snow2Surf> {
         "assets/images/tinky.jpg"
       ],
       "bestTimes": {
-        "Alpine Skiing": "0:32:00",
-        "Nordic Skiing": "0:48:00",
-        "Road Running": "0:35:00",
-        "Trail Running": "0:40:00",
-        "Mountain Biking": "1:20:00",
-        "Kayaking": "0:45:00",
-        "Road Cycling": "1:30:00",
-        "Canoeing": "0:45:00",
+        "Alpine Skiing": "0:15:00",
+        "Nordic Skiing": "0:40:00",
+        "Road Running": "0:40:00",
+        "Trail Running": "0:45:00",
+        "Mountain Biking": "00:50:00",
+        "Kayaking": "0:40:00",
+        "Road Cycling": "00:55:00",
+        "Canoeing": "0:55:00",
       },
     },
     "Advanced": {
@@ -138,14 +138,14 @@ class _Snow2SurfState extends State<Snow2Surf> {
         "assets/images/baldy.png"
       ],
       "bestTimes": {
-        "Alpine Skiing": "0:30:00",
-        "Nordic Skiing": "0:40:00",
+        "Alpine Skiing": "0:10:00",
+        "Nordic Skiing": "0:30:00",
         "Road Running": "0:30:00",
-        "Trail Running": "0:30:00",
-        "Mountain Biking": "1:10:00",
-        "Kayaking": "0:40:00",
-        "Road Cycling": "1:20:00",
-        "Canoeing": "0:40:00",
+        "Trail Running": "0:35:00",
+        "Mountain Biking": "0:40:00",
+        "Kayaking": "0:30:00",
+        "Road Cycling": "00:45:00",
+        "Canoeing": "0:45:00",
       },
     },
     "Expert": {
@@ -157,14 +157,14 @@ class _Snow2SurfState extends State<Snow2Surf> {
         "assets/images/don.jpg"
       ],
       "bestTimes": {
-        "Alpine Skiing": "0:20:00",
-        "Nordic Skiing": "0:35:00",
-        "Road Running": "0:25:00",
-        "Trail Running": "0:20:00",
-        "Mountain Biking": "1:00:00",
-        "Kayaking": "0:25:00",
-        "Road Cycling": "1:10:00",
-        "Canoeing": "0:25:00",
+        "Alpine Skiing": "0:07:00",
+        "Nordic Skiing": "0:20:00",
+        "Road Running": "0:20:00",
+        "Trail Running": "0:25:00",
+        "Mountain Biking": "0:30:00",
+        "Kayaking": "0:20:00",
+        "Road Cycling": "0:35:00",
+        "Canoeing": "0:35:00",
       },
     },
   };
@@ -211,7 +211,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
         // Prepare the participant record
         Map<String, dynamic> participantRecord = {
           'participant': participantEmail,
-          'best_time': '0:00' // Default best time
+          'best_time': '0:00:00' // Default best time
         };
 
         // Add the participant to the leg
@@ -352,14 +352,6 @@ class _Snow2SurfState extends State<Snow2Surf> {
     }
   }
 
-// Helper function to format time in seconds into a readable string
-  String formatTime(double seconds) {
-    int hours = seconds ~/ 3600;
-    int minutes = ((seconds % 3600) ~/ 60);
-    int remainingSeconds = seconds.toInt() % 60;
-    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
-  }
-
   Future<String> getUsername(String userEmail) async {
     try {
       final DocumentSnapshot userDoc = await FirebaseFirestore.instance
@@ -393,13 +385,28 @@ class _Snow2SurfState extends State<Snow2Surf> {
 
   Widget timeDifferenceWidget(
       String participantBestTime, String opponentBestTime) {
-    Duration participantDuration = parseBestTime(participantBestTime);
+    // Parse the times to Duration, handling "N/A" as zero for the participant
+    Duration participantDuration = participantBestTime != "N/A"
+        ? parseBestTime(participantBestTime)
+        : Duration.zero;
     Duration opponentDuration = parseBestTime(opponentBestTime);
 
+    // If participant has no time, show full opponent lead
+    if (participantBestTime == "N/A") {
+      return Text(
+        "- ${formatDuration(opponentDuration)}",
+        style: TextStyle(
+          color: Colors.red, // Or any color that signifies this condition
+          fontWeight: FontWeight.bold,
+        ),
+      );
+    }
+
+    // Calculate the difference otherwise
     Duration difference = opponentDuration - participantDuration;
     String differenceFormatted = difference.isNegative
-        ? '- ${difference.inHours.abs()}:${difference.inMinutes.remainder(60).abs().toString().padLeft(2, '0')}:${difference.inSeconds.remainder(60).abs().toString().padLeft(2, '0')}'
-        : '+ ${difference.inHours}:${difference.inMinutes.remainder(60).toString().padLeft(2, '0')}:${difference.inSeconds.remainder(60).toString().padLeft(2, '0')}';
+        ? '-${formatDuration(difference.abs())}'
+        : '+${formatDuration(difference)}';
 
     return Text(
       differenceFormatted,
@@ -410,8 +417,80 @@ class _Snow2SurfState extends State<Snow2Surf> {
     );
   }
 
+  Duration getTotalOpponentTime(
+      String difficultyLevel, List<dynamic> selectedLegs) {
+    final opponentTimes = opponents[difficultyLevel]?['bestTimes'];
+    if (opponentTimes == null) return Duration.zero;
+
+    return opponentTimes.entries.fold<Duration>(Duration.zero,
+        (Duration total, MapEntry<String, String> entry) {
+      if (selectedLegs.contains(entry.key)) {
+        // Check if the leg is selected
+        final timeParts = entry.value.split(':').map(int.parse).toList();
+        final duration = Duration(
+            hours: timeParts[0], minutes: timeParts[1], seconds: timeParts[2]);
+        return total + duration;
+      }
+      return total; // Return total as-is if the leg is not selected
+    });
+  }
+
+  Future<Map<String, dynamic>> getTotalParticipantTimeAndLegsInfo(
+      String challengeId) async {
+    final challengeRef =
+        FirebaseFirestore.instance.collection('Challenges').doc(challengeId);
+    final challengeSnapshot = await challengeRef.get();
+
+    if (!challengeSnapshot.exists) {
+      return {"totalTime": Duration.zero, "legsCompleted": 0};
+    }
+
+    final challengeData = challengeSnapshot.data() as Map<String, dynamic>;
+    final legParticipants = challengeData['legParticipants'] ?? {};
+    int legsCompleted = 0;
+
+    Duration totalTime = legParticipants.entries.fold<Duration>(Duration.zero,
+        (Duration total, MapEntry<String, dynamic> entry) {
+      final bestTime = entry.value['best_time'];
+      if (bestTime != null && bestTime != '0:00') {
+        final timeParts = bestTime.split(':').map(int.parse).toList();
+        final duration = Duration(
+            hours: timeParts[0],
+            minutes: timeParts[1],
+            seconds: timeParts.length > 2 ? timeParts[2] : 0);
+        legsCompleted++;
+        return total + duration;
+      }
+      return total;
+    });
+
+    return {
+      "totalTime": totalTime,
+      "legsCompleted": legsCompleted,
+      "legsRemaining": 4 - legsCompleted // Assuming 4 legs are required
+    };
+  }
+
+  String formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    return "${twoDigits(duration.inHours)}:${twoDigits(duration.inMinutes.remainder(60))}:${twoDigits(duration.inSeconds.remainder(60))}";
+  }
+
+// Helper function to format time in seconds into a readable string
+  String formatTime(double seconds) {
+    int hours = seconds ~/ 3600;
+    int minutes = ((seconds % 3600) ~/ 60);
+    int remainingSeconds = seconds.toInt() % 60;
+    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final Duration totalOpponentTime =
+        getTotalOpponentTime(widget.challengeDifficulty, widget.challengeLegs);
+    final String formattedTotalTime =
+        formatTime(totalOpponentTime.inSeconds.toDouble());
+
     return Scaffold(
       backgroundColor: const Color(0xFFDFD3C3),
       appBar: AppBar(
@@ -596,11 +675,11 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                         ),
                                       ),
                                     ),
-                                    if (participantBestTime != "N/A" &&
-                                        opponentBestTime !=
-                                            "N/A") // Only display if times are valid
-                                      timeDifferenceWidget(participantBestTime,
-                                          opponentBestTime),
+                                    // if (participantBestTime != "N/A" &&
+                                    //     opponentBestTime != "N/A")
+                                    // Only display if times are valid
+                                    timeDifferenceWidget(
+                                        participantBestTime, opponentBestTime)
                                   ],
                                 ),
                               ),
@@ -631,6 +710,60 @@ class _Snow2SurfState extends State<Snow2Surf> {
                     ),
                   );
                 },
+              ),
+            ),
+            FutureBuilder<Map<String, dynamic>>(
+              future: getTotalParticipantTimeAndLegsInfo(widget.challengeId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return CircularProgressIndicator(); // Show loading indicator while waiting
+                }
+
+                if (snapshot.hasError) {
+                  return Text("Error: ${snapshot.error}"); // Show error if any
+                }
+
+                if (snapshot.hasData) {
+                  // Extract the necessary data
+                  final Duration totalTime = snapshot.data!['totalTime'];
+                  final int legsCompleted = snapshot.data!['legsCompleted'];
+                  final int legsRemaining = snapshot.data!['legsRemaining'];
+
+                  // Decide what to display based on the legsCompleted
+                  if (legsCompleted == 4) {
+                    // All legs have times
+                    final String formattedTotalParticipantTime =
+                        formatDuration(totalTime);
+                    return Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        'Total Participant Time: $formattedTotalParticipantTime',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    );
+                  } else {
+                    // Some legs are still missing times
+                    return Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        '$legsRemaining more legs still require a best time',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    );
+                  }
+                } else {
+                  return Text(
+                      "No data available"); // Handle case when there's no data
+                }
+              },
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                'Total Opponent Time: $formattedTotalTime',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
             StreamBuilder<List<DocumentSnapshot>>(
