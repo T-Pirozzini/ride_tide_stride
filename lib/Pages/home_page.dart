@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:ride_tide_stride/pages/competition_page.dart';
+import 'package:ride_tide_stride/pages/competition_lobby.dart';
 import 'package:ride_tide_stride/pages/leaderboard_page.dart';
 import 'package:ride_tide_stride/pages/strava_page.dart';
 import 'package:ride_tide_stride/pages/talk_smack.dart';
@@ -16,15 +16,10 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   int _selectedIndex = 0;
   final currentUser = FirebaseAuth.instance.currentUser;
-  final GlobalKey<CompetitionPageState> competitionPageKey = GlobalKey();
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
-      if (_selectedIndex == 2) {
-        // Assuming competition tab is at index 2
-        competitionPageKey.currentState?.checkForWinner();
-      }
     });
   }
 
@@ -50,10 +45,10 @@ class _HomeState extends State<Home> {
           Builder(
             builder: (BuildContext context) => const Leaderboard(),
           ),
-          Builder(builder: (BuildContext context) => CompetitionPage(key: competitionPageKey)),
           Builder(
-            builder: (BuildContext context) => const TalkSmack(),
+            builder: (BuildContext context) => const CompetitionLobbyPage(),
           ),
+          Builder(builder: (BuildContext context) => TalkSmack()),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(

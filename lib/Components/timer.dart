@@ -5,7 +5,8 @@ class CountdownTimerWidget extends StatelessWidget {
   final int endTime;
   final VoidCallback? onTimerEnd;
 
-  const CountdownTimerWidget({Key? key, required this.endTime, required this.onTimerEnd})
+  const CountdownTimerWidget(
+      {Key? key, required this.endTime, required this.onTimerEnd})
       : super(key: key);
 
   @override
@@ -18,7 +19,7 @@ class CountdownTimerWidget extends StatelessWidget {
           const Text('Competition ends in... '),
           CountdownTimer(
             endTime: endTime,
-            textStyle: const TextStyle(fontSize: 18),
+            textStyle: const TextStyle(fontSize: 14),
             onEnd: onTimerEnd,
           ),
         ],

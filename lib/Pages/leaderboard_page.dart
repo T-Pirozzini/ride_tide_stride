@@ -118,12 +118,12 @@ class _LeaderboardState extends State<Leaderboard> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: <Widget>[
               // Place your buttons here
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pushNamed('/resultsPage');
-                },
-                child: const Text('View Past Results'),
-              ),
+              // ElevatedButton(
+              //   onPressed: () {
+              //     Navigator.of(context).pushNamed('/resultsPage');
+              //   },
+              //   child: const Text('View Past Results'),
+              // ),
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pushNamed('/awardsPage');
