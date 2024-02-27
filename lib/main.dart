@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:ride_tide_stride/pages/awards_page.dart';
 import 'package:ride_tide_stride/pages/results_page.dart';
-import 'package:ride_tide_stride/pages/snow_2_surf_results_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
