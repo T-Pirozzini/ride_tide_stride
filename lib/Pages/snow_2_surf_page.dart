@@ -5,7 +5,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:ride_tide_stride/pages/chat_widget.dart';
 
 class Snow2Surf extends StatefulWidget {
   final String challengeId;
@@ -32,15 +34,39 @@ class Snow2Surf extends StatefulWidget {
 }
 
 class _Snow2SurfState extends State<Snow2Surf> {
+  final GlobalKey<ScaffoldState> _snow2SurfScaffoldKey =
+      GlobalKey<ScaffoldState>();
   final currentUser = FirebaseAuth.instance.currentUser;
   DateTime? endDate;
   String formattedCurrentMonth = '';
   bool hasJoined = false;
   String joinedLeg = '';
 
+  void _sendMessage(String messageText) async {
+    if (messageText.isEmpty) {
+      return; // Avoid sending empty messages
+    }
+    final messageData = {
+      'time': FieldValue.serverTimestamp(), // Firestore server timestamp
+      'user': currentUser?.email ?? 'Anonymous',
+      'message': messageText
+    };
+
+    // Write the message to Firestore
+    try {
+      await FirebaseFirestore.instance
+          .collection('Challenges')
+          .doc(widget.challengeId)
+          .collection('messages')
+          .add(messageData);
+    } catch (e) {
+      print('Error saving message: $e');
+    }
+  }
+
   initState() {
     super.initState();
-    DateTime startDate = widget.startDate.toDate().subtract(Duration(days: 4));
+    DateTime startDate = widget.startDate.toDate();
     DateTime adjustedStartDate =
         DateTime(startDate.year, startDate.month, startDate.day);
     endDate = adjustedStartDate.add(Duration(days: 30));
@@ -48,7 +74,17 @@ class _Snow2SurfState extends State<Snow2Surf> {
     getActivitiesWithinDateRange().listen((activities) {
       processActivities(activities);
     });
+    checkAndFinalizeChallenge();
+    _messagesStream = FirebaseFirestore.instance
+        .collection('Challenges')
+        .doc(widget.challengeId)
+        .collection('messages')
+        .orderBy('time',
+            descending: true) // Assuming 'time' is your timestamp field
+        .snapshots();
   }
+
+  Stream<QuerySnapshot>? _messagesStream;
 
   List<Map<String, dynamic>> categories = [
     {
@@ -90,7 +126,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
       'name': 'Kayaking',
       'type': ['Kayaking'],
       'icon': Icons.kayaking_outlined,
-      'distance': 5.0,
+      'distance': 3.0,
       'bestTime': '0:00',
     },
     {
@@ -119,14 +155,14 @@ class _Snow2SurfState extends State<Snow2Surf> {
         "assets/images/tinky.jpg"
       ],
       "bestTimes": {
-        "Alpine Skiing": "0:32:00",
-        "Nordic Skiing": "0:48:00",
-        "Road Running": "0:35:00",
-        "Trail Running": "0:40:00",
-        "Mountain Biking": "1:20:00",
-        "Kayaking": "0:45:00",
-        "Road Cycling": "1:30:00",
-        "Canoeing": "0:45:00",
+        "Alpine Skiing": "0:15:00",
+        "Nordic Skiing": "0:50:00",
+        "Road Running": "0:45:00",
+        "Trail Running": "0:50:00",
+        "Mountain Biking": "01:10:00",
+        "Kayaking": "0:50:00",
+        "Road Cycling": "01:15:00",
+        "Canoeing": "1:15:00",
       },
     },
     "Advanced": {
@@ -138,14 +174,14 @@ class _Snow2SurfState extends State<Snow2Surf> {
         "assets/images/baldy.png"
       ],
       "bestTimes": {
-        "Alpine Skiing": "0:30:00",
+        "Alpine Skiing": "0:10:00",
         "Nordic Skiing": "0:40:00",
-        "Road Running": "0:30:00",
-        "Trail Running": "0:30:00",
-        "Mountain Biking": "1:10:00",
+        "Road Running": "0:35:00",
+        "Trail Running": "0:40:00",
+        "Mountain Biking": "0:50:00",
         "Kayaking": "0:40:00",
-        "Road Cycling": "1:20:00",
-        "Canoeing": "0:40:00",
+        "Road Cycling": "00:50:00",
+        "Canoeing": "0:55:00",
       },
     },
     "Expert": {
@@ -157,14 +193,14 @@ class _Snow2SurfState extends State<Snow2Surf> {
         "assets/images/don.jpg"
       ],
       "bestTimes": {
-        "Alpine Skiing": "0:20:00",
-        "Nordic Skiing": "0:35:00",
+        "Alpine Skiing": "0:07:00",
+        "Nordic Skiing": "0:30:00",
         "Road Running": "0:25:00",
-        "Trail Running": "0:20:00",
-        "Mountain Biking": "1:00:00",
-        "Kayaking": "0:25:00",
-        "Road Cycling": "1:10:00",
-        "Canoeing": "0:25:00",
+        "Trail Running": "0:30:00",
+        "Mountain Biking": "0:40:00",
+        "Kayaking": "0:30:00",
+        "Road Cycling": "0:40:00",
+        "Canoeing": "0:45:00",
       },
     },
   };
@@ -211,7 +247,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
         // Prepare the participant record
         Map<String, dynamic> participantRecord = {
           'participant': participantEmail,
-          'best_time': '0:00' // Default best time
+          'best_time': '0:00:00' // Default best time
         };
 
         // Add the participant to the leg
@@ -264,7 +300,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
     // This will keep track of the list of all document snapshots from all streams.
     List<DocumentSnapshot> allDocuments = [];
 
-    DateTime startDate = widget.startDate.toDate().subtract(Duration(days: 4));
+    DateTime startDate = widget.startDate.toDate();
     DateTime adjustedStartDate =
         DateTime(startDate.year, startDate.month, startDate.day);
     endDate = adjustedStartDate.add(Duration(days: 30));
@@ -352,14 +388,6 @@ class _Snow2SurfState extends State<Snow2Surf> {
     }
   }
 
-// Helper function to format time in seconds into a readable string
-  String formatTime(double seconds) {
-    int hours = seconds ~/ 3600;
-    int minutes = ((seconds % 3600) ~/ 60);
-    int remainingSeconds = seconds.toInt() % 60;
-    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
-  }
-
   Future<String> getUsername(String userEmail) async {
     try {
       final DocumentSnapshot userDoc = await FirebaseFirestore.instance
@@ -393,13 +421,28 @@ class _Snow2SurfState extends State<Snow2Surf> {
 
   Widget timeDifferenceWidget(
       String participantBestTime, String opponentBestTime) {
-    Duration participantDuration = parseBestTime(participantBestTime);
+    // Parse the times to Duration, handling "N/A" as zero for the participant
+    Duration participantDuration = participantBestTime != "N/A"
+        ? parseBestTime(participantBestTime)
+        : Duration.zero;
     Duration opponentDuration = parseBestTime(opponentBestTime);
 
+    // If participant has no time, show full opponent lead
+    if (participantBestTime == "N/A") {
+      return Text(
+        "- ${formatDuration(opponentDuration)}",
+        style: TextStyle(
+          color: Colors.red, // Or any color that signifies this condition
+          fontWeight: FontWeight.bold,
+        ),
+      );
+    }
+
+    // Calculate the difference otherwise
     Duration difference = opponentDuration - participantDuration;
     String differenceFormatted = difference.isNegative
-        ? '- ${difference.inHours.abs()}:${difference.inMinutes.remainder(60).abs().toString().padLeft(2, '0')}:${difference.inSeconds.remainder(60).abs().toString().padLeft(2, '0')}'
-        : '+ ${difference.inHours}:${difference.inMinutes.remainder(60).toString().padLeft(2, '0')}:${difference.inSeconds.remainder(60).toString().padLeft(2, '0')}';
+        ? '-${formatDuration(difference.abs())}'
+        : '+${formatDuration(difference)}';
 
     return Text(
       differenceFormatted,
@@ -410,9 +453,173 @@ class _Snow2SurfState extends State<Snow2Surf> {
     );
   }
 
+  Duration getTotalOpponentTime(
+      String difficultyLevel, List<dynamic> selectedLegs) {
+    final opponentTimes = opponents[difficultyLevel]?['bestTimes'];
+    if (opponentTimes == null) return Duration.zero;
+
+    return opponentTimes.entries.fold<Duration>(Duration.zero,
+        (Duration total, MapEntry<String, String> entry) {
+      if (selectedLegs.contains(entry.key)) {
+        // Check if the leg is selected
+        final timeParts = entry.value.split(':').map(int.parse).toList();
+        final duration = Duration(
+            hours: timeParts[0], minutes: timeParts[1], seconds: timeParts[2]);
+        return total + duration;
+      }
+      return total; // Return total as-is if the leg is not selected
+    });
+  }
+
+  Future<Map<String, dynamic>> getTotalParticipantTimeAndLegsInfo(
+      String challengeId) async {
+    final challengeRef =
+        FirebaseFirestore.instance.collection('Challenges').doc(challengeId);
+    final challengeSnapshot = await challengeRef.get();
+
+    if (!challengeSnapshot.exists) {
+      return {"totalTime": Duration.zero, "legsCompleted": 0};
+    }
+
+    final challengeData = challengeSnapshot.data() as Map<String, dynamic>;
+    final legParticipants = challengeData['legParticipants'] ?? {};
+    int legsCompleted = 0;
+
+    Duration totalTime = legParticipants.entries.fold<Duration>(Duration.zero,
+        (Duration total, MapEntry<String, dynamic> entry) {
+      final bestTime = entry.value['best_time'];
+      if (bestTime != null && bestTime != '0:00') {
+        final timeParts = bestTime.split(':').map(int.parse).toList();
+        final duration = Duration(
+            hours: timeParts[0],
+            minutes: timeParts[1],
+            seconds: timeParts.length > 2 ? timeParts[2] : 0);
+        legsCompleted++;
+        return total + duration;
+      }
+      return total;
+    });
+
+    return {
+      "totalTime": totalTime,
+      "legsCompleted": legsCompleted,
+      "legsRemaining": 4 - legsCompleted // Assuming 4 legs are required
+    };
+  }
+
+  String calculateTimeDifference(
+      Duration participantTime, String formattedOpponentTime) {
+    Duration opponentTime = parseBestTime(formattedOpponentTime);
+    Duration timeDifference = participantTime - opponentTime;
+
+    // Format time difference
+    String formattedTimeDifference = formatDuration(timeDifference.abs());
+
+    // Determine the color and sign based on if the participant is winning or losing
+    bool participantIsWinning = timeDifference.isNegative;
+    String sign = participantIsWinning ? '-' : '+';
+    String colorCode = participantIsWinning ? 'red' : 'green';
+
+    return '$sign$formattedTimeDifference';
+  }
+
+  String formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    return "${twoDigits(duration.inHours)}:${twoDigits(duration.inMinutes.remainder(60))}:${twoDigits(duration.inSeconds.remainder(60))}";
+  }
+
+// Helper function to format time in seconds into a readable string
+  String formatTime(double seconds) {
+    int hours = seconds ~/ 3600;
+    int minutes = ((seconds % 3600) ~/ 60);
+    int remainingSeconds = seconds.toInt() % 60;
+    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> checkAndFinalizeChallenge() async {
+    DateTime now = DateTime.now();
+
+    var participantTotalTimeInfo =
+        await getTotalParticipantTimeAndLegsInfo(widget.challengeId);
+    Duration participantTotalTime = participantTotalTimeInfo["totalTime"];
+    Duration opponentTotalTime =
+        getTotalOpponentTime(widget.challengeDifficulty, widget.challengeLegs);
+
+    // Check if the challenge has ended
+    if (endDate != null && now.isAfter(endDate!)) {
+      // Calculate the time difference
+      String formattedOpponentTotalTime = formatDuration(opponentTotalTime);
+      String timeDifferenceDisplay = calculateTimeDifference(
+          participantTotalTime, formattedOpponentTotalTime);
+
+      bool isParticipantWinning = timeDifferenceDisplay.startsWith('-');
+
+      // Update the challenge as completed with success or fail based on the total times
+      await FirebaseFirestore.instance
+          .collection('Challenges')
+          .doc(widget.challengeId)
+          .update({'active': false, 'success': isParticipantWinning});
+
+      // Show the dialog after the state update
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (isParticipantWinning) {
+          _showSuccessDialog();
+        }
+      });
+    }
+  }
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Challenge Completed!"),
+          content: Stack(
+            children: <Widget>[
+              Lottie.asset(
+                'assets/lottie/win_animation.json',
+                frameRate: FrameRate.max,
+                repeat: true,
+                reverse: false,
+                animate: true,
+              ),
+              Lottie.asset(
+                'assets/lottie/firework_animation.json',
+                frameRate: FrameRate.max,
+                repeat: true,
+                reverse: false,
+                animate: true,
+              ),
+              const Text(
+                "Congratulations! You have successfully completed the challenge.",
+                style: TextStyle(fontSize: 14),
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final Duration totalOpponentTime =
+        getTotalOpponentTime(widget.challengeDifficulty, widget.challengeLegs);
+    final String formattedOpponentTotalTime =
+        formatTime(totalOpponentTime.inSeconds.toDouble());
+
     return Scaffold(
+      key: _snow2SurfScaffoldKey,
+      resizeToAvoidBottomInset: true,
       backgroundColor: const Color(0xFFDFD3C3),
       appBar: AppBar(
         centerTitle: true,
@@ -430,6 +637,13 @@ class _Snow2SurfState extends State<Snow2Surf> {
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.chat),
+            onPressed: () =>
+                _snow2SurfScaffoldKey.currentState?.openEndDrawer(),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -442,7 +656,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
                 children: [
                   Center(
                     child: Text(
-                      widget.challengeName,
+                      widget.challengeDifficulty,
                       style: GoogleFonts.roboto(
                         textStyle: TextStyle(
                           fontSize: 24,
@@ -465,6 +679,18 @@ class _Snow2SurfState extends State<Snow2Surf> {
               ),
             ),
             const SizedBox(height: 5),
+            Center(
+              child: Text(
+                'Team Name: ${widget.challengeName}',
+                style: GoogleFonts.audiowide(
+                  textStyle: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w100,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+            ),
             Expanded(
               child: StreamBuilder<DocumentSnapshot>(
                 stream: getChallengeData(),
@@ -590,17 +816,16 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                     Center(
                                       child: Text(
                                         'VS',
-                                        style: TextStyle(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.bold,
+                                        style: GoogleFonts.blackOpsOne(
+                                          textStyle: TextStyle(
+                                            fontSize: 32,
+                                            letterSpacing: 1.2,
+                                          ),
                                         ),
                                       ),
                                     ),
-                                    if (participantBestTime != "N/A" &&
-                                        opponentBestTime !=
-                                            "N/A") // Only display if times are valid
-                                      timeDifferenceWidget(participantBestTime,
-                                          opponentBestTime),
+                                    timeDifferenceWidget(
+                                        participantBestTime, opponentBestTime)
                                   ],
                                 ),
                               ),
@@ -632,6 +857,85 @@ class _Snow2SurfState extends State<Snow2Surf> {
                   );
                 },
               ),
+            ),
+            FutureBuilder<Map<String, dynamic>>(
+              future: getTotalParticipantTimeAndLegsInfo(widget.challengeId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return CircularProgressIndicator(); // Show loading indicator while waiting
+                }
+
+                if (snapshot.hasError) {
+                  return Text("Error: ${snapshot.error}"); // Show error if any
+                }
+
+                if (snapshot.hasData) {
+                  // Extract the necessary data
+                  final Duration totalTime = snapshot.data!['totalTime'];
+
+                  // All legs have times
+                  final String formattedTotalParticipantTime =
+                      formatDuration(totalTime);
+                  final String timeDifferenceDisplay = calculateTimeDifference(
+                      totalTime, formattedOpponentTotalTime);
+
+                  return Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                '$formattedTotalParticipantTime',
+                                style: TextStyle(
+                                    fontSize: 24, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                          Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                '$formattedOpponentTotalTime',
+                                style: TextStyle(
+                                    fontSize: 24, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: RichText(
+                            text: TextSpan(
+                              text: '',
+                              style: TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black),
+                              children: <TextSpan>[
+                                TextSpan(
+                                  text: timeDifferenceDisplay,
+                                  style: TextStyle(
+                                      color:
+                                          timeDifferenceDisplay.startsWith('-')
+                                              ? Colors.red
+                                              : Colors.green),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                } else {
+                  return Text("No data available");
+                }
+              },
             ),
             StreamBuilder<List<DocumentSnapshot>>(
               stream: getActivitiesWithinDateRange(),
@@ -665,6 +969,37 @@ class _Snow2SurfState extends State<Snow2Surf> {
               },
             ),
           ],
+        ),
+      ),
+      endDrawer: Drawer(
+        child: StreamBuilder<QuerySnapshot>(
+          stream: _messagesStream,
+          builder:
+              (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+            if (snapshot.hasError) {
+              return Text('Something went wrong');
+            }
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Text('Loading');
+            }
+            final messages = snapshot.data?.docs
+                    .map((doc) =>
+                        doc['message'] as String) // Extract 'message' field
+                    .toList() ??
+                [];
+            return ChatWidget(
+              key: ValueKey(messages.length),
+              messages: messages,
+              currentUserEmail: currentUser?.email ?? '',
+              onSend: (String message) {
+                if (message.isNotEmpty) {
+                  _sendMessage(message);
+                }
+              },
+              teamColor: Colors.primaries[
+                  currentUser!.email.hashCode % Colors.primaries.length],
+            );
+          },
         ),
       ),
     );

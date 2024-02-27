@@ -225,7 +225,8 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                           challengeDifficulty:
                                               challengeData['difficulty'] ??
                                                   'No difficulty',
-                                          challengeLegs: challengeData['legsSelected']);
+                                          challengeLegs:
+                                              challengeData['legsSelected']);
                                   }
                                 },
                               ),
@@ -254,7 +255,8 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                             challengeDifficulty:
                                                 challengeData['difficulty'] ??
                                                     'No difficulty',
-                                            challengeLegs: challengeData['legsSelected'],
+                                            challengeLegs:
+                                                challengeData['legsSelected'],
                                           );
                                         case 'Mtn Scramble':
                                           return MtnScramblePage(
@@ -303,7 +305,8 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                             challengeDifficulty:
                                                 challengeData['difficulty'] ??
                                                     'No difficulty',
-                                            challengeLegs: challengeData['legsSelected'],
+                                            challengeLegs:
+                                                challengeData['legsSelected'],
                                           );
                                       }
                                     }),
@@ -466,6 +469,8 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
         floatingActionButton: FloatingActionButton(
           onPressed: addCompetition,
           child: Icon(Icons.add),
+          heroTag:
+              null, 
         ));
   }
 }
