@@ -401,7 +401,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
       if (userDoc.exists &&
           userData != null &&
           userData.containsKey('username')) {
-        return userData['username'] ?? 'No username';
+        return userData['username'] ?? 'No participant';
       } else {
         return 'No username';
       }
@@ -746,6 +746,8 @@ class _Snow2SurfState extends State<Snow2Surf> {
                           bool isUserInThisLeg =
                               participant == (currentUser?.email ?? '');
 
+                          print(participant);
+
                           return Row(
                             children: [
                               Expanded(
@@ -763,11 +765,10 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                               children: <Widget>[
                                                 Icon(category['icon']),
                                                 Text(category['name']),
-                                                if (isUserInThisLeg) ...[
-                                                  SizedBox(height: 8),
+                                                if (currentUser != participant)
                                                   FutureBuilder<String>(
                                                     future: getUsername(
-                                                        currentUser!.email!),
+                                                        participant),
                                                     builder:
                                                         (context, snapshot) {
                                                       if (snapshot
@@ -791,13 +792,18 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                                                       .bold));
                                                     },
                                                   ),
-                                                  Text('Best Time: $bestTime'),
+                                                Text('Best Time: $bestTime'),
+                                                if (isUserInThisLeg) ...[
+                                                  SizedBox(),
                                                 ] else ...[
-                                                  ElevatedButton(
-                                                    onPressed: () =>
-                                                        joinTeam(currentLeg),
-                                                    child: Text('Join'),
-                                                  ),
+                                                  participant == "No username"
+                                                      ? ElevatedButton(
+                                                          onPressed: () =>
+                                                              joinTeam(
+                                                                  currentLeg),
+                                                          child: Text('Join'),
+                                                        )
+                                                      : SizedBox(),
                                                 ],
                                               ],
                                             ),
@@ -890,7 +896,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
                               child: Text(
                                 '$formattedTotalParticipantTime',
                                 style: TextStyle(
-                                    fontSize: 24, fontWeight: FontWeight.bold),
+                                    fontSize: 18, fontWeight: FontWeight.bold),
                               ),
                             ),
                           ),
@@ -900,7 +906,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
                               child: Text(
                                 '$formattedOpponentTotalTime',
                                 style: TextStyle(
-                                    fontSize: 24, fontWeight: FontWeight.bold),
+                                    fontSize: 18, fontWeight: FontWeight.bold),
                               ),
                             ),
                           ),
@@ -913,7 +919,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
                             text: TextSpan(
                               text: '',
                               style: TextStyle(
-                                  fontSize: 28,
+                                  fontSize: 24,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.black),
                               children: <TextSpan>[
