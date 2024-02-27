@@ -73,11 +73,15 @@ class _ChatWidgetState extends State<ChatWidget> {
           child: Row(
             children: [
               Expanded(
-                child: TextField(
-                  controller: _textController,
-                  decoration: InputDecoration(
-                    labelText: 'Type a message',
-                    border: OutlineInputBorder(),
+                child: Padding(
+                  padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).viewInsets.bottom),
+                  child: TextField(
+                    controller: _textController,
+                    decoration: InputDecoration(
+                      labelText: 'Type a message',
+                      border: OutlineInputBorder(),
+                    ),
                   ),
                 ),
               ),

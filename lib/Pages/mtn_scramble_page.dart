@@ -1,10 +1,12 @@
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
+import 'package:ride_tide_stride/pages/chat_widget.dart';
 
 class MtnScramblePage extends StatefulWidget {
   final String challengeId;
@@ -32,8 +34,33 @@ class MtnScramblePage extends StatefulWidget {
 }
 
 class _MtnScramblePageState extends State<MtnScramblePage> {
+  final GlobalKey<ScaffoldState> _mtnScrambleScaffoldKey =
+      GlobalKey<ScaffoldState>();
+      final currentUser = FirebaseAuth.instance.currentUser;
   Map<String, Color> participantColors = {};
   DateTime? endDate;
+
+  void _sendMessage(String messageText) async {
+    if (messageText.isEmpty) {
+      return; // Avoid sending empty messages
+    }
+    final messageData = {
+      'time': FieldValue.serverTimestamp(), // Firestore server timestamp
+      'user': currentUser?.email ?? 'Anonymous',
+      'message': messageText
+    };
+
+    // Write the message to Firestore
+    try {
+      await FirebaseFirestore.instance
+          .collection('Challenges')
+          .doc(widget.challengeId)
+          .collection('messages')
+          .add(messageData);
+    } catch (e) {
+      print('Error saving message: $e');
+    }
+  }
 
   @override
   void initState() {
@@ -43,7 +70,15 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
         DateTime(startDate.year, startDate.month, startDate.day);
     endDate = adjustedStartDate.add(Duration(days: 30));
     checkAndFinalizeChallenge();
+    _messagesStream = FirebaseFirestore.instance
+        .collection('Challenges')
+        .doc(widget.challengeId)
+        .collection('messages')
+        .orderBy('time',
+            descending: true) // Assuming 'time' is your timestamp field
+        .snapshots();
   }
+  Stream<QuerySnapshot>? _messagesStream;
 
   Future<Map<String, double>> fetchParticipantElevations() async {
     Map<String, double> participantElevations = {};
@@ -262,6 +297,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _mtnScrambleScaffoldKey,
       backgroundColor: const Color(0xFFDFD3C3),
       appBar: AppBar(
         centerTitle: true,
@@ -294,6 +330,13 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.chat),
+            onPressed: () =>
+                _mtnScrambleScaffoldKey.currentState?.openEndDrawer(),
+          ),
+        ],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -523,6 +566,37 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
             ),
           ),
         ],
+      ),
+      endDrawer: Drawer(
+        child: StreamBuilder<QuerySnapshot>(
+          stream: _messagesStream,
+          builder:
+              (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+            if (snapshot.hasError) {
+              return Text('Something went wrong');
+            }
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Text('Loading');
+            }
+            final messages = snapshot.data?.docs
+                    .map((doc) =>
+                        doc['message'] as String) // Extract 'message' field
+                    .toList() ??
+                [];
+            return ChatWidget(
+              key: ValueKey(messages.length),
+              messages: messages,
+              currentUserEmail: currentUser?.email ?? '',
+              onSend: (String message) {
+                if (message.isNotEmpty) {
+                  _sendMessage(message);
+                }
+              },
+              teamColor: Colors.primaries[
+                  currentUser!.email.hashCode % Colors.primaries.length],
+            );
+          },
+        ),
       ),
     );
   }

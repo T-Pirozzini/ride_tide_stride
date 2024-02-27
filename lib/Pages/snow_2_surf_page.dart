@@ -5,7 +5,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:ride_tide_stride/pages/chat_widget.dart';
 
 class Snow2Surf extends StatefulWidget {
   final String challengeId;
@@ -32,15 +34,39 @@ class Snow2Surf extends StatefulWidget {
 }
 
 class _Snow2SurfState extends State<Snow2Surf> {
+  final GlobalKey<ScaffoldState> _snow2SurfScaffoldKey =
+      GlobalKey<ScaffoldState>();
   final currentUser = FirebaseAuth.instance.currentUser;
   DateTime? endDate;
   String formattedCurrentMonth = '';
   bool hasJoined = false;
   String joinedLeg = '';
 
+  void _sendMessage(String messageText) async {
+    if (messageText.isEmpty) {
+      return; // Avoid sending empty messages
+    }
+    final messageData = {
+      'time': FieldValue.serverTimestamp(), // Firestore server timestamp
+      'user': currentUser?.email ?? 'Anonymous',
+      'message': messageText
+    };
+
+    // Write the message to Firestore
+    try {
+      await FirebaseFirestore.instance
+          .collection('Challenges')
+          .doc(widget.challengeId)
+          .collection('messages')
+          .add(messageData);
+    } catch (e) {
+      print('Error saving message: $e');
+    }
+  }
+
   initState() {
     super.initState();
-    DateTime startDate = widget.startDate.toDate().subtract(Duration(days: 4));
+    DateTime startDate = widget.startDate.toDate();
     DateTime adjustedStartDate =
         DateTime(startDate.year, startDate.month, startDate.day);
     endDate = adjustedStartDate.add(Duration(days: 30));
@@ -48,7 +74,17 @@ class _Snow2SurfState extends State<Snow2Surf> {
     getActivitiesWithinDateRange().listen((activities) {
       processActivities(activities);
     });
+    checkAndFinalizeChallenge();
+    _messagesStream = FirebaseFirestore.instance
+        .collection('Challenges')
+        .doc(widget.challengeId)
+        .collection('messages')
+        .orderBy('time',
+            descending: true) // Assuming 'time' is your timestamp field
+        .snapshots();
   }
+
+  Stream<QuerySnapshot>? _messagesStream;
 
   List<Map<String, dynamic>> categories = [
     {
@@ -264,7 +300,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
     // This will keep track of the list of all document snapshots from all streams.
     List<DocumentSnapshot> allDocuments = [];
 
-    DateTime startDate = widget.startDate.toDate().subtract(Duration(days: 4));
+    DateTime startDate = widget.startDate.toDate();
     DateTime adjustedStartDate =
         DateTime(startDate.year, startDate.month, startDate.day);
     endDate = adjustedStartDate.add(Duration(days: 30));
@@ -500,6 +536,80 @@ class _Snow2SurfState extends State<Snow2Surf> {
     return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
+  Future<void> checkAndFinalizeChallenge() async {
+    DateTime now = DateTime.now();
+
+    var participantTotalTimeInfo =
+        await getTotalParticipantTimeAndLegsInfo(widget.challengeId);
+    Duration participantTotalTime = participantTotalTimeInfo["totalTime"];
+    Duration opponentTotalTime =
+        getTotalOpponentTime(widget.challengeDifficulty, widget.challengeLegs);
+
+    // Check if the challenge has ended
+    if (endDate != null && now.isAfter(endDate!)) {
+      // Calculate the time difference
+      String formattedOpponentTotalTime = formatDuration(opponentTotalTime);
+      String timeDifferenceDisplay = calculateTimeDifference(
+          participantTotalTime, formattedOpponentTotalTime);
+
+      bool isParticipantWinning = timeDifferenceDisplay.startsWith('-');
+
+      // Update the challenge as completed with success or fail based on the total times
+      await FirebaseFirestore.instance
+          .collection('Challenges')
+          .doc(widget.challengeId)
+          .update({'active': false, 'success': isParticipantWinning});
+
+      // Show the dialog after the state update
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (isParticipantWinning) {
+          _showSuccessDialog();
+        }
+      });
+    }
+  }
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Challenge Completed!"),
+          content: Stack(
+            children: <Widget>[
+              Lottie.asset(
+                'assets/lottie/win_animation.json',
+                frameRate: FrameRate.max,
+                repeat: true,
+                reverse: false,
+                animate: true,
+              ),
+              Lottie.asset(
+                'assets/lottie/firework_animation.json',
+                frameRate: FrameRate.max,
+                repeat: true,
+                reverse: false,
+                animate: true,
+              ),
+              const Text(
+                "Congratulations! You have successfully completed the challenge.",
+                style: TextStyle(fontSize: 14),
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final Duration totalOpponentTime =
@@ -508,6 +618,8 @@ class _Snow2SurfState extends State<Snow2Surf> {
         formatTime(totalOpponentTime.inSeconds.toDouble());
 
     return Scaffold(
+      key: _snow2SurfScaffoldKey,
+      resizeToAvoidBottomInset: true,
       backgroundColor: const Color(0xFFDFD3C3),
       appBar: AppBar(
         centerTitle: true,
@@ -525,6 +637,13 @@ class _Snow2SurfState extends State<Snow2Surf> {
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.chat),
+            onPressed: () =>
+                _snow2SurfScaffoldKey.currentState?.openEndDrawer(),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -562,11 +681,11 @@ class _Snow2SurfState extends State<Snow2Surf> {
             const SizedBox(height: 5),
             Center(
               child: Text(
-                widget.challengeName,
-                style: GoogleFonts.roboto(
+                'Team Name: ${widget.challengeName}',
+                style: GoogleFonts.audiowide(
                   textStyle: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w300,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w100,
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -697,15 +816,14 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                     Center(
                                       child: Text(
                                         'VS',
-                                        style: TextStyle(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.bold,
+                                        style: GoogleFonts.blackOpsOne(
+                                          textStyle: TextStyle(
+                                            fontSize: 32,
+                                            letterSpacing: 1.2,
+                                          ),
                                         ),
                                       ),
                                     ),
-                                    // if (participantBestTime != "N/A" &&
-                                    //     opponentBestTime != "N/A")
-                                    // Only display if times are valid
                                     timeDifferenceWidget(
                                         participantBestTime, opponentBestTime)
                                   ],
@@ -772,7 +890,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
                               child: Text(
                                 '$formattedTotalParticipantTime',
                                 style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold),
+                                    fontSize: 24, fontWeight: FontWeight.bold),
                               ),
                             ),
                           ),
@@ -782,7 +900,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
                               child: Text(
                                 '$formattedOpponentTotalTime',
                                 style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold),
+                                    fontSize: 24, fontWeight: FontWeight.bold),
                               ),
                             ),
                           ),
@@ -793,9 +911,9 @@ class _Snow2SurfState extends State<Snow2Surf> {
                           padding: const EdgeInsets.all(8.0),
                           child: RichText(
                             text: TextSpan(
-                              text: 'Time Difference: ',
+                              text: '',
                               style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 28,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.black),
                               children: <TextSpan>[
@@ -851,6 +969,37 @@ class _Snow2SurfState extends State<Snow2Surf> {
               },
             ),
           ],
+        ),
+      ),
+      endDrawer: Drawer(
+        child: StreamBuilder<QuerySnapshot>(
+          stream: _messagesStream,
+          builder:
+              (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+            if (snapshot.hasError) {
+              return Text('Something went wrong');
+            }
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Text('Loading');
+            }
+            final messages = snapshot.data?.docs
+                    .map((doc) =>
+                        doc['message'] as String) // Extract 'message' field
+                    .toList() ??
+                [];
+            return ChatWidget(
+              key: ValueKey(messages.length),
+              messages: messages,
+              currentUserEmail: currentUser?.email ?? '',
+              onSend: (String message) {
+                if (message.isNotEmpty) {
+                  _sendMessage(message);
+                }
+              },
+              teamColor: Colors.primaries[
+                  currentUser!.email.hashCode % Colors.primaries.length],
+            );
+          },
         ),
       ),
     );
