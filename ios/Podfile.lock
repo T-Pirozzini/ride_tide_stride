@@ -682,6 +682,8 @@ PODS:
     - leveldb-library (~> 1.22)
     - nanopb (< 2.30910.0, >= 2.30908.0)
   - Flutter (1.0.0)
+  - flutter_local_notifications (0.0.1):
+    - Flutter
   - flutter_web_auth (0.5.0):
     - Flutter
   - GoogleUtilities/AppDelegateSwizzler (7.11.5):
@@ -785,6 +787,7 @@ DEPENDENCIES:
   - firebase_auth (from `.symlinks/plugins/firebase_auth/ios`)
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
   - Flutter (from `Flutter`)
+  - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
   - flutter_web_auth (from `.symlinks/plugins/flutter_web_auth/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
@@ -819,6 +822,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/firebase_core/ios"
   Flutter:
     :path: Flutter
+  flutter_local_notifications:
+    :path: ".symlinks/plugins/flutter_local_notifications/ios"
   flutter_web_auth:
     :path: ".symlinks/plugins/flutter_web_auth/ios"
   path_provider_foundation:
@@ -843,6 +848,7 @@ SPEC CHECKSUMS:
   FirebaseCoreInternal: 2f4bee5ed00301b5e56da0849268797a2dd31fb4
   FirebaseFirestore: b4c0eaaf24efda5732ec21d9e6c788d083118ca6
   Flutter: f04841e97a9d0b0a8025694d0796dd46242b2854
+  flutter_local_notifications: 0c0b1ae97e741e1521e4c1629a459d04b9aec743
   flutter_web_auth: c25208760459cec375a3c39f6a8759165ca0fa4d
   GoogleUtilities: 13e2c67ede716b8741c7989e26893d151b2b2084
   "gRPC-C++": 0968bace703459fd3e5dcb0b2bed4c573dbff046
