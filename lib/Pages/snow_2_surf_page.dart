@@ -221,6 +221,9 @@ class _Snow2SurfState extends State<Snow2Surf> {
     // Ensure user is a participant
     if (!widget.participantsEmails.contains(participantEmail)) {
       print("User is not a participant in this challenge. Cannot join leg.");
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("You are not a participant in this challenge."),
+      ));
       return;
     }
 
@@ -245,6 +248,9 @@ class _Snow2SurfState extends State<Snow2Surf> {
 
         if (alreadyInALeg) {
           print("User has already joined a leg.");
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text("You have already joined a leg."),
+          ));
           return;
         }
 
@@ -778,53 +784,75 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                       Expanded(
                                         child: Card(
                                           child: Padding(
-                                            padding: EdgeInsets.all(8),
+                                            padding: EdgeInsets.all(2),
                                             child: Column(
                                               mainAxisAlignment:
                                                   MainAxisAlignment.center,
                                               children: <Widget>[
-                                                Icon(category['icon']),
-                                                Text(category['name']),
-                                                if (currentUser != participant)
-                                                  FutureBuilder<String>(
-                                                    future: getUsername(
-                                                        participant),
-                                                    builder:
-                                                        (context, snapshot) {
-                                                      if (snapshot
-                                                              .connectionState ==
-                                                          ConnectionState
-                                                              .waiting) {
-                                                        return CircularProgressIndicator();
-                                                      }
-                                                      if (snapshot.hasError ||
-                                                          !snapshot.hasData ||
-                                                          snapshot
-                                                              .data!.isEmpty) {
-                                                        return Text(
-                                                            'Error loading username');
-                                                      }
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceEvenly,
+                                                  children: [
+                                                    Icon(category['icon']),
+                                                    Text(category['name']),
+                                                  ],
+                                                ),
+                                                FutureBuilder<String>(
+                                                  future:
+                                                      getUsername(participant),
+                                                  builder: (context, snapshot) {
+                                                    if (snapshot
+                                                            .connectionState ==
+                                                        ConnectionState
+                                                            .waiting) {
+                                                      return CircularProgressIndicator();
+                                                    }
+                                                    if (snapshot.hasError) {
                                                       return Text(
-                                                          snapshot.data!,
-                                                          style: TextStyle(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold));
-                                                    },
-                                                  ),
-                                                Text('Best Time: $bestTime'),
-                                                if (isUserInThisLeg) ...[
-                                                  SizedBox(),
-                                                ] else ...[
-                                                  participant == "No username"
-                                                      ? ElevatedButton(
+                                                          'Error loading username');
+                                                    }
+                                                    String username =
+                                                        snapshot.data ?? '';
+                                                    bool showJoinButton =
+                                                        username ==
+                                                                "No username" &&
+                                                            (bestTime ==
+                                                                    "N/A" ||
+                                                                bestTime
+                                                                    .isEmpty);
+                                                    List<Widget>
+                                                        columnChildren = [
+                                                      Text(
+                                                        username.isNotEmpty
+                                                            ? username
+                                                            : 'No username',
+                                                        style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                      ),
+                                                      Text(
+                                                          'Best Time: ${bestTime.isNotEmpty ? bestTime : "N/A"}'),
+                                                    ];
+                                                    if (showJoinButton) {
+                                                      columnChildren.add(
+                                                        ElevatedButton(
                                                           onPressed: () =>
                                                               joinTeam(
                                                                   currentLeg),
                                                           child: Text('Join'),
-                                                        )
-                                                      : SizedBox(),
-                                                ],
+                                                        ),
+                                                      );
+                                                    } else {
+                                                      columnChildren
+                                                          .add(SizedBox());
+                                                    }
+                                                    return Column(
+                                                      children: columnChildren,
+                                                    );
+                                                  },
+                                                ),
                                               ],
                                             ),
                                           ),
