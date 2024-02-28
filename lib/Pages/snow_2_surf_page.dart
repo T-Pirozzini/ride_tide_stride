@@ -198,8 +198,8 @@ class _Snow2SurfState extends State<Snow2Surf> {
       "bestTimes": {
         "Alpine Skiing": "0:07:00",
         "Nordic Skiing": "0:30:00",
-        "Road Running": "0:25:00",
-        "Trail Running": "0:30:00",
+        "Road Running": "0:22:00",
+        "Trail Running": "0:25:00",
         "Mountain Biking": "0:40:00",
         "Kayaking": "0:30:00",
         "Road Cycling": "0:40:00",
@@ -794,8 +794,16 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                                       MainAxisAlignment
                                                           .spaceEvenly,
                                                   children: [
-                                                    Icon(category['icon']),
-                                                    Text(category['name']),
+                                                    Text(
+                                                      category['name'],
+                                                      style: TextStyle(
+                                                          fontSize: 12),
+                                                    ),
+                                                    Text(
+                                                      '${category['distance'].toString()} km',
+                                                      style: TextStyle(
+                                                          fontSize: 12),
+                                                    ),
                                                   ],
                                                 ),
                                                 FutureBuilder<String>(
@@ -823,14 +831,24 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                                                     .isEmpty);
                                                     List<Widget>
                                                         columnChildren = [
-                                                      Text(
-                                                        username.isNotEmpty
-                                                            ? username
-                                                            : 'No username',
-                                                        style: TextStyle(
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .bold),
+                                                      Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        children: [
+                                                          Icon(
+                                                              category['icon']),
+                                                          SizedBox(width: 8),
+                                                          Text(
+                                                            username.isNotEmpty
+                                                                ? username
+                                                                : 'No username',
+                                                            style: TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold),
+                                                          ),
+                                                        ],
                                                       ),
                                                       Text(
                                                           'Best Time: ${bestTime.isNotEmpty ? bestTime : "N/A"}'),
