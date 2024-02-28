@@ -959,7 +959,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
                             width:
                                 8), // Provides spacing between the icon and the text
                         Text(
-                          "Please complete all legs. $legsRemaining remaining.",
+                          "Please fill all positions. $legsRemaining remaining.",
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
