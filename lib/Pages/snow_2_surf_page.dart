@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:ride_tide_stride/pages/chat_widget.dart';
+import 'package:ride_tide_stride/models/chat_message.dart';
 
 class Snow2Surf extends StatefulWidget {
   final String challengeId;
@@ -80,7 +82,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
         .doc(widget.challengeId)
         .collection('messages')
         .orderBy('time',
-            descending: true) // Assuming 'time' is your timestamp field
+            descending: false) // Assuming 'time' is your timestamp field
         .snapshots();
   }
 
@@ -988,22 +990,34 @@ class _Snow2SurfState extends State<Snow2Surf> {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Text('Loading');
             }
-            final messages = snapshot.data?.docs
-                    .map((doc) =>
-                        doc['message'] as String) // Extract 'message' field
-                    .toList() ??
+            final messages = snapshot.data?.docs.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return ChatMessage(
+                    user: data['user'] ?? 'Anonymous',
+                    message: data['message'] ?? '',
+                    time: (data['time'] as Timestamp).toDate(),
+                  );
+                }).toList() ??
                 [];
+
+            final random = Random(currentUser!.email.hashCode);
+            final participantColors = {
+              for (var email in widget.participantsEmails)
+                if (email is String)
+                  email: Color((random.nextInt(0xFFFFFF) << 8) | 0xFF)
+            };
+
             return ChatWidget(
               key: ValueKey(messages.length),
               messages: messages,
               currentUserEmail: currentUser?.email ?? '',
+              participantColors: participantColors,
               onSend: (String message) {
                 if (message.isNotEmpty) {
                   _sendMessage(message);
                 }
               },
-              teamColor: Colors.primaries[
-                  currentUser!.email.hashCode % Colors.primaries.length],
+              teamColor: Color((random.nextInt(0xFFFFFF) << 8) | 0xFF),
             );
           },
         ),

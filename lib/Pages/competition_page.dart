@@ -846,17 +846,18 @@ class CompetitionPageState extends State<CompetitionPage>
                             doc['message'] as String) // Extract 'message' field
                         .toList() ??
                     [];
-                return ChatWidget(
-                  key: ValueKey(messages.length),
-                  messages: messages,
-                  currentUserEmail: currentUser?.email ?? '',
-                  onSend: (String message) {
-                    if (message.isNotEmpty) {
-                      _sendMessage(message);
-                    }
-                  },
-                  teamColor: getUserTeamColor(),
-                );
+                // return ChatWidget(
+                //   key: ValueKey(messages.length),
+                //   messages: messages,
+                //   currentUserEmail: currentUser?.email ?? '',
+                //   onSend: (String message) {
+                //     if (message.isNotEmpty) {
+                //       _sendMessage(message);
+                //     }
+                //   },
+                //   teamColor: getUserTeamColor(),
+                // );
+                return Text('nothing');
               },
             ),
           ),

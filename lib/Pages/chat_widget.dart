@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:ride_tide_stride/models/chat_message.dart';
+
 import 'package:timeago/timeago.dart' as TimeAgo;
 
 class ChatWidget extends StatefulWidget {
   final Function(String) onSend;
-  final List<String> messages;
+  // final List<String> messages;
+  final List<ChatMessage> messages;
   final String? currentUserEmail;
   final Color teamColor;
+  final Map<String, Color> participantColors;
 
   const ChatWidget(
       {Key? key,
       required this.onSend,
       required this.messages,
       required this.currentUserEmail,
-      required this.teamColor})
+      required this.teamColor,
+      required this.participantColors})
       : super(key: key);
 
   @override
@@ -35,30 +40,30 @@ class _ChatWidgetState extends State<ChatWidget> {
           child: ListView.builder(
             itemCount: widget.messages.length,
             itemBuilder: (context, index) {
-              String userEmail = widget.currentUserEmail!.split('@')[0];
-              DateTime messageTime =
-                  DateTime.now().subtract(Duration(minutes: index));
+              ChatMessage message = widget.messages[index];
 
               return ListTile(
-                title: Text(widget.messages[index]),
+                title: Text(message.message),
                 subtitle: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      userEmail,
+                      message.user,
                       style: TextStyle(fontSize: 12),
                     ),
-                    Text(TimeAgo.format(messageTime),
+                    Text(TimeAgo.format(message.time),
                         style: TextStyle(fontSize: 12)),
                   ],
                 ),
                 leading: CircleAvatar(
-                  backgroundColor: widget.teamColor,
+                  backgroundColor:
+                      widget.participantColors[message.user] ?? Colors.grey,
                   child: Text(
-                    widget.currentUserEmail!.isNotEmpty
-                        ? widget.currentUserEmail![0].toUpperCase()
+                    message.user.isNotEmpty
+                        ? message.user[0].toUpperCase()
                         : '',
                     style: TextStyle(
+                      color: Colors.black54,
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),

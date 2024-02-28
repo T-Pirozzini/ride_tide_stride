@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
+import 'package:ride_tide_stride/models/chat_message.dart';
 import 'package:ride_tide_stride/pages/chat_widget.dart';
 
 class MtnScramblePage extends StatefulWidget {
@@ -36,7 +37,7 @@ class MtnScramblePage extends StatefulWidget {
 class _MtnScramblePageState extends State<MtnScramblePage> {
   final GlobalKey<ScaffoldState> _mtnScrambleScaffoldKey =
       GlobalKey<ScaffoldState>();
-      final currentUser = FirebaseAuth.instance.currentUser;
+  final currentUser = FirebaseAuth.instance.currentUser;
   Map<String, Color> participantColors = {};
   DateTime? endDate;
 
@@ -78,6 +79,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
             descending: true) // Assuming 'time' is your timestamp field
         .snapshots();
   }
+
   Stream<QuerySnapshot>? _messagesStream;
 
   Future<Map<String, double>> fetchParticipantElevations() async {
@@ -123,7 +125,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
           activityTypeMappings.containsKey(widget.challengeActivity)) {
         List<String> relevantActivityTypes =
             activityTypeMappings[widget.challengeActivity]!;
-        for (String activityType in relevantActivityTypes) {          
+        for (String activityType in relevantActivityTypes) {
           var activitiesSnapshot =
               await query.where('type', isEqualTo: activityType).get();
           activitiesSnapshot.docs.forEach((doc) {
@@ -578,15 +580,23 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Text('Loading');
             }
-            final messages = snapshot.data?.docs
-                    .map((doc) =>
-                        doc['message'] as String) // Extract 'message' field
-                    .toList() ??
+            final messages = snapshot.data?.docs.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return ChatMessage(
+                    user: data['user'] ?? 'Anonymous',
+                    message: data['message'] ?? '',
+                    time: (data['time'] as Timestamp).toDate(),
+                  );
+                }).toList() ??
                 [];
+
+            
+
             return ChatWidget(
               key: ValueKey(messages.length),
               messages: messages,
               currentUserEmail: currentUser?.email ?? '',
+              participantColors: participantColors,
               onSend: (String message) {
                 if (message.isNotEmpty) {
                   _sendMessage(message);
