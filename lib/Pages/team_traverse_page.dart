@@ -18,6 +18,7 @@ class TeamTraversePage extends StatefulWidget {
   final String mapDistance;
   final String challengeCategory;
   final String challengeActivity;
+  final String challengeCreator;
 
   const TeamTraversePage(
       {Key? key,
@@ -28,7 +29,8 @@ class TeamTraversePage extends StatefulWidget {
       required this.challengeName,
       required this.mapDistance,
       required this.challengeCategory,
-      required this.challengeActivity})
+      required this.challengeActivity,
+      required this.challengeCreator})
       : super(key: key);
 
   @override
@@ -575,6 +577,9 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
                                   ],
                                 ),
                               ),
+                               email == widget.challengeCreator
+                                  ? Icon(Icons.verified_outlined)
+                                  : SizedBox.shrink(),
                             ],
                           ),
                         ),

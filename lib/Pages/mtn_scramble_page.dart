@@ -18,6 +18,7 @@ class MtnScramblePage extends StatefulWidget {
   final String mapElevation;
   final String challengeCategory;
   final String challengeActivity;
+  final String challengeCreator;
 
   const MtnScramblePage(
       {super.key,
@@ -28,7 +29,8 @@ class MtnScramblePage extends StatefulWidget {
       required this.challengeName,
       required this.mapElevation,
       required this.challengeCategory,
-      required this.challengeActivity});
+      required this.challengeActivity,
+      required this.challengeCreator});
 
   @override
   State<MtnScramblePage> createState() => _MtnScramblePageState();
@@ -557,6 +559,9 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                                   ],
                                 ),
                               ),
+                              email == widget.challengeCreator
+                                  ? Icon(Icons.verified_outlined)
+                                  : SizedBox.shrink(),
                             ],
                           ),
                         ),
@@ -589,8 +594,6 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                   );
                 }).toList() ??
                 [];
-
-            
 
             return ChatWidget(
               key: ValueKey(messages.length),
