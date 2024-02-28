@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -166,6 +165,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
         "Road Cycling": "01:15:00",
         "Canoeing": "1:15:00",
       },
+      "teamName": "Teletubbies",
     },
     "Advanced": {
       "name": ["Crash", "Todd", "Noise", "Baldy"],
@@ -185,6 +185,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
         "Road Cycling": "00:50:00",
         "Canoeing": "0:55:00",
       },
+      "teamName": "Crash N' The Boys",
     },
     "Expert": {
       "name": ["Mike", "Leo", "Raph", "Don"],
@@ -204,6 +205,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
         "Road Cycling": "0:40:00",
         "Canoeing": "0:45:00",
       },
+      "teamName": "TMNT",
     },
   };
 
@@ -512,15 +514,15 @@ class _Snow2SurfState extends State<Snow2Surf> {
   String calculateTimeDifference(
       Duration participantTime, String formattedOpponentTime) {
     Duration opponentTime = parseBestTime(formattedOpponentTime);
-    Duration timeDifference = participantTime - opponentTime;
+    Duration timeDifference = opponentTime - participantTime;
 
     // Format time difference
     String formattedTimeDifference = formatDuration(timeDifference.abs());
 
-    // Determine the color and sign based on if the participant is winning or losing
+    // Determine the sign based on if the participant is winning or losing
+    // If participant time is less (better), then timeDifference is negative
     bool participantIsWinning = timeDifference.isNegative;
-    String sign = participantIsWinning ? '-' : '+';
-    String colorCode = participantIsWinning ? 'red' : 'green';
+    String sign = participantIsWinning ? '-' : '+'; // Corrected this line
 
     return '$sign$formattedTimeDifference';
   }
@@ -658,7 +660,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
                 children: [
                   Center(
                     child: Text(
-                      widget.challengeDifficulty,
+                      "Difficulty Level: ${widget.challengeDifficulty}",
                       style: GoogleFonts.roboto(
                         textStyle: TextStyle(
                           fontSize: 24,
@@ -681,16 +683,32 @@ class _Snow2SurfState extends State<Snow2Surf> {
               ),
             ),
             const SizedBox(height: 5),
-            Center(
-              child: Text(
-                'Team Name: ${widget.challengeName}',
-                style: GoogleFonts.audiowide(
-                  textStyle: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w100,
-                    letterSpacing: 1.2,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${widget.challengeName}',
+                    style: GoogleFonts.audiowide(
+                      textStyle: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w100,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
                   ),
-                ),
+                  Text(
+                    '${opponents[widget.challengeDifficulty]['teamName']}',
+                    style: GoogleFonts.audiowide(
+                      textStyle: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w100,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             Expanded(
@@ -878,6 +896,34 @@ class _Snow2SurfState extends State<Snow2Surf> {
                 }
 
                 if (snapshot.hasData) {
+                  final int legsCompleted = snapshot.data!['legsCompleted'];
+                  final int legsRemaining = snapshot.data!['legsRemaining'];
+
+                  if (legsCompleted < 4) {
+                    // Not all legs have times
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          color: Theme.of(context)
+                              .errorColor, // Or any color that fits your design
+                        ),
+                        SizedBox(
+                            width:
+                                8), // Provides spacing between the icon and the text
+                        Text(
+                          "Please complete all legs. $legsRemaining remaining.",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors
+                                .black54, // Or any color that fits your design
+                          ),
+                        ),
+                      ],
+                    );
+                  }
                   // Extract the necessary data
                   final Duration totalTime = snapshot.data!['totalTime'];
 
