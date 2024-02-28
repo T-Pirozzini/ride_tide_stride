@@ -1,5 +1,5 @@
 import 'dart:async';
-
+import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:ride_tide_stride/pages/chat_widget.dart';
+import 'package:ride_tide_stride/models/chat_message.dart';
 
 class Snow2Surf extends StatefulWidget {
   final String challengeId;
@@ -80,7 +81,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
         .doc(widget.challengeId)
         .collection('messages')
         .orderBy('time',
-            descending: true) // Assuming 'time' is your timestamp field
+            descending: false) // Assuming 'time' is your timestamp field
         .snapshots();
   }
 
@@ -164,6 +165,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
         "Road Cycling": "01:15:00",
         "Canoeing": "1:15:00",
       },
+      "teamName": "Teletubbies",
     },
     "Advanced": {
       "name": ["Crash", "Todd", "Noise", "Baldy"],
@@ -183,6 +185,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
         "Road Cycling": "00:50:00",
         "Canoeing": "0:55:00",
       },
+      "teamName": "Crash N' The Boys",
     },
     "Expert": {
       "name": ["Mike", "Leo", "Raph", "Don"],
@@ -195,13 +198,14 @@ class _Snow2SurfState extends State<Snow2Surf> {
       "bestTimes": {
         "Alpine Skiing": "0:07:00",
         "Nordic Skiing": "0:30:00",
-        "Road Running": "0:25:00",
-        "Trail Running": "0:30:00",
+        "Road Running": "0:22:00",
+        "Trail Running": "0:25:00",
         "Mountain Biking": "0:40:00",
         "Kayaking": "0:30:00",
         "Road Cycling": "0:40:00",
         "Canoeing": "0:45:00",
       },
+      "teamName": "TMNT",
     },
   };
 
@@ -217,6 +221,9 @@ class _Snow2SurfState extends State<Snow2Surf> {
     // Ensure user is a participant
     if (!widget.participantsEmails.contains(participantEmail)) {
       print("User is not a participant in this challenge. Cannot join leg.");
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("You are not a participant in this challenge."),
+      ));
       return;
     }
 
@@ -241,6 +248,9 @@ class _Snow2SurfState extends State<Snow2Surf> {
 
         if (alreadyInALeg) {
           print("User has already joined a leg.");
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text("You have already joined a leg."),
+          ));
           return;
         }
 
@@ -510,15 +520,15 @@ class _Snow2SurfState extends State<Snow2Surf> {
   String calculateTimeDifference(
       Duration participantTime, String formattedOpponentTime) {
     Duration opponentTime = parseBestTime(formattedOpponentTime);
-    Duration timeDifference = participantTime - opponentTime;
+    Duration timeDifference = opponentTime - participantTime;
 
     // Format time difference
     String formattedTimeDifference = formatDuration(timeDifference.abs());
 
-    // Determine the color and sign based on if the participant is winning or losing
+    // Determine the sign based on if the participant is winning or losing
+    // If participant time is less (better), then timeDifference is negative
     bool participantIsWinning = timeDifference.isNegative;
-    String sign = participantIsWinning ? '-' : '+';
-    String colorCode = participantIsWinning ? 'red' : 'green';
+    String sign = participantIsWinning ? '-' : '+'; // Corrected this line
 
     return '$sign$formattedTimeDifference';
   }
@@ -656,7 +666,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
                 children: [
                   Center(
                     child: Text(
-                      widget.challengeDifficulty,
+                      "Difficulty Level: ${widget.challengeDifficulty}",
                       style: GoogleFonts.roboto(
                         textStyle: TextStyle(
                           fontSize: 24,
@@ -679,16 +689,32 @@ class _Snow2SurfState extends State<Snow2Surf> {
               ),
             ),
             const SizedBox(height: 5),
-            Center(
-              child: Text(
-                'Team Name: ${widget.challengeName}',
-                style: GoogleFonts.audiowide(
-                  textStyle: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w100,
-                    letterSpacing: 1.2,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${widget.challengeName}',
+                    style: GoogleFonts.audiowide(
+                      textStyle: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w100,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
                   ),
-                ),
+                  Text(
+                    '${opponents[widget.challengeDifficulty]['teamName']}',
+                    style: GoogleFonts.audiowide(
+                      textStyle: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w100,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             Expanded(
@@ -758,53 +784,93 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                       Expanded(
                                         child: Card(
                                           child: Padding(
-                                            padding: EdgeInsets.all(8),
+                                            padding: EdgeInsets.all(2),
                                             child: Column(
                                               mainAxisAlignment:
                                                   MainAxisAlignment.center,
                                               children: <Widget>[
-                                                Icon(category['icon']),
-                                                Text(category['name']),
-                                                if (currentUser != participant)
-                                                  FutureBuilder<String>(
-                                                    future: getUsername(
-                                                        participant),
-                                                    builder:
-                                                        (context, snapshot) {
-                                                      if (snapshot
-                                                              .connectionState ==
-                                                          ConnectionState
-                                                              .waiting) {
-                                                        return CircularProgressIndicator();
-                                                      }
-                                                      if (snapshot.hasError ||
-                                                          !snapshot.hasData ||
-                                                          snapshot
-                                                              .data!.isEmpty) {
-                                                        return Text(
-                                                            'Error loading username');
-                                                      }
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceEvenly,
+                                                  children: [
+                                                    Text(
+                                                      category['name'],
+                                                      style: TextStyle(
+                                                          fontSize: 12),
+                                                    ),
+                                                    Text(
+                                                      '${category['distance'].toString()} km',
+                                                      style: TextStyle(
+                                                          fontSize: 12),
+                                                    ),
+                                                  ],
+                                                ),
+                                                FutureBuilder<String>(
+                                                  future:
+                                                      getUsername(participant),
+                                                  builder: (context, snapshot) {
+                                                    if (snapshot
+                                                            .connectionState ==
+                                                        ConnectionState
+                                                            .waiting) {
+                                                      return CircularProgressIndicator();
+                                                    }
+                                                    if (snapshot.hasError) {
                                                       return Text(
-                                                          snapshot.data!,
-                                                          style: TextStyle(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold));
-                                                    },
-                                                  ),
-                                                Text('Best Time: $bestTime'),
-                                                if (isUserInThisLeg) ...[
-                                                  SizedBox(),
-                                                ] else ...[
-                                                  participant == "No username"
-                                                      ? ElevatedButton(
+                                                          'Error loading username');
+                                                    }
+                                                    String username =
+                                                        snapshot.data ?? '';
+                                                    bool showJoinButton =
+                                                        username ==
+                                                                "No username" &&
+                                                            (bestTime ==
+                                                                    "N/A" ||
+                                                                bestTime
+                                                                    .isEmpty);
+                                                    List<Widget>
+                                                        columnChildren = [
+                                                      Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        children: [
+                                                          Icon(
+                                                              category['icon']),
+                                                          SizedBox(width: 8),
+                                                          Text(
+                                                            username.isNotEmpty
+                                                                ? username
+                                                                : 'No username',
+                                                            style: TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      Text(
+                                                          'Best Time: ${bestTime.isNotEmpty ? bestTime : "N/A"}'),
+                                                    ];
+                                                    if (showJoinButton) {
+                                                      columnChildren.add(
+                                                        ElevatedButton(
                                                           onPressed: () =>
                                                               joinTeam(
                                                                   currentLeg),
                                                           child: Text('Join'),
-                                                        )
-                                                      : SizedBox(),
-                                                ],
+                                                        ),
+                                                      );
+                                                    } else {
+                                                      columnChildren
+                                                          .add(SizedBox());
+                                                    }
+                                                    return Column(
+                                                      children: columnChildren,
+                                                    );
+                                                  },
+                                                ),
                                               ],
                                             ),
                                           ),
@@ -876,6 +942,34 @@ class _Snow2SurfState extends State<Snow2Surf> {
                 }
 
                 if (snapshot.hasData) {
+                  final int legsCompleted = snapshot.data!['legsCompleted'];
+                  final int legsRemaining = snapshot.data!['legsRemaining'];
+
+                  if (legsCompleted < 4) {
+                    // Not all legs have times
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          color: Theme.of(context)
+                              .errorColor, // Or any color that fits your design
+                        ),
+                        SizedBox(
+                            width:
+                                8), // Provides spacing between the icon and the text
+                        Text(
+                          "Please fill all positions. $legsRemaining remaining.",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors
+                                .black54, // Or any color that fits your design
+                          ),
+                        ),
+                      ],
+                    );
+                  }
                   // Extract the necessary data
                   final Duration totalTime = snapshot.data!['totalTime'];
 
@@ -988,22 +1082,34 @@ class _Snow2SurfState extends State<Snow2Surf> {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Text('Loading');
             }
-            final messages = snapshot.data?.docs
-                    .map((doc) =>
-                        doc['message'] as String) // Extract 'message' field
-                    .toList() ??
+            final messages = snapshot.data?.docs.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return ChatMessage(
+                    user: data['user'] ?? 'Anonymous',
+                    message: data['message'] ?? '',
+                    time: (data['time'] as Timestamp).toDate(),
+                  );
+                }).toList() ??
                 [];
+
+            final random = Random(currentUser!.email.hashCode);
+            final participantColors = {
+              for (var email in widget.participantsEmails)
+                if (email is String)
+                  email: Color((random.nextInt(0xFFFFFF) << 8) | 0xFF)
+            };
+
             return ChatWidget(
               key: ValueKey(messages.length),
               messages: messages,
               currentUserEmail: currentUser?.email ?? '',
+              participantColors: participantColors,
               onSend: (String message) {
                 if (message.isNotEmpty) {
                   _sendMessage(message);
                 }
               },
-              teamColor: Colors.primaries[
-                  currentUser!.email.hashCode % Colors.primaries.length],
+              teamColor: Color((random.nextInt(0xFFFFFF) << 8) | 0xFF),
             );
           },
         ),

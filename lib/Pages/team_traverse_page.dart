@@ -6,6 +6,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
+import 'package:ride_tide_stride/models/chat_message.dart';
 import 'package:ride_tide_stride/pages/chat_widget.dart';
 
 class TeamTraversePage extends StatefulWidget {
@@ -17,6 +18,7 @@ class TeamTraversePage extends StatefulWidget {
   final String mapDistance;
   final String challengeCategory;
   final String challengeActivity;
+  final String challengeCreator;
 
   const TeamTraversePage(
       {Key? key,
@@ -27,7 +29,8 @@ class TeamTraversePage extends StatefulWidget {
       required this.challengeName,
       required this.mapDistance,
       required this.challengeCategory,
-      required this.challengeActivity})
+      required this.challengeActivity,
+      required this.challengeCreator})
       : super(key: key);
 
   @override
@@ -574,6 +577,9 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
                                   ],
                                 ),
                               ),
+                               email == widget.challengeCreator
+                                  ? Icon(Icons.verified_outlined)
+                                  : SizedBox.shrink(),
                             ],
                           ),
                         ),
@@ -597,15 +603,21 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Text('Loading');
             }
-            final messages = snapshot.data?.docs
-                    .map((doc) =>
-                        doc['message'] as String) // Extract 'message' field
-                    .toList() ??
+            final messages = snapshot.data?.docs.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return ChatMessage(
+                    user: data['user'] ?? 'Anonymous',
+                    message: data['message'] ?? '',
+                    time: (data['time'] as Timestamp).toDate(),
+                  );
+                }).toList() ??
                 [];
+
             return ChatWidget(
               key: ValueKey(messages.length),
               messages: messages,
               currentUserEmail: currentUser?.email ?? '',
+              participantColors: participantColors,
               onSend: (String message) {
                 if (message.isNotEmpty) {
                   _sendMessage(message);

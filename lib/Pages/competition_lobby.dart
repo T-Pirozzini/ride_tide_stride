@@ -60,6 +60,15 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
       }
 
       List participants = List.from(snapshot['participants'] ?? []);
+      // Check if the challenge is already full
+      if (participants.length >= 8) {
+        print("Challenge is full");
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Sorry, the challenge is currently full.'),
+        ));
+        // Optionally, show a dialog or a snackbar to inform the user
+        return;
+      }
       if (!participants.contains(currentUserEmail)) {
         participants.add(currentUserEmail);
         transaction.update(challengeRef, {'participants': participants});
@@ -198,6 +207,9 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                         challengeActivity:
                                             challengeData['categoryActivity'] ??
                                                 'No activity',
+                                        challengeCreator:
+                                            challengeData['userEmail'] ??
+                                                'No creator',
                                       );
                                     case 'Team Traverse':
                                       return TeamTraversePage(
@@ -213,6 +225,9 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                         challengeActivity:
                                             challengeData['categoryActivity'] ??
                                                 'No activity',
+                                        challengeCreator:
+                                            challengeData['userEmail'] ??
+                                                'No creator',
                                       );
                                     default:
                                       // Handle unknown challenge type if necessary
@@ -274,6 +289,9 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                             challengeActivity: challengeData[
                                                     'categoryActivity'] ??
                                                 'No activity',
+                                            challengeCreator:
+                                                challengeData['userEmail'] ??
+                                                    'No creator',
                                           );
                                         case 'Team Traverse':
                                           return TeamTraversePage(
@@ -291,6 +309,9 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                             challengeActivity: challengeData[
                                                     'categoryActivity'] ??
                                                 'No activity',
+                                            challengeCreator:
+                                                challengeData['userEmail'] ??
+                                                    'No creator',
                                           );
                                         default:
                                           // Handle unknown challenge type if necessary
@@ -469,8 +490,7 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
         floatingActionButton: FloatingActionButton(
           onPressed: addCompetition,
           child: Icon(Icons.add),
-          heroTag:
-              null, 
+          heroTag: null,
         ));
   }
 }

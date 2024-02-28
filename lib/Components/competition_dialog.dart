@@ -295,6 +295,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
 
     return AlertDialog(
       title: Center(child: Text('Create a Challenge')),
+      titlePadding: EdgeInsets.only(top: 5),
       content: Builder(builder: (context) {
         return SingleChildScrollView(
           child: Container(
@@ -303,34 +304,31 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: Container(
-                    height: 80,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: _challenges
-                          .map((challenge) => GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _selectedChallenge = challenge.name;
-                                    _selectedDescription =
-                                        challenge.description;
-                                  });
-                                },
-                                child: CircleAvatar(
-                                  maxRadius:
-                                      _selectedChallenge == challenge.name
-                                          ? 30.0
-                                          : 20.0,
-                                  child: ClipOval(
-                                    child: Image.asset(challenge.assetPath),
-                                  ),
+                Container(
+                  height: 60,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: _challenges
+                        .map((challenge) => GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedChallenge = challenge.name;
+                                  _selectedDescription = challenge.description;
+                                });
+                              },
+                              child: CircleAvatar(
+                                maxRadius: _selectedChallenge == challenge.name
+                                    ? 30.0
+                                    : 20.0,
+                                child: ClipOval(
+                                  child: Image.asset(challenge.assetPath),
                                 ),
-                              ))
-                          .toList(),
-                    ),
+                              ),
+                            ))
+                        .toList(),
                   ),
                 ),
+                SizedBox(height: 5),
                 Container(
                   height: 230,
                   child: usePageView
@@ -615,7 +613,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                         )),
                   ),
                 ),
-                SizedBox(height: 15),
+                SizedBox(height: 5),
                 Container(
                   width: 250,
                   child: Column(
@@ -633,7 +631,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                                   onPressed: togglePrivacy,
                                   style: OutlinedButton.styleFrom(
                                     shape: CircleBorder(),
-                                    padding: EdgeInsets.all(15),
+                                    padding: EdgeInsets.all(5),
                                   ),
                                   child: Icon(
                                       _isPublic ? Icons.lock_open : Icons.lock),
@@ -671,7 +669,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                                   onPressed: toggleVisibility,
                                   style: OutlinedButton.styleFrom(
                                     shape: CircleBorder(),
-                                    padding: EdgeInsets.all(15),
+                                    padding: EdgeInsets.all(5),
                                   ),
                                   child: Icon(_isVisible
                                       ? Icons.visibility
