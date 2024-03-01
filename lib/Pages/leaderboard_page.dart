@@ -59,8 +59,6 @@ class _LeaderboardState extends State<Leaderboard> {
     final endTime =
         DateTime(endOfMonth.year, endOfMonth.month, endOfMonth.day, 23, 59, 59)
             .millisecondsSinceEpoch;
-    // final testTime =
-    //     DateTime.now().millisecondsSinceEpoch + 5000; // 5 seconds from now
 
     return DefaultTabController(
       length: 3,
@@ -140,16 +138,16 @@ class _LeaderboardState extends State<Leaderboard> {
             LeaderboardTab(title: 'Total Elevation'),
           ],
         ),
-        floatingActionButton: isAdmin
-            ? FloatingActionButton(
-                heroTag: null,
-                onPressed: () {
-                  // Only show the button and handle the action if the user is an admin
-                  _saveResultsToFirestore();
-                },
-                child: const Icon(Icons.save),
-              )
-            : null, // Set to null if the user is not an admin
+        // floatingActionButton: isAdmin
+        //     ? FloatingActionButton(
+        //         heroTag: null,
+        //         onPressed: () {
+        //           // Only show the button and handle the action if the user is an admin
+        //           _saveResultsToFirestore();
+        //         },
+        //         child: const Icon(Icons.save),
+        //       )
+        //     : null, // Set to null if the user is not an admin
       ),
     );
   }
@@ -160,7 +158,9 @@ void _saveResultsToFirestore() async {
   final currentMonth = DateTime.now().month;
   final currentYear = DateTime.now().year;
   final firstDayOfMonth = DateTime(currentYear, currentMonth, 1);
-  final lastDayOfMonth = DateTime(currentYear, currentMonth + 1, 0);
+  final lastDayOfMonth = DateTime(currentYear, currentMonth + 1, 1)
+      .subtract(const Duration(days: 1));
+
   String formattedDate =
       DateFormat('MMMM yyyy').format(DateTime(currentYear, currentMonth));
 
@@ -336,7 +336,9 @@ class LeaderboardTab extends StatelessWidget {
     final currentMonth = DateTime.now().month;
     final currentYear = DateTime.now().year;
     final firstDayOfMonth = DateTime(currentYear, currentMonth, 1);
-    final lastDayOfMonth = DateTime(currentYear, currentMonth + 1, 0);
+    final lastDayOfMonth =
+        DateTime(currentYear, currentMonth + 1, 1, 23, 59, 59)
+            .subtract(const Duration(days: 1));
 
     final snapshot = await FirebaseFirestore.instance
         .collection('activities')
@@ -361,7 +363,6 @@ class LeaderboardTab extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         double deviceHeight = constraints.maxHeight;
-        double deviceWidth = constraints.maxWidth;
         double topPadding = MediaQuery.of(context).padding.top;
         double bottomPadding = MediaQuery.of(context).padding.bottom;
         double usableHeight = deviceHeight - topPadding - bottomPadding;
@@ -744,18 +745,17 @@ class LeaderboardTab extends StatelessWidget {
   }
 
   Stream<QuerySnapshot> getCurrentMonthData() {
-    final currentMonth = DateTime.now().month;
-    final currentYear = DateTime.now().year;
-
-    final firstDayOfMonth = DateTime(currentYear, currentMonth, 1);
-    final lastDayOfMonth = DateTime(currentYear, currentMonth + 1, 0);
+    final now = DateTime.now();
+    final firstDayOfMonth = DateTime(now.year, now.month, 1);
+    final endOfMonth = DateTime.utc(now.year, now.month + 1, 1, 23, 59, 59)
+        .subtract(const Duration(days: 1));
 
     return FirebaseFirestore.instance
         .collection('activities')
         .where('start_date',
             isGreaterThanOrEqualTo: firstDayOfMonth.toUtc().toIso8601String())
         .where('start_date',
-            isLessThanOrEqualTo: lastDayOfMonth.toUtc().toIso8601String())
+            isLessThanOrEqualTo: endOfMonth.toUtc().toIso8601String())
         .snapshots();
   }
 

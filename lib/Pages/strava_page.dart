@@ -946,6 +946,11 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
     Map<String, dynamic> athlete,
     CollectionReference activitiesCollection,
   ) {
+    double averageSpeed = activity['average_speed'];
+    if (averageSpeed == 0) {
+      averageSpeed = 0.0;
+    }
+
     final Map<String, dynamic> activityData = {
       'activity_id': activity['id'],
       'name': activity['name'],
@@ -958,12 +963,6 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
       'start_date_local': activity['start_date_local'],
       'timezone': activity['timezone'],
       'utc_offset': activity['utc_offset'],
-      "map": {
-        "id": activity['map']['id'],
-        "polyline": activity['map']['polyline'],
-        "resource_state": activity['map']['resource_state'],
-        "summary_polyline": activity['map']['summary_polyline'],
-      },
       'timestamp': FieldValue.serverTimestamp(),
       'username': athlete['username'],
       'fullname': athlete['firstname'] + ' ' + athlete['lastname'],
@@ -973,7 +972,6 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
       'user_email': currentUser!.email,
       'average_speed': activity['average_speed'],
       'average_watts': activity['average_watts'],
-      'acheivement_count': activity['achievement_count'],
     };
 
     // Add the data to Firestore
