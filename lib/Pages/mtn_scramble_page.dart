@@ -343,7 +343,6 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
         ],
       ),
       body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Container(
             color: Colors.white,
@@ -374,8 +373,6 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
           ),
           const SizedBox(height: 5),
           Expanded(
-            flex:
-                1, // Adjust flex to change how space is allocated between the map and participant list
             child: Stack(
               children: [
                 FutureBuilder<Map<String, dynamic>>(
@@ -492,6 +489,16 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
           Divider(
             thickness: 2,
           ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            child: Row(
+              children: [
+                Icon(Icons.verified_outlined),
+                SizedBox(width: 2),
+                Text('Challenge Creator'),
+              ],
+            ),
+          ),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(8.0),
@@ -510,7 +517,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                   return GridView.builder(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2, // Number of columns
-                      childAspectRatio: 3 / 1, // Adjust the size ratio of items
+                      childAspectRatio: 7 / 2, // Adjust the size ratio of items
                       crossAxisSpacing: 2, // Spacing between items horizontally
                       mainAxisSpacing: 2, // Spacing between items vertically
                     ),
@@ -530,7 +537,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
 
                       return Card(
                         child: Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.only(left: 8.0),
                           child: Row(
                             children: [
                               email != "Empty Position"
@@ -552,7 +559,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                                         email), // Username or "Empty Slot"
                                     Text(
                                       index < widget.participantsEmails.length
-                                          ? 'Elevation: ${elevation.toStringAsFixed(2)} m'
+                                          ? '${elevation.toStringAsFixed(2)} m'
                                           : '',
                                       style: TextStyle(fontSize: 12),
                                     ),
