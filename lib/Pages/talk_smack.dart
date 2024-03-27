@@ -61,7 +61,10 @@ class _TalkSmackState extends State<TalkSmack> {
         title: const Text(
           'Chat Room: Talk Smack',
           style: TextStyle(
-              fontSize: 24, fontWeight: FontWeight.w300, letterSpacing: 1.2),
+              fontSize: 24,
+              fontWeight: FontWeight.w300,
+              letterSpacing: 1.2,
+              color: Colors.white),
         ),
       ),
       body: Column(

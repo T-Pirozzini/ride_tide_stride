@@ -16,10 +16,13 @@ class CountdownTimerWidget extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          const Text('Competition ends in... '),
+          const Text(
+            'Competition ends in... ',
+            style: TextStyle(color: Colors.white),
+          ),
           CountdownTimer(
             endTime: endTime,
-            textStyle: const TextStyle(fontSize: 14),
+            textStyle: const TextStyle(fontSize: 14, color: Colors.white),
             onEnd: onTimerEnd,
           ),
         ],

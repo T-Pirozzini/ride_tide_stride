@@ -104,7 +104,7 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                           fontWeight: FontWeight.w300,
                           letterSpacing: 1.2)),
                 ),
-                centerTitle: true,
+                // centerTitle: true,
               ),
             ),
             SliverToBoxAdapter(

@@ -71,10 +71,12 @@ class _LeaderboardState extends State<Leaderboard> {
                 textStyle: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w300,
-                    letterSpacing: 1.2)),
+                    letterSpacing: 1.2,
+                    color: Colors.white)),
           ),
           bottom: TabBar(
-            labelStyle: GoogleFonts.tektur(textStyle: TextStyle()),
+            labelStyle:
+                GoogleFonts.tektur(textStyle: TextStyle(color: Colors.white)),
             tabs: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
