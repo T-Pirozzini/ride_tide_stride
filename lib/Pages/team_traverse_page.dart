@@ -511,6 +511,16 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
           Divider(
             thickness: 2,
           ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            child: Row(
+              children: [
+                Icon(Icons.verified_outlined),
+                SizedBox(width: 2),
+                Text('Challenge Creator'),
+              ],
+            ),
+          ),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(8.0),
@@ -529,7 +539,7 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
                   return GridView.builder(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2, // Number of columns
-                      childAspectRatio: 3 / 1, // Adjust the size ratio of items
+                      childAspectRatio: 7 / 2, // Adjust the size ratio of items
                       crossAxisSpacing: 2, // Spacing between items horizontally
                       mainAxisSpacing: 2, // Spacing between items vertically
                     ),
@@ -547,8 +557,9 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
                           participantColors[email] ?? Colors.grey;
 
                       return Card(
+                        elevation: 1,
                         child: Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.only(left: 8.0),
                           child: Row(
                             children: [
                               email != "Empty Position"
@@ -570,14 +581,14 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
                                         email), // Username or "Empty Slot"
                                     Text(
                                       index < widget.participantsEmails.length
-                                          ? 'Distance: ${(distance / 1000).toStringAsFixed(2)} km'
+                                          ? '${(distance / 1000).toStringAsFixed(2)} km'
                                           : '',
                                       style: TextStyle(fontSize: 12),
                                     ),
                                   ],
                                 ),
                               ),
-                               email == widget.challengeCreator
+                              email == widget.challengeCreator
                                   ? Icon(Icons.verified_outlined)
                                   : SizedBox.shrink(),
                             ],

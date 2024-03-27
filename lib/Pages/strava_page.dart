@@ -534,31 +534,38 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                 ),
                                 const SizedBox(height: 25),
                                 Center(
-                                  child: ElevatedButton.icon(
-                                    onPressed: testAuthentication,
-                                    icon: Icon(
-                                      Icons.link,
-                                      color: Colors
-                                          .white, // Adjust the color to fit your design
-                                    ),
-                                    label: Text(
-                                      "Get my Activities",
-                                      style: TextStyle(fontSize: 18),
-                                    ),
-                                    style: ElevatedButton.styleFrom(
-                                      primary: Color(
-                                          0xFF283D3B), // Button background color
-                                      onPrimary:
-                                          Colors.white, // Text and Icon color
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(10.0),
-                                      ),
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: 20, vertical: 12),
-                                    ),
+                                  child: GestureDetector(
+                                    onTap: testAuthentication,
+                                    child: Image(
+                                        image: AssetImage(
+                                            'assets/images/btn_strava_connectwith_orange@2x.png')),
                                   ),
                                 ),
+                                // Center(
+                                //   child: ElevatedButton.icon(
+                                //     onPressed: testAuthentication,
+                                //     icon: Icon(
+                                //       Icons.link,
+                                //       color: Colors
+                                //           .white, // Adjust the color to fit your design
+                                //     ),
+                                //     label: Text(
+                                //       "Get my Activities",
+                                //       style: TextStyle(fontSize: 18),
+                                //     ),
+                                //     style: ElevatedButton.styleFrom(
+                                //       foregroundColor: Colors.white,
+                                //       backgroundColor: Color(
+                                //           0xFF283D3B), // Text and Icon color
+                                //       shape: RoundedRectangleBorder(
+                                //         borderRadius:
+                                //             BorderRadius.circular(10.0),
+                                //       ),
+                                //       padding: EdgeInsets.symmetric(
+                                //           horizontal: 20, vertical: 12),
+                                //     ),
+                                //   ),
+                                // ),
                                 SizedBox(height: 25),
                                 Row(
                                   children: [

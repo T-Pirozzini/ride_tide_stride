@@ -382,8 +382,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                                   child: Text('Open'),
                                   style: _selectedCategoryButton == 'Open'
                                       ? TextButton.styleFrom(
-                                          primary: Colors.white,
-                                          backgroundColor: Theme.of(context)
+                                          foregroundColor: Colors.white, backgroundColor: Theme.of(context)
                                               .secondaryHeaderColor,
                                         )
                                       : null,
@@ -398,8 +397,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                                   style:
                                       _selectedCategoryButton == 'Competitive'
                                           ? TextButton.styleFrom(
-                                              primary: Colors.white,
-                                              backgroundColor: Theme.of(context)
+                                              foregroundColor: Colors.white, backgroundColor: Theme.of(context)
                                                   .secondaryHeaderColor,
                                             )
                                           : null,
@@ -523,8 +521,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                                   child: Text('Intro'),
                                   style: _selectedDifficultyButton == 'Intro'
                                       ? TextButton.styleFrom(
-                                          primary: Colors.white,
-                                          backgroundColor: Theme.of(context)
+                                          foregroundColor: Colors.white, backgroundColor: Theme.of(context)
                                               .secondaryHeaderColor,
                                         )
                                       : null,
@@ -538,8 +535,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                                   child: Text('Advanced'),
                                   style: _selectedDifficultyButton == 'Advanced'
                                       ? TextButton.styleFrom(
-                                          primary: Colors.white,
-                                          backgroundColor: Theme.of(context)
+                                          foregroundColor: Colors.white, backgroundColor: Theme.of(context)
                                               .secondaryHeaderColor,
                                         )
                                       : null,
@@ -553,8 +549,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                                   child: Text('Expert'),
                                   style: _selectedDifficultyButton == 'Expert'
                                       ? TextButton.styleFrom(
-                                          primary: Colors.white,
-                                          backgroundColor: Theme.of(context)
+                                          foregroundColor: Colors.white, backgroundColor: Theme.of(context)
                                               .secondaryHeaderColor,
                                         )
                                       : null,
@@ -567,8 +562,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                                 setState(() {});
                               },
                               style: TextButton.styleFrom(
-                                primary: Colors.white,
-                                backgroundColor:
+                                foregroundColor: Colors.white, backgroundColor:
                                     Theme.of(context).secondaryHeaderColor,
                               ),
                               child: Text(
@@ -762,8 +756,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
           },
           child: Text('Create Challenge'),
           style: TextButton.styleFrom(
-            primary: Colors.white,
-            backgroundColor: Theme.of(context).primaryColor,
+            foregroundColor: Colors.white, backgroundColor: Theme.of(context).primaryColor,
           ),
         ),
         TextButton(
