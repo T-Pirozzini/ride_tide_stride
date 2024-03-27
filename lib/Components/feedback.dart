@@ -57,7 +57,7 @@ class UserFeedback extends StatelessWidget {
           ElevatedButton(
             onPressed: launchMailto,
             style: ElevatedButton.styleFrom(
-              primary: Color(0xFF283D3B),
+              backgroundColor: Color(0xFF283D3B),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
