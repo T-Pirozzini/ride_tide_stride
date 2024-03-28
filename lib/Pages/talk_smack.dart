@@ -188,6 +188,7 @@ class _TalkSmackState extends State<TalkSmack> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 5.0),
             child: Material(
+              color: Colors.white,
               elevation: 2,
               borderRadius: BorderRadius.circular(25.0),
               child: Row(
