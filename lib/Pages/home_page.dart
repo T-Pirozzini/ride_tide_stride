@@ -32,12 +32,14 @@ class _HomeState extends State<Home> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Hey $username. Get after it!",
-            style: GoogleFonts.specialElite(
-                fontWeight: FontWeight.w300,
-                fontSize: 18,
-                letterSpacing: 1.2,
-                color: Colors.white)),
+        title: FittedBox(
+          child: Text("Hey $username. Get after it!",
+              style: GoogleFonts.specialElite(
+                  fontWeight: FontWeight.w300,
+                  fontSize: 18,
+                  letterSpacing: 1.2,
+                  color: Colors.white)),
+        ),
       ),
       body: IndexedStack(
         index: _selectedIndex,
