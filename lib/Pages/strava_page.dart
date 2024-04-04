@@ -91,9 +91,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
     ExampleAuthentication(stravaClient).testDeauthorize().then((value) {
       setState(() {
         isLoggedIn = false;
-        // this.token = null;
-        token = null;
-        _textEditingController.clear();
+        this.token = null;        
       });
     }).catchError(showErrorMessage);
   }
@@ -541,31 +539,6 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                             'assets/images/btn_strava_connectwith_orange@2x.png')),
                                   ),
                                 ),
-                                // Center(
-                                //   child: ElevatedButton.icon(
-                                //     onPressed: testAuthentication,
-                                //     icon: Icon(
-                                //       Icons.link,
-                                //       color: Colors
-                                //           .white, // Adjust the color to fit your design
-                                //     ),
-                                //     label: Text(
-                                //       "Get my Activities",
-                                //       style: TextStyle(fontSize: 18),
-                                //     ),
-                                //     style: ElevatedButton.styleFrom(
-                                //       foregroundColor: Colors.white,
-                                //       backgroundColor: Color(
-                                //           0xFF283D3B), // Text and Icon color
-                                //       shape: RoundedRectangleBorder(
-                                //         borderRadius:
-                                //             BorderRadius.circular(10.0),
-                                //       ),
-                                //       padding: EdgeInsets.symmetric(
-                                //           horizontal: 20, vertical: 12),
-                                //     ),
-                                //   ),
-                                // ),
                                 SizedBox(height: 25),
                                 Row(
                                   children: [
@@ -611,7 +584,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                 const SizedBox(
                   height: 5,
                 ),
-                if (athleteData != null)
+                if (athleteData != null && isLoggedIn)
                   Center(
                     child: Card(
                       elevation: 10,
@@ -645,7 +618,18 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                 ),
                               ],
                             ),
-                            SizedBox(height: 20),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text("Disconnect from Strava?",
+                                    style: TextStyle(
+                                        color: Colors.white, fontSize: 12)),
+                                IconButton(
+                                    onPressed: testDeauth,
+                                    icon: Icon(Icons.logout,
+                                        color: Colors.tealAccent)),
+                              ],
+                            ),
                             SwitchListTile(
                               activeColor: Colors.tealAccent,
                               title: Text(
@@ -687,7 +671,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                       ),
                     ),
                   ),
-                if (athleteActivities != null)
+                if (athleteActivities != null && isLoggedIn)
                   Column(
                     children: [
                       ListView.builder(
