@@ -57,6 +57,7 @@ dependencies:
   material_symbols_icons: ^4.2713.0
   flutter_local_notifications: ^16.3.0
   fl_chart: ^0.40.0
+  flutter_colorpicker: ^1.0.3
 
 dev_dependencies:
   flutter_test:

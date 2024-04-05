@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -264,7 +265,11 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
     String username = data?['username'] as String? ?? '';
     String email = data?['email'] as String? ?? '';
 
-    return {'username': username, 'email': email};
+    return {
+      'username': username,
+      'email': email,
+      'color': data?['color'] as String? ?? '#FFD700'
+    };
   }
 
   Future<bool> _showDeleteConfirmationDialog(BuildContext context) async {
@@ -361,6 +366,76 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
     setState(() {
       globalVisible = !globalVisible;
     });
+  }
+
+  void updateProfile() async {
+    // Initialize color from user's current color preference or default to tealAccent
+    Color pickedColor = Colors.tealAccent;
+    Map<String, String> userInfo = await getUserInfo();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        // Create a TextEditingController for each field to control the text input
+        TextEditingController usernameController =
+            TextEditingController(text: userInfo['username']);
+        return AlertDialog(
+          title: Text('Edit Profile'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                TextField(
+                  controller: usernameController,
+                  decoration: InputDecoration(
+                    hintText: "Enter new username",
+                    labelText: "New Username",
+                    border: OutlineInputBorder(),
+                    filled: true,
+                    fillColor: Colors.grey[200],
+                    prefixIcon: Icon(Icons.person),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SlidePicker(
+                  colorModel: ColorModel.rgb,
+                  enableAlpha: false,
+                  pickerColor: pickedColor,
+                  onColorChanged: (Color color) {
+                    pickedColor = color;
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+            TextButton(
+              child: Text('Save'),
+              onPressed: () async {
+                // Update Firestore with the new color
+                String colorString =
+                    '#${pickedColor.value.toRadixString(16).padLeft(8, '0')}'; // Convert Color to hex string
+                await FirebaseFirestore.instance
+                    .collection('Users')
+                    .doc(currentUser!.email)
+                    .update({
+                  'color': colorString,
+                  'username': usernameController.text,
+                });
+                setState(() {});
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -619,7 +694,8 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                       ),
                       child: Container(
                         width: screenWidth * 0.9,
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
                           color: const Color(0xFF283D3B).withOpacity(0.9),
                           borderRadius: BorderRadius.circular(12),
@@ -633,17 +709,39 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                 Icon(Icons.person,
                                     color: Colors.tealAccent, size: 32),
                                 SizedBox(width: 8),
-                                Text(
-                                  '${athleteData!['firstname']} ${athleteData!['lastname']}',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
+                                FutureBuilder<Map<String, String>>(
+                                  future:
+                                      getUserInfo(), // Call getUserInfo() to get user's info
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return CircularProgressIndicator(); // Show loading indicator while data is being fetched
+                                    }
+                                    if (snapshot.hasData) {
+                                      return Text(
+                                        snapshot.data![
+                                            'username']!, // Use retrieved username here
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      );
+                                    }
+                                    // Handle error or no data case
+                                    return Text(
+                                      'Error',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 SizedBox(width: 25),
                                 IconButton(
-                                  onPressed: () {},
+                                  onPressed: updateProfile,
                                   icon: Icon(Icons.edit),
                                   color: Colors.grey.shade300,
                                 ),
@@ -1015,6 +1113,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
       'user_email': currentUser!.email,
       'average_speed': activity['average_speed'],
       'average_watts': activity['average_watts'],
+      'public': globalVisible,
     };
 
     // Add the data to Firestore
