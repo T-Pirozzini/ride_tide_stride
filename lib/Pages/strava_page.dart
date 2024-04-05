@@ -599,7 +599,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                       'Welcome to R.T.S!',
                                       style: TextStyle(
                                         color: Color(0xFF283D3B),
-                                        fontSize: 16,
+                                        fontSize: 18,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -750,13 +750,16 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text("Disconnect from Strava?",
-                                    style: TextStyle(
-                                        color: Colors.white, fontSize: 12)),
+                                Text(
+                                  "Disconnect from Strava?",
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 12),
+                                ),
                                 IconButton(
-                                    onPressed: testDeauth,
-                                    icon: Icon(Icons.logout,
-                                        color: Colors.tealAccent)),
+                                  onPressed: testDeauth,
+                                  icon: Icon(Icons.logout,
+                                      color: Colors.tealAccent),
+                                ),
                               ],
                             ),
                             Divider(color: Colors.tealAccent),
@@ -767,8 +770,62 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                             _infoRow(Icons.location_city, 'HQ',
                                 '${athleteData!['city']}, ${athleteData!['state']}'),
                             SizedBox(height: 10),
-                            _infoRow(Icons.visibility, 'Privacy',
-                                'Toggle visibility in Leaderboard'),
+                            Center(
+                              child: Material(
+                                elevation: 2,
+                                borderRadius: BorderRadius.circular(10.0),
+                                color: Color(0xFF283D3B),
+                                child: InkWell(
+                                  onTap: () {
+                                    toggleGlobalLeaderboardVisibility();
+                                  },
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                          color: Colors.tealAccent, width: 1),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: IntrinsicWidth(
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            color: Colors.tealAccent,
+                                            globalVisible
+                                                ? Icons.visibility
+                                                : Icons.visibility_off,
+                                          ),
+                                          SizedBox(width: 5),
+                                          Text(
+                                            'Hide from Global Leaderboard?',
+                                            style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.white),
+                                          ),
+                                          SizedBox(width: 5),
+                                          globalVisible
+                                              ? Text('Public',
+                                                  style: TextStyle(
+                                                      fontSize: 14,
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.bold))
+                                              : Text('Private',
+                                                  style: TextStyle(
+                                                      fontSize: 14,
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.bold)),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -936,47 +993,6 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                             ],
                                           );
                                         },
-                                      ),
-                                      SizedBox(height: 5),
-                                      GestureDetector(
-                                        onTap: () {
-                                          toggleGlobalLeaderboardVisibility();
-                                        },
-                                        child: Container(
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            border: Border.all(
-                                                color: Colors.grey.shade700),
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                          ),
-                                          child: IntrinsicWidth(
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                Icon(
-                                                  globalVisible
-                                                      ? Icons.visibility
-                                                      : Icons.visibility_off,
-                                                ),
-                                                SizedBox(width: 5),
-                                                Text(
-                                                  'Hide from Global Leaderboard?',
-                                                  style: TextStyle(
-                                                      fontSize: 12,
-                                                      color:
-                                                          Colors.grey.shade700),
-                                                ),
-                                                SizedBox(width: 5),
-                                                globalVisible
-                                                    ? Text('Public')
-                                                    : Text('Private'),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
                                       ),
                                     ],
                                   ),

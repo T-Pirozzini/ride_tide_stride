@@ -47,12 +47,10 @@ class MyApp extends StatelessWidget {
             },
           ),
           floatingActionButtonTheme: const FloatingActionButtonThemeData(
-            backgroundColor:
-                Color(0xFF283D3B), 
+            backgroundColor: Color(0xFF283D3B),
           ),
           dialogTheme: const DialogTheme(
-            backgroundColor:
-                Colors.white, 
+            backgroundColor: Colors.white,
           ),
           fontFamily: GoogleFonts.openSans().fontFamily,
           buttonTheme: const ButtonThemeData(

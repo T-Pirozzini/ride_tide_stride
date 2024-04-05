@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
+import 'package:ride_tide_stride/components/activity_icons.dart';
 import 'package:ride_tide_stride/models/chat_message.dart';
 import 'package:ride_tide_stride/pages/chat_widget.dart';
 
@@ -92,11 +93,9 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
       Colors.blueAccent,
       Colors.orangeAccent,
       Colors.purpleAccent,
-      Colors.pinkAccent,
-      Colors.tealAccent,
-      Colors.amberAccent,
       Colors.cyanAccent,
-      Colors.limeAccent,
+      Colors.pinkAccent,
+      Colors.amberAccent,
     ];
     int colorIndex = 0;
 
@@ -288,6 +287,91 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
           actions: <Widget>[
             TextButton(
               child: const Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> showUserActivitiesDialog(String userEmail) async {
+    DateTime startDate = widget.startDate.toDate();
+    DateTime adjustedStartDate =
+        DateTime(startDate.year, startDate.month, startDate.day);
+    DateTime endDate = adjustedStartDate.add(Duration(days: 30));
+    // Fetch activities for the given user email
+    QuerySnapshot activitiesSnapshot = await FirebaseFirestore.instance
+        .collection('activities')
+        .where('user_email', isEqualTo: userEmail)
+        .where('timestamp',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(adjustedStartDate))
+        .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
+        .get();
+
+    // Parse activities data
+    List<Map<String, dynamic>> activities = activitiesSnapshot.docs
+        .map((doc) => doc.data() as Map<String, dynamic>)
+        .toList();
+
+    // Now show the dialog with the activities data
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: getUserName(userEmail),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: activities.length,
+              itemBuilder: (BuildContext context, int index) {
+                var activity = activities[index];
+                IconData? iconData = activityIcons[activity['type']];
+                return Card(
+                  color: Color(0xFF283D3B).withOpacity(.6),
+                  elevation: 2,
+                  child: ListTile(
+                    dense: true,
+                    leading: Icon(
+                      iconData ?? Icons.error_outline,
+                      color: Colors.tealAccent.shade400,
+                      size: 32,
+                    ),
+                    title: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        activity['name'] ?? 'Unnamed activity',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    subtitle: Text(
+                      DateFormat('yyyy-MM-dd').format(
+                          (activity['timestamp'] as Timestamp).toDate()),
+                      style: TextStyle(
+                          fontSize: 12.0, color: Colors.grey.shade200),
+                    ),
+                    trailing: Text(
+                      '${activity['elevation_gain']} m',
+                      style: TextStyle(
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.tealAccent),
+                    ),
+                    isThreeLine: true,
+                  ),
+                );
+              },
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Close'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -513,7 +597,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                   }
 
                   // Ensure we display up to 10 slots, showing "Empty Slot" as needed
-                  int itemCount = max(10, widget.participantsEmails.length);
+                  int itemCount = max(8, widget.participantsEmails.length);
                   return GridView.builder(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2, // Number of columns
@@ -535,41 +619,50 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                       Color avatarColor =
                           participantColors[email] ?? Colors.grey;
 
-                      return Card(
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 8.0),
-                          child: Row(
-                            children: [
-                              email != "Empty Position"
-                                  ? CircleAvatar(
-                                      backgroundColor: avatarColor,
-                                      radius:
-                                          10, // Adjust the size of the avatar as needed
-                                    )
-                                  : SizedBox.shrink(),
-                              SizedBox(
-                                  width:
-                                      8), // Provides some spacing between the avatar and the text
-                              Expanded(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    getUserName(
-                                        email), // Username or "Empty Slot"
-                                    Text(
-                                      index < widget.participantsEmails.length
-                                          ? '${elevation.toStringAsFixed(2)} m'
-                                          : '',
-                                      style: TextStyle(fontSize: 12),
-                                    ),
-                                  ],
+                      return GestureDetector(
+                        onTap: () {
+                          if (email != "Empty Position") {
+                            showUserActivitiesDialog(email);
+                          }
+                        },
+                        child: Card(
+                          elevation: 1,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child: Row(
+                              children: [
+                                email != "Empty Position"
+                                    ? CircleAvatar(
+                                        backgroundColor: avatarColor,
+                                        radius:
+                                            10, // Adjust the size of the avatar as needed
+                                      )
+                                    : SizedBox.shrink(),
+                                SizedBox(
+                                    width:
+                                        8), // Provides some spacing between the avatar and the text
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      getUserName(
+                                          email), // Username or "Empty Slot"
+                                      Text(
+                                        index < widget.participantsEmails.length
+                                            ? '${elevation.toStringAsFixed(2)} m'
+                                            : '',
+                                        style: TextStyle(fontSize: 12),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              email == widget.challengeCreator
-                                  ? Icon(Icons.verified_outlined)
-                                  : SizedBox.shrink(),
-                            ],
+                                email == widget.challengeCreator
+                                    ? Icon(Icons.verified_outlined)
+                                    : SizedBox.shrink(),
+                              ],
+                            ),
                           ),
                         ),
                       );
@@ -577,6 +670,20 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                   );
                 },
               ),
+            ),
+          ),
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.all(10),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline),
+                SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                      "Click on a participant to view activities contributing to the challenge"),
+                ),
+              ],
             ),
           ),
         ],
