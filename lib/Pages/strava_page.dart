@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -32,6 +33,8 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
 
   bool isLoggedIn = false;
   TokenResponse? token;
+
+  bool globalVisible = true;
 
   bool autoSubmit = false;
 
@@ -91,9 +94,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
     ExampleAuthentication(stravaClient).testDeauthorize().then((value) {
       setState(() {
         isLoggedIn = false;
-        // this.token = null;
-        token = null;
-        _textEditingController.clear();
+        this.token = null;
       });
     }).catchError(showErrorMessage);
   }
@@ -264,7 +265,11 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
     String username = data?['username'] as String? ?? '';
     String email = data?['email'] as String? ?? '';
 
-    return {'username': username, 'email': email};
+    return {
+      'username': username,
+      'email': email,
+      'color': data?['color'] as String? ?? '#FFD700'
+    };
   }
 
   Future<bool> _showDeleteConfirmationDialog(BuildContext context) async {
@@ -355,6 +360,82 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
       },
     );
     return result ?? false;
+  }
+
+  void toggleGlobalLeaderboardVisibility() {
+    setState(() {
+      globalVisible = !globalVisible;
+    });
+  }
+
+  void updateProfile() async {
+    // Initialize color from user's current color preference or default to tealAccent
+    Color pickedColor = Colors.tealAccent;
+    Map<String, String> userInfo = await getUserInfo();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        // Create a TextEditingController for each field to control the text input
+        TextEditingController usernameController =
+            TextEditingController(text: userInfo['username']);
+        return AlertDialog(
+          title: Text('Edit Profile'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                TextField(
+                  controller: usernameController,
+                  decoration: InputDecoration(
+                    hintText: "Enter new username",
+                    labelText: "New Username",
+                    border: OutlineInputBorder(),
+                    filled: true,
+                    fillColor: Colors.grey[200],
+                    prefixIcon: Icon(Icons.person),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SlidePicker(
+                  colorModel: ColorModel.rgb,
+                  enableAlpha: false,
+                  pickerColor: pickedColor,
+                  onColorChanged: (Color color) {
+                    pickedColor = color;
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+            TextButton(
+              child: Text('Save'),
+              onPressed: () async {
+                // Update Firestore with the new color
+                String colorString =
+                    '#${pickedColor.value.toRadixString(16).padLeft(8, '0')}'; // Convert Color to hex string
+                await FirebaseFirestore.instance
+                    .collection('Users')
+                    .doc(currentUser!.email)
+                    .update({
+                  'color': colorString,
+                  'username': usernameController.text,
+                });
+                setState(() {});
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -507,6 +588,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Icon(
                                       Icons.check_circle_outline,
@@ -517,7 +599,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                       'Welcome to R.T.S!',
                                       style: TextStyle(
                                         color: Color(0xFF283D3B),
-                                        fontSize: 18,
+                                        fontSize: 16,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -525,14 +607,29 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                 ),
                                 const SizedBox(height: 15),
                                 Text(
-                                  'Click the button below to display your most recent activities.',
+                                  'To access all of the features:',
                                   style: TextStyle(
                                     color: Color(0xFF283D3B),
-                                    fontSize: 16,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                Text(
+                                  'R.T.S. requires a connection to your Strava Account.',
+                                  style: TextStyle(
+                                    color: Color(0xFF283D3B),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                SizedBox(height: 15),
+                                Text(
+                                  'Click the button below to connect to Strava and participate with other users in the Global Leaderboards and Challenges.',
+                                  style: TextStyle(
+                                    color: Color(0xFF283D3B),
+                                    fontSize: 14,
                                     fontStyle: FontStyle.italic,
                                   ),
                                 ),
-                                const SizedBox(height: 25),
+                                const SizedBox(height: 5),
                                 Center(
                                   child: GestureDetector(
                                     onTap: testAuthentication,
@@ -541,32 +638,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                             'assets/images/btn_strava_connectwith_orange@2x.png')),
                                   ),
                                 ),
-                                // Center(
-                                //   child: ElevatedButton.icon(
-                                //     onPressed: testAuthentication,
-                                //     icon: Icon(
-                                //       Icons.link,
-                                //       color: Colors
-                                //           .white, // Adjust the color to fit your design
-                                //     ),
-                                //     label: Text(
-                                //       "Get my Activities",
-                                //       style: TextStyle(fontSize: 18),
-                                //     ),
-                                //     style: ElevatedButton.styleFrom(
-                                //       foregroundColor: Colors.white,
-                                //       backgroundColor: Color(
-                                //           0xFF283D3B), // Text and Icon color
-                                //       shape: RoundedRectangleBorder(
-                                //         borderRadius:
-                                //             BorderRadius.circular(10.0),
-                                //       ),
-                                //       padding: EdgeInsets.symmetric(
-                                //           horizontal: 20, vertical: 12),
-                                //     ),
-                                //   ),
-                                // ),
-                                SizedBox(height: 25),
+                                SizedBox(height: 15),
                                 Row(
                                   children: [
                                     Icon(
@@ -575,19 +647,20 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                     ),
                                     SizedBox(width: 8.0),
                                     Expanded(
-                                      child: Text('No Strava account required!',
+                                      child: Text(
+                                          'Connecting to Strava is Optional',
                                           style: TextStyle(
                                               color: Color(0xFF283D3B),
-                                              fontSize: 18,
+                                              fontSize: 16,
                                               fontWeight: FontWeight.bold)),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 10),
                                 Text(
-                                  'View the Leaderboards or Talk Smack using the tabs below.',
+                                  'You can "View the Leaderboards" or "Spectate Challenges" without connecting to Strava (use the bottom tabs to navigate).',
                                   style: TextStyle(
-                                      color: Color(0xFF283D3B), fontSize: 15),
+                                      color: Color(0xFF283D3B), fontSize: 14),
                                 ),
                               ],
                             ),
@@ -611,7 +684,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                 const SizedBox(
                   height: 5,
                 ),
-                if (athleteData != null)
+                if (athleteData != null && isLoggedIn)
                   Center(
                     child: Card(
                       elevation: 10,
@@ -621,7 +694,8 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                       ),
                       child: Container(
                         width: screenWidth * 0.9,
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
                           color: const Color(0xFF283D3B).withOpacity(0.9),
                           borderRadius: BorderRadius.circular(12),
@@ -633,47 +707,57 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(Icons.person,
-                                    color: Colors.white, size: 24),
+                                    color: Colors.tealAccent, size: 32),
                                 SizedBox(width: 8),
-                                Text(
-                                  '${athleteData!['firstname']} ${athleteData!['lastname']}',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
+                                FutureBuilder<Map<String, String>>(
+                                  future:
+                                      getUserInfo(), // Call getUserInfo() to get user's info
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return CircularProgressIndicator(); // Show loading indicator while data is being fetched
+                                    }
+                                    if (snapshot.hasData) {
+                                      return Text(
+                                        snapshot.data![
+                                            'username']!, // Use retrieved username here
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      );
+                                    }
+                                    // Handle error or no data case
+                                    return Text(
+                                      'Error',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    );
+                                  },
+                                ),
+                                SizedBox(width: 25),
+                                IconButton(
+                                  onPressed: updateProfile,
+                                  icon: Icon(Icons.edit),
+                                  color: Colors.grey.shade300,
                                 ),
                               ],
                             ),
-                            SizedBox(height: 20),
-                            SwitchListTile(
-                              activeColor: Colors.tealAccent,
-                              title: Text(
-                                'Submit $currentMonth activities',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                              value: autoSubmit,
-                              onChanged: (bool value) async {
-                                setState(() {
-                                  autoSubmit = value;
-                                });
-                                // If turned ON, auto-submit all activities
-                                if (autoSubmit) {
-                                  getSubmittedActivityIDs()
-                                      .then((submittedIDs) {
-                                    for (var activity in athleteActivities!) {
-                                      if (!submittedIDs.contains(
-                                          activity['id'].toString())) {
-                                        // Activity hasn't been submitted yet
-                                        submitActivityToFirestore(
-                                            activity, athleteData!);
-                                        Future.delayed(
-                                            Duration(milliseconds: 100));
-                                      }
-                                    }
-                                  });
-                                }
-                              },
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text("Disconnect from Strava?",
+                                    style: TextStyle(
+                                        color: Colors.white, fontSize: 12)),
+                                IconButton(
+                                    onPressed: testDeauth,
+                                    icon: Icon(Icons.logout,
+                                        color: Colors.tealAccent)),
+                              ],
                             ),
                             Divider(color: Colors.tealAccent),
                             SizedBox(height: 10),
@@ -682,12 +766,15 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                             SizedBox(height: 10),
                             _infoRow(Icons.location_city, 'HQ',
                                 '${athleteData!['city']}, ${athleteData!['state']}'),
+                            SizedBox(height: 10),
+                            _infoRow(Icons.visibility, 'Privacy',
+                                'Toggle visibility in Leaderboard'),
                           ],
                         ),
                       ),
                     ),
                   ),
-                if (athleteActivities != null)
+                if (athleteActivities != null && isLoggedIn)
                   Column(
                     children: [
                       ListView.builder(
@@ -714,16 +801,22 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                   padding: const EdgeInsets.all(10.0),
                                   child: Column(
                                     children: [
-                                      Text(
-                                        '${activity['name']}',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 20),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            '${activity['name']}',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16),
+                                          ),
+                                        ],
                                       ),
                                       // Date and activity type
                                       Row(
                                         mainAxisAlignment:
-                                            MainAxisAlignment.spaceAround,
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Text(
                                             DateFormat('MMM d, yyyy (EEE)')
@@ -843,6 +936,47 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                             ],
                                           );
                                         },
+                                      ),
+                                      SizedBox(height: 5),
+                                      GestureDetector(
+                                        onTap: () {
+                                          toggleGlobalLeaderboardVisibility();
+                                        },
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                                color: Colors.grey.shade700),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          child: IntrinsicWidth(
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  globalVisible
+                                                      ? Icons.visibility
+                                                      : Icons.visibility_off,
+                                                ),
+                                                SizedBox(width: 5),
+                                                Text(
+                                                  'Hide from Global Leaderboard?',
+                                                  style: TextStyle(
+                                                      fontSize: 12,
+                                                      color:
+                                                          Colors.grey.shade700),
+                                                ),
+                                                SizedBox(width: 5),
+                                                globalVisible
+                                                    ? Text('Public')
+                                                    : Text('Private'),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -979,6 +1113,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
       'user_email': currentUser!.email,
       'average_speed': activity['average_speed'],
       'average_watts': activity['average_watts'],
+      'public': globalVisible,
     };
 
     // Add the data to Firestore
@@ -1017,7 +1152,7 @@ Widget _infoRow(IconData icon, String title, String value) {
       Text(
         '$title: ',
         style: TextStyle(
-          fontSize: 16,
+          fontSize: 14,
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
@@ -1027,7 +1162,7 @@ Widget _infoRow(IconData icon, String title, String value) {
           value,
           style: TextStyle(
             color: Colors.white,
-            fontSize: 16,
+            fontSize: 14,
           ),
         ),
       ),
@@ -1074,7 +1209,7 @@ Widget _activityIcon(String activityType) {
       Icons.help_outline; // Default icon if not found
   return Row(
     children: [
-      Icon(iconData, color: Colors.teal.shade100, size: 48),
+      Icon(iconData, color: Colors.teal.shade100, size: 36),
     ],
   );
 }
