@@ -667,6 +667,20 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
               ),
             ),
           ),
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.all(10),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline),
+                SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                      "Click on a participant to view activities contributing to the challenge"),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
       endDrawer: Drawer(

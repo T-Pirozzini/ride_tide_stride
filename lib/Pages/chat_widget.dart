@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:ride_tide_stride/models/chat_message.dart';
 
@@ -32,6 +33,23 @@ class _ChatWidgetState extends State<ChatWidget> {
     _textController.clear();
   }
 
+  Widget getUserName(String email) {
+    // Proceed with fetching the username
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance.collection('Users').doc(email).get(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Text("Loading...");
+        }
+        if (!snapshot.hasData || snapshot.data?.data() == null) {
+          return Text(email);
+        }
+        var data = snapshot.data!.data() as Map<String, dynamic>;
+        return Text(data['username'] ?? email);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -42,33 +60,27 @@ class _ChatWidgetState extends State<ChatWidget> {
             itemBuilder: (context, index) {
               ChatMessage message = widget.messages[index];
 
-              return ListTile(
-                title: Text(message.message),
-                subtitle: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      message.user,
-                      style: TextStyle(fontSize: 12),
+              final username = getUserName(message.user);
+
+              return Column(
+                children: [
+                  ListTile(
+                    title: Text(message.message),
+                    subtitle: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        username,
+                        Text(TimeAgo.format(message.time),
+                            style: TextStyle(fontSize: 12)),
+                      ],
                     ),
-                    Text(TimeAgo.format(message.time),
-                        style: TextStyle(fontSize: 12)),
-                  ],
-                ),
-                leading: CircleAvatar(
-                  backgroundColor:
-                      widget.participantColors[message.user] ?? Colors.grey,
-                  child: Text(
-                    message.user.isNotEmpty
-                        ? message.user[0].toUpperCase()
-                        : '',
-                    style: TextStyle(
-                      color: Colors.black54,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                    leading: CircleAvatar(
+                      backgroundColor:
+                          widget.participantColors[message.user] ?? Colors.grey,
                     ),
                   ),
-                ),
+                  Divider(),
+                ],
               );
             },
           ),
