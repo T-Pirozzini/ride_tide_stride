@@ -599,7 +599,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                       'Welcome to R.T.S!',
                                       style: TextStyle(
                                         color: Color(0xFF283D3B),
-                                        fontSize: 16,
+                                        fontSize: 18,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -773,8 +773,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                             Center(
                               child: Material(
                                 elevation: 2,
-                                borderRadius: BorderRadius.circular(
-                                    10.0), 
+                                borderRadius: BorderRadius.circular(10.0),
                                 color: Color(0xFF283D3B),
                                 child: InkWell(
                                   onTap: () {

@@ -129,7 +129,7 @@ class _LeaderboardState extends State<Leaderboard> {
                   Navigator.of(context).pushNamed('/awardsPage');
                 },
                 child: const Text('View Awards'),
-              ),
+              ),              
             ],
           ),
         ),
@@ -471,20 +471,30 @@ class LeaderboardTab extends StatelessWidget {
   }
 
   Widget customPlaceWidget(String place) {
-    const color = Color(0xFFA09A6A); // Customize the color as needed
+    const color = Color(0xFFA09A6A);
 
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(color: color, width: 2.0),
       ),
-      padding: const EdgeInsets.all(10.0), // Adjust padding as needed
-      child: Text(
-        place,
-        style: const TextStyle(
-          fontSize: 24, // Adjust font size as needed
-          color: color, // Text color
-          fontWeight: FontWeight.bold, // Bold text
+      padding: const EdgeInsets.all(8.0),
+      constraints: const BoxConstraints(
+        minWidth: 40.0,
+        minHeight: 40.0,
+      ),
+      child: FittedBox(
+        fit: BoxFit.contain,
+        child: Padding(
+          padding: const EdgeInsets.all(2.0),
+          child: Text(
+            place,
+            style: const TextStyle(
+              fontSize: 16,
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ),
     );

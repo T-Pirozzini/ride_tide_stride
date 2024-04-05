@@ -92,11 +92,9 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
       Colors.blueAccent,
       Colors.orangeAccent,
       Colors.purpleAccent,
-      Colors.pinkAccent,
-      Colors.tealAccent,
-      Colors.amberAccent,
       Colors.cyanAccent,
-      Colors.limeAccent,
+      Colors.pinkAccent,
+      Colors.amberAccent,
     ];
     int colorIndex = 0;
 
@@ -513,7 +511,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                   }
 
                   // Ensure we display up to 10 slots, showing "Empty Slot" as needed
-                  int itemCount = max(10, widget.participantsEmails.length);
+                  int itemCount = max(8, widget.participantsEmails.length);
                   return GridView.builder(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2, // Number of columns

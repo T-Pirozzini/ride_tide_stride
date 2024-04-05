@@ -6,6 +6,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
+import 'package:ride_tide_stride/components/activity_icons.dart';
 import 'package:ride_tide_stride/models/chat_message.dart';
 import 'package:ride_tide_stride/pages/chat_widget.dart';
 
@@ -46,10 +47,10 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
 
   void _sendMessage(String messageText) async {
     if (messageText.isEmpty) {
-      return; // Avoid sending empty messages
+      return;
     }
     final messageData = {
-      'time': FieldValue.serverTimestamp(), // Firestore server timestamp
+      'time': FieldValue.serverTimestamp(),
       'user': currentUser?.email ?? 'Anonymous',
       'message': messageText
     };
@@ -78,8 +79,7 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
         .collection('Challenges')
         .doc(widget.challengeId)
         .collection('messages')
-        .orderBy('time',
-            descending: true) // Assuming 'time' is your timestamp field
+        .orderBy('time', descending: true)
         .snapshots();
   }
 
@@ -93,11 +93,9 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
       Colors.blueAccent,
       Colors.orangeAccent,
       Colors.purpleAccent,
-      Colors.pinkAccent,
-      Colors.tealAccent,
-      Colors.amberAccent,
       Colors.cyanAccent,
-      Colors.limeAccent,
+      Colors.pinkAccent,
+      Colors.amberAccent,
     ];
     int colorIndex = 0;
 
@@ -156,27 +154,6 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
 
     return participantDistances;
   }
-
-  //     var activitiesSnapshot = await FirebaseFirestore.instance
-  //         .collection('activities')
-  //         .where('user_email', isEqualTo: email)
-  //         .where('timestamp',
-  //             isGreaterThanOrEqualTo: Timestamp.fromDate(adjustedStartDate))
-  //         .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
-  //         .get();
-
-  //     for (var doc in activitiesSnapshot.docs) {
-  //       DateTime activityDate = (doc.data()['timestamp'] as Timestamp).toDate();
-  //       print("Activity Timestamp for $email: $activityDate");
-  //       totalDistance += (doc.data()['distance'] as num).toDouble();
-  //     }
-  //     participantDistances[email] = totalDistance;
-
-  //     participantColors[email] = colors[colorIndex % colors.length];
-  //     colorIndex++;
-  //   }
-  //   return participantDistances;
-  // }
 
   Widget buildPieChart(Map<String, double> participantDistances) {
     double totalDistance =
@@ -306,6 +283,91 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
           actions: <Widget>[
             TextButton(
               child: const Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> showUserActivitiesDialog(String userEmail) async {
+    DateTime startDate = widget.startDate.toDate();
+    DateTime adjustedStartDate =
+        DateTime(startDate.year, startDate.month, startDate.day);
+    DateTime endDate = adjustedStartDate.add(Duration(days: 30));
+    // Fetch activities for the given user email
+    QuerySnapshot activitiesSnapshot = await FirebaseFirestore.instance
+        .collection('activities')
+        .where('user_email', isEqualTo: userEmail)
+        .where('timestamp',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(adjustedStartDate))
+        .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
+        .get();
+
+    // Parse activities data
+    List<Map<String, dynamic>> activities = activitiesSnapshot.docs
+        .map((doc) => doc.data() as Map<String, dynamic>)
+        .toList();
+
+    // Now show the dialog with the activities data
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: getUserName(userEmail),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: activities.length,
+              itemBuilder: (BuildContext context, int index) {
+                var activity = activities[index];
+                IconData? iconData = activityIcons[activity['type']];
+                return Card(
+                  color: Color(0xFF283D3B).withOpacity(.6),
+                  elevation: 2,
+                  child: ListTile(
+                    dense: true,
+                    leading: Icon(
+                      iconData ?? Icons.error_outline,
+                      color: Colors.tealAccent.shade400,
+                      size: 32,
+                    ),
+                    title: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        activity['name'] ?? 'Unnamed activity',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    subtitle: Text(
+                      DateFormat('yyyy-MM-dd').format(
+                          (activity['timestamp'] as Timestamp).toDate()),
+                      style: TextStyle(
+                          fontSize: 12.0, color: Colors.grey.shade200),
+                    ),
+                    trailing: Text(
+                      '${(activity['distance'] / 1000).toStringAsFixed(2)} km',
+                      style: TextStyle(
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.tealAccent),
+                    ),
+                    isThreeLine: true,
+                  ),
+                );
+              },
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Close'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -534,8 +596,8 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
                     return Text("No participant data available");
                   }
 
-                  // Ensure we display up to 10 slots, showing "Empty Slot" as needed
-                  int itemCount = max(10, widget.participantsEmails.length);
+                  // Ensure we display up to 8 slots, showing "Empty Slot" as needed
+                  int itemCount = max(8, widget.participantsEmails.length);
                   return GridView.builder(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2, // Number of columns
@@ -556,42 +618,46 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
                       Color avatarColor =
                           participantColors[email] ?? Colors.grey;
 
-                      return Card(
-                        elevation: 1,
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 8.0),
-                          child: Row(
-                            children: [
-                              email != "Empty Position"
-                                  ? CircleAvatar(
-                                      backgroundColor: avatarColor,
-                                      radius:
-                                          10, // Adjust the size of the avatar as needed
-                                    )
-                                  : SizedBox.shrink(),
-                              SizedBox(
-                                  width:
-                                      8), // Provides some spacing between the avatar and the text
-                              Expanded(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    getUserName(
-                                        email), // Username or "Empty Slot"
-                                    Text(
-                                      index < widget.participantsEmails.length
-                                          ? '${(distance / 1000).toStringAsFixed(2)} km'
-                                          : '',
-                                      style: TextStyle(fontSize: 12),
-                                    ),
-                                  ],
+                      return GestureDetector(
+                        onTap: () {
+                          if (email != "Empty Position") {
+                            showUserActivitiesDialog(email);
+                          }
+                        },
+                        child: Card(
+                          elevation: 1,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child: Row(
+                              children: [
+                                email != "Empty Position"
+                                    ? CircleAvatar(
+                                        backgroundColor: avatarColor,
+                                        radius: 10,
+                                      )
+                                    : SizedBox.shrink(),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      getUserName(email),
+                                      Text(
+                                        index < widget.participantsEmails.length
+                                            ? '${(distance / 1000).toStringAsFixed(2)} km'
+                                            : '',
+                                        style: TextStyle(fontSize: 12),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              email == widget.challengeCreator
-                                  ? Icon(Icons.verified_outlined)
-                                  : SizedBox.shrink(),
-                            ],
+                                email == widget.challengeCreator
+                                    ? Icon(Icons.verified_outlined)
+                                    : SizedBox.shrink(),
+                              ],
+                            ),
                           ),
                         ),
                       );
@@ -646,8 +712,7 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
   Widget getUserName(String email) {
     // Check if email is "Empty Slot", and avoid fetching from Firestore
     if (email == "Empty Slot") {
-      return Text(
-          email); // Or return SizedBox.shrink() if you don't want to show anything
+      return Text(email);
     }
 
     // Proceed with fetching the username
@@ -660,10 +725,8 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
         if (!snapshot.hasData || snapshot.data?.data() == null) {
           return Text(email); // Fallback to email if user data is not available
         }
-        var data = snapshot.data!.data()
-            as Map<String, dynamic>; // Cast the data to the correct type
-        return Text(
-            data['username'] ?? email); // Show username or email as a fallback
+        var data = snapshot.data!.data() as Map<String, dynamic>;
+        return Text(data['username'] ?? email);
       },
     );
   }
