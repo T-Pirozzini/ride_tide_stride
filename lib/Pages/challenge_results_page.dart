@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 class ChallengeResultsPage extends StatefulWidget {
   const ChallengeResultsPage({super.key});
@@ -21,8 +23,19 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
     // get the challenge results
     QuerySnapshot querySnapshot =
         await FirebaseFirestore.instance.collection('Challenges').get();
+
+    // convert to a list for sorting
+    List<QueryDocumentSnapshot> challengeDocs = querySnapshot.docs;
+
+    // sort the documents by the timestamp field
+    challengeDocs.sort((b, a) {
+      Timestamp aTimestamp = a['timestamp'];
+      Timestamp bTimestamp = b['timestamp'];
+      return aTimestamp.compareTo(bTimestamp);
+    });
+
     // return challenge documents
-    return querySnapshot.docs;
+    return challengeDocs;
   }
 
   @override
@@ -58,6 +71,17 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
               bool isActive = challenge['active'] ?? false;
               bool isSuccess = challenge['success'] ?? false;
               String challengeImage = challenge['currentMap'];
+              Timestamp timestamp = challenge['timestamp'];
+              DateTime myDateTime = timestamp.toDate();
+              String formattedDate =
+                  DateFormat('MMM d, yyyy').format(myDateTime);
+              String mapName = challenge['mapName'] ?? challenge['type'];
+              String mapType = challenge['type'];
+              String mapSpecs = mapType == 'Team Traverse'
+                  ? '${challenge['mapDistance']}'
+                  : mapType == 'Mtn Scramble'
+                      ? '${challenge['mapElevation']} m'
+                      : challenge['difficulty'];
 
               // Determine background color based on challenge status
               Color backgroundColor;
@@ -80,17 +104,52 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
                   ),
                   child: ListTile(
                     leading: ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Image.asset(challengeImage,
-                            height: 50, width: 50, fit: BoxFit.cover)),
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.asset(challengeImage,
+                          height: 50, width: 50, fit: BoxFit.cover),
+                    ),
                     title: Text(challengeName),
-                    subtitle: Text('Results for Challenge $index'),
+                    subtitle: FittedBox(
+                        child: Text('$mapName - $mapSpecs - $formattedDate')),
                     trailing: isSuccess
-                        ? Icon(Icons.check)
+                        ? FittedBox(
+                            child: Text(
+                              'Success!',
+                              style: GoogleFonts.luckiestGuy(
+                                textStyle: TextStyle(
+                                  letterSpacing: 4,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          )
                         : isActive
-                            ? Icon(Icons.pending)
-                            : Icon(Icons.error),
-                    onTap: () {},
+                            ? FittedBox(
+                                child: Text(
+                                  'Pending. . .',
+                                  style: GoogleFonts.luckiestGuy(
+                                    textStyle: TextStyle(
+                                      letterSpacing: 2,
+                                      fontSize: 12,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : FittedBox(
+                                child: Text(
+                                  'Failed',
+                                  style: GoogleFonts.luckiestGuy(
+                                    textStyle: TextStyle(
+                                      letterSpacing: 4,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                    onTap: () {
+                      challengeResultsDialog(context, challenge);
+                    },
                   ),
                 ),
               );
@@ -98,6 +157,40 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
           );
         },
       ),
+    );
+  }
+
+  void challengeResultsDialog(
+      BuildContext context, Map<String, dynamic> challenge) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(challenge['name']),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Type: ${challenge['type']}'),
+              Text('Map: ${challenge['mapName']}'),
+              Text('Distance: ${challenge['mapDistance']}'),
+              Text('Elevation: ${challenge['mapElevation']}'),
+              Text('Difficulty: ${challenge['difficulty']}'),
+              Text('Success: ${challenge['success']}'),
+              Text('Active: ${challenge['active']}'),
+              Text('Timestamp: ${challenge['timestamp']}'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
