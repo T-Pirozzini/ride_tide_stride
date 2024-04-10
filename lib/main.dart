@@ -5,6 +5,7 @@ import 'package:ride_tide_stride/firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:ride_tide_stride/pages/awards_page.dart';
+import 'package:ride_tide_stride/pages/challenge_results_page.dart';
 import 'package:ride_tide_stride/pages/results_page.dart';
 
 Future<void> main() async {
@@ -62,6 +63,7 @@ class MyApp extends StatelessWidget {
         routes: {
           '/resultsPage': (context) => ResultsPage(),
           '/awardsPage': (context) => AwardsPage(),
+          '/challengeResultsPage': (context) => ChallengeResultsPage(),
         },
       ),
     );
