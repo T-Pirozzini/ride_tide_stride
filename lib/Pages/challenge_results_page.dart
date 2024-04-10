@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:ride_tide_stride/helpers/helper_functions.dart';
 
 class ChallengeResultsPage extends StatefulWidget {
   const ChallengeResultsPage({super.key});
@@ -162,24 +163,50 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
 
   void challengeResultsDialog(
       BuildContext context, Map<String, dynamic> challenge) {
+    List participants = challenge['participants'];
+    List<Future<String>> usernameFutures = participants
+        .map((participant) => getUserNameString(participant))
+        .toList();
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text(challenge['name']),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Type: ${challenge['type']}'),
-              Text('Map: ${challenge['mapName']}'),
-              Text('Distance: ${challenge['mapDistance']}'),
-              Text('Elevation: ${challenge['mapElevation']}'),
-              Text('Difficulty: ${challenge['difficulty']}'),
-              Text('Success: ${challenge['success']}'),
-              Text('Active: ${challenge['active']}'),
-              Text('Timestamp: ${challenge['timestamp']}'),
-            ],
+          title: Center(child: Text(challenge['type'])),
+          content: FutureBuilder<List<String>>(
+            future: Future.wait(usernameFutures),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                // Show loading state while waiting for usernames
+                return CircularProgressIndicator();
+              }
+              // Data is loaded
+              List<String> participantUsernames = snapshot.data ?? [];
+              return Stack(
+                children: [
+                  Opacity(
+                      opacity: .5,
+                      child: Image.asset(challenge['currentMap'],
+                          fit: BoxFit.fill)),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(challenge['name']),
+                      Text('${challenge['userDescription']}'),
+                      // Display each username in its own Text widget
+                      if (participantUsernames.isNotEmpty)
+                        Padding(
+                          padding: EdgeInsets.only(top: 8.0),
+                          child: Center(child: Text('Participants:')),
+                        ),
+                      ...participantUsernames
+                          .map((username) => Text(username))
+                          .toList(),
+                    ],
+                  ),
+                ],
+              );
+            },
           ),
           actions: [
             TextButton(
