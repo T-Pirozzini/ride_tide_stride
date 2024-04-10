@@ -487,6 +487,21 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
             ),
           ],
         ),
+        bottomNavigationBar: BottomAppBar(
+          color: Colors
+              .white, // This sets the background color of the BottomAppBar
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: <Widget>[
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pushNamed('/challengeResultsPage');
+                },
+                child: const Text('View Past Challenge Results'),
+              ),
+            ],
+          ),
+        ),
         floatingActionButton: FloatingActionButton(
           onPressed: addCompetition,
           child: Icon(Icons.add),
