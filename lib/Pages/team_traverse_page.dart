@@ -110,6 +110,7 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
     DateTime adjustedStartDate =
         DateTime(startDate.year, startDate.month, startDate.day);
     DateTime endDate = adjustedStartDate.add(Duration(days: 30));
+    Map<String, double> participantProgress = {};
 
     for (String email in widget.participantsEmails) {
       double totalDistance = 0.0;
@@ -147,10 +148,15 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
         });
       }
 
+      participantProgress[email] = totalDistance;
       participantDistances[email] = totalDistance;
       participantColors[email] = colors[colorIndex % colors.length];
       colorIndex++;
     }
+    await FirebaseFirestore.instance
+        .collection('Challenges')
+        .doc(widget.challengeId)
+        .update({'participantProgress': participantProgress});
 
     return participantDistances;
   }
@@ -242,13 +248,21 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
         await FirebaseFirestore.instance
             .collection('Challenges')
             .doc(widget.challengeId)
-            .update({'active': false, 'success': true, 'teamDistance': totalDistance});
+            .update({
+          'active': false,
+          'success': true,
+          'teamDistance': totalDistance
+        });
       }
     } else if (endDate != null && now.isAfter(endDate!)) {
       await FirebaseFirestore.instance
           .collection('Challenges')
           .doc(widget.challengeId)
-          .update({'active': false, 'success': false, 'teamDistance': totalDistance});
+          .update({
+        'active': false,
+        'success': false,
+        'teamDistance': totalDistance
+      });
     }
   }
 

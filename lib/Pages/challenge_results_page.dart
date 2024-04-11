@@ -193,24 +193,27 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
   void challengeResultsDialog(
       BuildContext context, Map<String, dynamic> challenge) {
     List participants = challenge['participants'];
-    List<Future<String>> usernameFutures = participants
-        .map((participant) => getUserNameString(participant))
-        .toList();
+    List<Future<Map<String, dynamic>>> usernameFutures =
+        participants.map((email) async {
+      // Assuming getUserNameString returns a Future of the username given an email
+      String username = await getUserNameString(email);
+      double result = challenge['participantProgress'][email] ?? 0;
+      return {'username': username, 'participantResult': result};
+    }).toList();
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Center(child: Text(challenge['name'])),
-          content: FutureBuilder<List<String>>(
+          content: FutureBuilder<List<Map<String, dynamic>>>(
             future: Future.wait(usernameFutures),
             builder: (context, snapshot) {
               if (snapshot.connectionState != ConnectionState.done) {
-                // Show loading state while waiting for usernames
                 return CircularProgressIndicator();
               }
               // Data is loaded
-              List<String> participantUsernames = snapshot.data ?? [];
+              List<Map<String, dynamic>> participantData = snapshot.data ?? [];
               return Stack(
                 children: [
                   Opacity(
@@ -220,30 +223,71 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
                   Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('${challenge['userDescription']}'),
-                      Text('Challenge: ${challenge['type']}'),
-                      // Display each username in its own Text widget
-                      if (participantUsernames.isNotEmpty)
+                      Container(
+                        padding: EdgeInsets.all(8.0),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          color: Color(0xFF283D3B).withOpacity(0.6),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              '${challenge['userDescription']}',
+                              style:
+                                  TextStyle(fontSize: 14, color: Colors.white),
+                            ),
+                            Text(
+                              'Challenge: ${challenge['type']}',
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  fontStyle: FontStyle.italic,
+                                  color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (participantData.isNotEmpty)
                         Padding(
                           padding: EdgeInsets.only(top: 8.0),
-                          child: Center(child: Text('Participants:')),
+                          child: Text(
+                            'Participants:',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
                         ),
-                      ...participantUsernames
-                          .map((username) => Card(
+                      ...participantData
+                          .map((data) => Card(
                                 color: Colors.black54,
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      username,
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                    Text(
-                                      'distance',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ],
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        data[
+                                            'username'], // Display the username
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                      challenge['type'] == 'Team Traverse'
+                                          ? Text(
+                                              '${(data['participantResult'] / 1000).toStringAsFixed(2)} km',
+                                              style: TextStyle(
+                                                  color: Colors.white),
+                                            )
+                                          : challenge['type'] == 'Mtn Scramble'
+                                              ? Text(
+                                                  '${data['participantResult'].toStringAsFixed(0)} m',
+                                                  style: TextStyle(
+                                                      color: Colors.white),
+                                                )
+                                              : Text(
+                                                  '${data['participantResult'].toStringAsFixed(2)}',
+                                                  style: TextStyle(
+                                                      color: Colors.white),
+                                                )
+                                    ],
+                                  ),
                                 ),
                               ))
                           .toList(),

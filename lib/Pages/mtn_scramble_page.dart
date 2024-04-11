@@ -122,9 +122,6 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
               isGreaterThanOrEqualTo: Timestamp.fromDate(adjustedStartDate))
           .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endDate));
 
-      participantElevations[email] = totalElevation;
-      participantProgress[email] = totalElevation;
-
       // Adjust query for Competitive challenges
       if (widget.challengeCategory == "Competitive" &&
           activityTypeMappings.containsKey(widget.challengeActivity)) {
@@ -153,6 +150,8 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
         });
       }
 
+      participantProgress[email] = totalElevation;
+      participantElevations[email] = totalElevation;
       participantColors[email] = colors[colorIndex % colors.length];
       colorIndex++;
     }
