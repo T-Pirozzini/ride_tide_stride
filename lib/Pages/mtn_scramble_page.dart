@@ -110,6 +110,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
     DateTime adjustedStartDate =
         DateTime(startDate.year, startDate.month, startDate.day);
     DateTime endDate = adjustedStartDate.add(Duration(days: 30));
+    Map<String, double> participantProgress = {};
 
     for (String email in widget.participantsEmails) {
       double totalElevation = 0.0;
@@ -149,10 +150,15 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
         });
       }
 
+      participantProgress[email] = totalElevation;
       participantElevations[email] = totalElevation;
       participantColors[email] = colors[colorIndex % colors.length];
       colorIndex++;
     }
+    await FirebaseFirestore.instance
+        .collection('Challenges')
+        .doc(widget.challengeId)
+        .update({'participantProgress': participantProgress});
 
     return participantElevations;
   }
@@ -246,13 +252,21 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
         await FirebaseFirestore.instance
             .collection('Challenges')
             .doc(widget.challengeId)
-            .update({'active': false, 'success': true});
+            .update({
+          'active': false,
+          'success': true,
+          'teamElevation': totalElevation
+        });
       }
     } else if (endDate != null && now.isAfter(endDate!)) {
       await FirebaseFirestore.instance
           .collection('Challenges')
           .doc(widget.challengeId)
-          .update({'active': false, 'success': false});
+          .update({
+        'active': false,
+        'success': false,
+        'teamElevation': totalElevation
+      });
     }
   }
 
