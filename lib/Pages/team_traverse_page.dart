@@ -242,13 +242,13 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
         await FirebaseFirestore.instance
             .collection('Challenges')
             .doc(widget.challengeId)
-            .update({'active': false, 'success': true});
+            .update({'active': false, 'success': true, 'teamDistance': totalDistance});
       }
     } else if (endDate != null && now.isAfter(endDate!)) {
       await FirebaseFirestore.instance
           .collection('Challenges')
           .doc(widget.challengeId)
-          .update({'active': false, 'success': false});
+          .update({'active': false, 'success': false, 'teamDistance': totalDistance});
     }
   }
 

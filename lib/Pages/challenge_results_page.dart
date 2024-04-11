@@ -97,60 +97,89 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
 
               return Padding(
                 padding: const EdgeInsets.all(2.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: backgroundColor,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.black, width: 1),
-                  ),
-                  child: ListTile(
-                    leading: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.asset(challengeImage,
-                          height: 50, width: 50, fit: BoxFit.cover),
-                    ),
-                    title: Text(challengeName),
-                    subtitle: FittedBox(
-                        child: Text('$mapName - $mapSpecs - $formattedDate')),
-                    trailing: isSuccess
-                        ? FittedBox(
-                            child: Text(
-                              'Success!',
-                              style: GoogleFonts.luckiestGuy(
-                                textStyle: TextStyle(
-                                  letterSpacing: 4,
-                                  color: Colors.white,
-                                ),
-                              ),
+                child: Card(
+                  color: backgroundColor,
+                  elevation: 4,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Start Date: $formattedDate',
+                              textAlign: TextAlign.center,
                             ),
-                          )
-                        : isActive
-                            ? FittedBox(
-                                child: Text(
-                                  'Pending. . .',
-                                  style: GoogleFonts.luckiestGuy(
-                                    textStyle: TextStyle(
-                                      letterSpacing: 2,
-                                      fontSize: 12,
-                                      color: Colors.black,
+                            isSuccess
+                                ? FittedBox(
+                                    child: Text(
+                                      'Success!',
+                                      style: GoogleFonts.luckiestGuy(
+                                        textStyle: TextStyle(
+                                          letterSpacing: 4,
+                                          color: Colors.white,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                              )
-                            : FittedBox(
-                                child: Text(
-                                  'Failed',
-                                  style: GoogleFonts.luckiestGuy(
-                                    textStyle: TextStyle(
-                                      letterSpacing: 4,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                    onTap: () {
-                      challengeResultsDialog(context, challenge);
-                    },
+                                  )
+                                : isActive
+                                    ? FittedBox(
+                                        child: Text(
+                                          'Pending. . .',
+                                          style: GoogleFonts.luckiestGuy(
+                                            textStyle: TextStyle(
+                                              letterSpacing: 2,
+                                              fontSize: 12,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    : FittedBox(
+                                        child: Text(
+                                          'Failed',
+                                          style: GoogleFonts.luckiestGuy(
+                                            textStyle: TextStyle(
+                                              letterSpacing: 4,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                          ],
+                        ),
+                      ),
+                      ListTile(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        leading: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.asset(challengeImage,
+                              height: 80, width: 80, fit: BoxFit.cover),
+                        ),
+                        title: Text(
+                          challengeName,
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(
+                          '$mapName',
+                          style: TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                        trailing: Text(
+                          '$mapSpecs',
+                          style: TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
+                        onTap: () {
+                          challengeResultsDialog(context, challenge);
+                        },
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -172,7 +201,7 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Center(child: Text(challenge['type'])),
+          title: Center(child: Text(challenge['name'])),
           content: FutureBuilder<List<String>>(
             future: Future.wait(usernameFutures),
             builder: (context, snapshot) {
@@ -191,8 +220,8 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
                   Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(challenge['name']),
                       Text('${challenge['userDescription']}'),
+                      Text('Challenge: ${challenge['type']}'),
                       // Display each username in its own Text widget
                       if (participantUsernames.isNotEmpty)
                         Padding(
@@ -200,7 +229,23 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
                           child: Center(child: Text('Participants:')),
                         ),
                       ...participantUsernames
-                          .map((username) => Text(username))
+                          .map((username) => Card(
+                                color: Colors.black54,
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      username,
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                    Text(
+                                      'distance',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ],
+                                ),
+                              ))
                           .toList(),
                     ],
                   ),
