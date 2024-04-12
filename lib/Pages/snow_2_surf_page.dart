@@ -1088,6 +1088,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
                     user: data['user'] ?? 'Anonymous',
                     message: data['message'] ?? '',
                     time: (data['time'] as Timestamp).toDate(),
+                    readBy: data['readBy'] ?? [],
                   );
                 }).toList() ??
                 [];

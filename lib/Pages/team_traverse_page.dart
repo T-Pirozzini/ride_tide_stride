@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -44,6 +45,7 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
   final currentUser = FirebaseAuth.instance.currentUser;
   Map<String, Color> participantColors = {};
   DateTime? endDate;
+  bool unread = false;
 
   void _sendMessage(String messageText) async {
     if (messageText.isEmpty) {
@@ -52,7 +54,8 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
     final messageData = {
       'time': FieldValue.serverTimestamp(),
       'user': currentUser?.email ?? 'Anonymous',
-      'message': messageText
+      'message': messageText,
+      'readBy': [currentUser?.email],
     };
 
     // Write the message to Firestore
@@ -65,6 +68,50 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
     } catch (e) {
       print('Error saving message: $e');
     }
+  }
+
+  void _markMessagesAsRead(List<DocumentSnapshot> messageDocs) {
+    for (var doc in messageDocs) {
+      Map<String, dynamic>? data = doc.data() as Map<String, dynamic>?;
+      if (data != null &&
+          !(data['readBy'] as List<dynamic>? ?? [])
+              .contains(currentUser?.email)) {
+        FirebaseFirestore.instance
+            .collection('Challenges')
+            .doc(widget.challengeId)
+            .collection('messages')
+            .doc(doc.id)
+            .update({
+          'readBy': FieldValue.arrayUnion([currentUser?.email])
+        }).then((_) {
+          print(
+              "Message marked as read for: ${currentUser?.email}"); // Debug output
+        }).catchError((error) {
+          print("Failed to mark message as read: $error"); // Debug output
+        });
+      }
+    }
+  }
+
+  void updateUnreadStatus(List<DocumentSnapshot> messageDocs) {
+    int unreadCount = 0;
+    for (var doc in messageDocs) {
+      var data = doc.data() as Map<String, dynamic>;
+      if (!(data['readBy'] as List<dynamic>).contains(currentUser?.email)) {
+        unreadCount++;
+      }
+    }
+
+    bool hasUnread = unreadCount > 0;
+
+    // Ensure setState is called after the current build process.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (unread != hasUnread) {
+        setState(() {
+          unread = hasUnread;
+        });
+      }
+    });
   }
 
   @override
@@ -81,6 +128,13 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
         .collection('messages')
         .orderBy('time', descending: true)
         .snapshots();
+    Future.microtask(() {
+      if (_messagesStream != null) {
+        _messagesStream!.first.then((snapshot) {
+          updateUnreadStatus(snapshot.docs);
+        });
+      }
+    });
   }
 
   Stream<QuerySnapshot>? _messagesStream;
@@ -430,10 +484,15 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
         ),
         actions: <Widget>[
           IconButton(
-            icon: Icon(Icons.chat),
-            onPressed: () =>
-                _teamTraverseScaffoldKey.currentState?.openEndDrawer(),
-          ),
+            icon: unread
+                ? Icon(Icons.chat_outlined, color: Colors.red)
+                : Icon(Icons.chat, color: Colors.white),
+            onPressed: () {
+              // Optimistically set unread to false
+              setState(() => unread = false);
+              _teamTraverseScaffoldKey.currentState?.openEndDrawer();
+            },
+          )
         ],
       ),
       body: Column(
@@ -706,14 +765,33 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
               return Text('Something went wrong');
             }
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return Text('Loading');
+              return Column(
+                children: [
+                  CircularProgressIndicator(),
+                  Text('Loading'),
+                ],
+              );
             }
+
+            // Handle message reading logic
+            List<DocumentSnapshot> messageDocs = snapshot.data?.docs ?? [];
+            updateUnreadStatus(messageDocs);
+
+            _markMessagesAsRead(messageDocs);
+
             final messages = snapshot.data?.docs.map((doc) {
                   final data = doc.data() as Map<String, dynamic>;
+                  Timestamp? timestamp = data['time'] as Timestamp?;
+
+                  // Create a default time if 'time' is null
+                  DateTime messageTime =
+                      timestamp != null ? timestamp.toDate() : DateTime.now();
+
                   return ChatMessage(
                     user: data['user'] ?? 'Anonymous',
                     message: data['message'] ?? '',
-                    time: (data['time'] as Timestamp).toDate(),
+                    time: messageTime,
+                    readBy: data['readBy'] as List? ?? [],
                   );
                 }).toList() ??
                 [];
