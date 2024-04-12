@@ -719,6 +719,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                     user: data['user'] ?? 'Anonymous',
                     message: data['message'] ?? '',
                     time: (data['time'] as Timestamp).toDate(),
+                    readBy: data['readBy'] ?? [],
                   );
                 }).toList() ??
                 [];
