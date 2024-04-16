@@ -10,6 +10,7 @@ import 'package:lottie/lottie.dart';
 import 'package:ride_tide_stride/components/activity_icons.dart';
 import 'package:ride_tide_stride/models/chat_message.dart';
 import 'package:ride_tide_stride/pages/chat_widget.dart';
+import 'package:badges/badges.dart' as badges;
 
 class MtnScramblePage extends StatefulWidget {
   final String challengeId;

@@ -10,6 +10,7 @@ import 'package:lottie/lottie.dart';
 import 'package:ride_tide_stride/components/activity_icons.dart';
 import 'package:ride_tide_stride/models/chat_message.dart';
 import 'package:ride_tide_stride/pages/chat_widget.dart';
+import 'package:badges/badges.dart' as badges;
 
 class TeamTraversePage extends StatefulWidget {
   final String challengeId;
@@ -46,6 +47,7 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
   Map<String, Color> participantColors = {};
   DateTime? endDate;
   bool unread = false;
+  int unreadMessageCount = 0;
 
   void _sendMessage(String messageText) async {
     if (messageText.isEmpty) {
@@ -94,21 +96,21 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
   }
 
   void updateUnreadStatus(List<DocumentSnapshot> messageDocs) {
-    int unreadCount = 0;
+    int newUnreadCount = 0;
     for (var doc in messageDocs) {
       var data = doc.data() as Map<String, dynamic>;
       if (!(data['readBy'] as List<dynamic>).contains(currentUser?.email)) {
-        unreadCount++;
+        newUnreadCount++;
       }
     }
 
-    bool hasUnread = unreadCount > 0;
-    print("Has unread messages: $hasUnread"); // Debug statement
+    // bool hasUnread = unreadCount > 0;
+    // print("Has unread messages: $hasUnread"); // Debug statement
 
     Future.microtask(() {
-      if (unread != hasUnread) {
+      if (unreadMessageCount != newUnreadCount) {
         setState(() {
-          unread = hasUnread;
+          unreadMessageCount = newUnreadCount;
         });
       }
     });
@@ -131,7 +133,7 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
 
     _messagesStream!.first.then((snapshot) {
       updateUnreadStatus(snapshot.docs);
-    });    
+    });
   }
 
   Stream<QuerySnapshot>? _messagesStream;
@@ -487,13 +489,23 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
         ),
         actions: <Widget>[
           IconButton(
-            icon: Icon(
-              unread ? Icons.chat_outlined : Icons.chat,
-              color: unread ? Colors.red : Colors.white,
+            icon: badges.Badge(
+              badgeContent: Text(
+                unreadMessageCount.toString(),
+                style: TextStyle(color: Colors.white),
+              ),
+              showBadge: unreadMessageCount > 0,
+              child: Icon(
+                Icons.chat,
+                color: unread ? Colors.red : Colors.white,
+              ),
             ),
             onPressed: () {
               // Optimistically set unread to false
-              setState(() => unread = false);
+              setState(() {
+                unread = false;
+                unreadMessageCount = 0;
+              });
               _teamTraverseScaffoldKey.currentState?.openEndDrawer();
             },
           )
