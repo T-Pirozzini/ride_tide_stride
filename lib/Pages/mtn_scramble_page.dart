@@ -46,6 +46,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
   Map<String, Color> participantColors = {};
   DateTime? endDate;
   bool unread = false;
+  int unreadMessageCount = 0;
 
   void _sendMessage(String messageText) async {
     if (messageText.isEmpty) {
@@ -94,21 +95,28 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
   }
 
   void updateUnreadStatus(List<DocumentSnapshot> messageDocs) {
-    int unreadCount = 0;
+    int newUnreadCount = 0;
     for (var doc in messageDocs) {
       var data = doc.data() as Map<String, dynamic>;
       if (!(data['readBy'] as List<dynamic>).contains(currentUser?.email)) {
-        unreadCount++;
+        newUnreadCount++;
       }
     }
 
-    bool hasUnread = unreadCount > 0;
+    // bool hasUnread = unreadCount > 0;
 
     // Ensure setState is called after the current build process.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (unread != hasUnread) {
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   if (unread != hasUnread) {
+    //     setState(() {
+    //       unread = hasUnread;
+    //     });
+    //   }
+    // });
+    Future.microtask(() {
+      if (unreadMessageCount != newUnreadCount) {
         setState(() {
-          unread = hasUnread;
+          unreadMessageCount = newUnreadCount;
         });
       }
     });
@@ -128,17 +136,21 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
         .collection('messages')
         .orderBy('time',
             descending: true) // Assuming 'time' is your timestamp field
-        .snapshots();
-    _messagesStream!.listen((snapshot) {
+        .snapshots();    
+
+    _messagesStream!.first.then((snapshot) {
       updateUnreadStatus(snapshot.docs);
     });
-    Future.microtask(() {
-      if (_messagesStream != null) {
-        _messagesStream!.first.then((snapshot) {
-          updateUnreadStatus(snapshot.docs);
-        });
-      }
-    });
+    // _messagesStream!.listen((snapshot) {
+    //   updateUnreadStatus(snapshot.docs);
+    // });
+    // Future.microtask(() {
+    //   if (_messagesStream != null) {
+    //     _messagesStream!.first.then((snapshot) {
+    //       updateUnreadStatus(snapshot.docs);
+    //     });
+    //   }
+    // });
   }
 
   Stream<QuerySnapshot>? _messagesStream;
@@ -498,11 +510,23 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
         ),
         actions: <Widget>[
           IconButton(
-            icon: unread
-                ? Icon(Icons.chat_outlined, color: Colors.red)
-                : Icon(Icons.chat, color: Colors.white),
+            icon: badges.Badge(
+              badgeContent: Text(
+                unreadMessageCount.toString(),
+                style: TextStyle(color: Colors.white),
+              ),
+              showBadge: unreadMessageCount > 0,
+              child: Icon(
+                Icons.chat,
+                color: unread ? Colors.red : Colors.white,
+              ),
+            ),
             onPressed: () {
-              setState(() => unread = false);
+              // Optimistically set unread to false
+              setState(() {
+                unread = false;
+                unreadMessageCount = 0;
+              });
               _mtnScrambleScaffoldKey.currentState?.openEndDrawer();
             },
           ),
