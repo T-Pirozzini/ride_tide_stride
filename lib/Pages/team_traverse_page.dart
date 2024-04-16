@@ -385,7 +385,13 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: getUserName(userEmail),
+          title: Center(child: getUserName(userEmail)),
+          titleTextStyle: GoogleFonts.tektur(
+              textStyle: TextStyle(
+                  fontSize: 24,
+                  color: Colors.black,
+                  fontWeight: FontWeight.w300,
+                  letterSpacing: 1.2)),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
