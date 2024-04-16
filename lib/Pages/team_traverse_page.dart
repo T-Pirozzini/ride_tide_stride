@@ -10,6 +10,7 @@ import 'package:lottie/lottie.dart';
 import 'package:ride_tide_stride/components/activity_icons.dart';
 import 'package:ride_tide_stride/models/chat_message.dart';
 import 'package:ride_tide_stride/pages/chat_widget.dart';
+import 'package:badges/badges.dart' as badges;
 
 class TeamTraversePage extends StatefulWidget {
   final String challengeId;
@@ -46,6 +47,7 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
   Map<String, Color> participantColors = {};
   DateTime? endDate;
   bool unread = false;
+  int unreadMessageCount = 0;
 
   void _sendMessage(String messageText) async {
     if (messageText.isEmpty) {
@@ -94,21 +96,21 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
   }
 
   void updateUnreadStatus(List<DocumentSnapshot> messageDocs) {
-    int unreadCount = 0;
+    int newUnreadCount = 0;
     for (var doc in messageDocs) {
       var data = doc.data() as Map<String, dynamic>;
       if (!(data['readBy'] as List<dynamic>).contains(currentUser?.email)) {
-        unreadCount++;
+        newUnreadCount++;
       }
     }
 
-    bool hasUnread = unreadCount > 0;
+    // bool hasUnread = unreadCount > 0;
+    // print("Has unread messages: $hasUnread"); // Debug statement
 
-    // Ensure setState is called after the current build process.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (unread != hasUnread) {
+    Future.microtask(() {
+      if (unreadMessageCount != newUnreadCount) {
         setState(() {
-          unread = hasUnread;
+          unreadMessageCount = newUnreadCount;
         });
       }
     });
@@ -128,12 +130,9 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
         .collection('messages')
         .orderBy('time', descending: true)
         .snapshots();
-    Future.microtask(() {
-      if (_messagesStream != null) {
-        _messagesStream!.first.then((snapshot) {
-          updateUnreadStatus(snapshot.docs);
-        });
-      }
+
+    _messagesStream!.first.then((snapshot) {
+      updateUnreadStatus(snapshot.docs);
     });
   }
 
@@ -385,7 +384,13 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: getUserName(userEmail),
+          title: Center(child: getUserName(userEmail)),
+          titleTextStyle: GoogleFonts.tektur(
+              textStyle: TextStyle(
+                  fontSize: 24,
+                  color: Colors.black,
+                  fontWeight: FontWeight.w300,
+                  letterSpacing: 1.2)),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
@@ -484,12 +489,23 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
         ),
         actions: <Widget>[
           IconButton(
-            icon: unread
-                ? Icon(Icons.chat_outlined, color: Colors.red)
-                : Icon(Icons.chat, color: Colors.white),
+            icon: badges.Badge(
+              badgeContent: Text(
+                unreadMessageCount.toString(),
+                style: TextStyle(color: Colors.white),
+              ),
+              showBadge: unreadMessageCount > 0,
+              child: Icon(
+                Icons.chat,
+                color: unread ? Colors.red : Colors.white,
+              ),
+            ),
             onPressed: () {
               // Optimistically set unread to false
-              setState(() => unread = false);
+              setState(() {
+                unread = false;
+                unreadMessageCount = 0;
+              });
               _teamTraverseScaffoldKey.currentState?.openEndDrawer();
             },
           )
@@ -772,6 +788,7 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
                 ],
               );
             }
+            print('Number of messages: ${snapshot.data?.docs.length}');
 
             // Handle message reading logic
             List<DocumentSnapshot> messageDocs = snapshot.data?.docs ?? [];
