@@ -103,9 +103,9 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
     }
 
     bool hasUnread = unreadCount > 0;
+    print("Has unread messages: $hasUnread"); // Debug statement
 
-    // Ensure setState is called after the current build process.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    Future.microtask(() {
       if (unread != hasUnread) {
         setState(() {
           unread = hasUnread;
@@ -128,13 +128,10 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
         .collection('messages')
         .orderBy('time', descending: true)
         .snapshots();
-    Future.microtask(() {
-      if (_messagesStream != null) {
-        _messagesStream!.first.then((snapshot) {
-          updateUnreadStatus(snapshot.docs);
-        });
-      }
-    });
+
+    _messagesStream!.first.then((snapshot) {
+      updateUnreadStatus(snapshot.docs);
+    });    
   }
 
   Stream<QuerySnapshot>? _messagesStream;
@@ -490,9 +487,10 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
         ),
         actions: <Widget>[
           IconButton(
-            icon: unread
-                ? Icon(Icons.chat_outlined, color: Colors.red)
-                : Icon(Icons.chat, color: Colors.white),
+            icon: Icon(
+              unread ? Icons.chat_outlined : Icons.chat,
+              color: unread ? Colors.red : Colors.white,
+            ),
             onPressed: () {
               // Optimistically set unread to false
               setState(() => unread = false);
@@ -778,6 +776,7 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
                 ],
               );
             }
+            print('Number of messages: ${snapshot.data?.docs.length}');
 
             // Handle message reading logic
             List<DocumentSnapshot> messageDocs = snapshot.data?.docs ?? [];

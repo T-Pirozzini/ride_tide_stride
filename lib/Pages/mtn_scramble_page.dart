@@ -128,6 +128,9 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
         .orderBy('time',
             descending: true) // Assuming 'time' is your timestamp field
         .snapshots();
+    _messagesStream!.listen((snapshot) {
+      updateUnreadStatus(snapshot.docs);
+    });
     Future.microtask(() {
       if (_messagesStream != null) {
         _messagesStream!.first.then((snapshot) {
