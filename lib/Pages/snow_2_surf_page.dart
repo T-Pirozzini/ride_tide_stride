@@ -681,6 +681,16 @@ class _Snow2SurfState extends State<Snow2Surf> {
     );
   }
 
+  bool isLegFilled(String legName, Map<String, dynamic> legParticipants) {
+    if (legParticipants.containsKey(legName)) {
+      var legInfo = legParticipants[legName];
+      return legInfo != null &&
+          legInfo['participant'] != null &&
+          legInfo['participant'].trim().isNotEmpty;
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final Duration totalOpponentTime =
@@ -819,6 +829,13 @@ class _Snow2SurfState extends State<Snow2Surf> {
                         itemCount: widget.challengeLegs.length,
                         itemBuilder: (context, index) {
                           var currentLeg = widget.challengeLegs[index];
+                          List<Map<String, dynamic>> activities =
+                              (legParticipants[currentLeg]?['activities']
+                                          as List<dynamic>?)
+                                      ?.map((activity) =>
+                                          activity as Map<String, dynamic>)
+                                      .toList() ??
+                                  []; // Provide a default empty list if null
                           var category = categories.firstWhere(
                             (cat) => cat['name'] == currentLeg,
                             orElse: () =>
@@ -857,96 +874,112 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                   child: Row(
                                     children: [
                                       Expanded(
-                                        child: Card(
-                                          child: Padding(
-                                            padding: EdgeInsets.all(2),
-                                            child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: <Widget>[
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceEvenly,
-                                                  children: [
-                                                    Text(
-                                                      category['name'],
-                                                      style: TextStyle(
-                                                          fontSize: 12),
-                                                    ),
-                                                    Text(
-                                                      '${category['distance'].toString()} km',
-                                                      style: TextStyle(
-                                                          fontSize: 12),
-                                                    ),
-                                                  ],
-                                                ),
-                                                FutureBuilder<String>(
-                                                  future:
-                                                      getUsername(participant),
-                                                  builder: (context, snapshot) {
-                                                    if (snapshot
-                                                            .connectionState ==
-                                                        ConnectionState
-                                                            .waiting) {
-                                                      return CircularProgressIndicator();
-                                                    }
-                                                    if (snapshot.hasError) {
-                                                      return Text(
-                                                          'Error loading username');
-                                                    }
-                                                    String username =
-                                                        snapshot.data ?? '';
-                                                    bool showJoinButton =
-                                                        username ==
-                                                                "No username" &&
-                                                            (bestTime ==
-                                                                    "N/A" ||
-                                                                bestTime
-                                                                    .isEmpty);
-                                                    List<Widget>
-                                                        columnChildren = [
-                                                      Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .center,
-                                                        children: [
-                                                          Icon(
-                                                              category['icon']),
-                                                          SizedBox(width: 8),
-                                                          Text(
-                                                            username.isNotEmpty
-                                                                ? username
-                                                                : 'No username',
-                                                            style: TextStyle(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold),
-                                                          ),
-                                                        ],
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            if (activities.isNotEmpty) {
+                                              showActivityDetailsDialog(
+                                                  context, activities);
+                                            } else {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(SnackBar(
+                                                content: Text(
+                                                    "No activities available for this leg."),
+                                              ));
+                                            }
+                                          },
+                                          child: Card(
+                                            child: Padding(
+                                              padding: EdgeInsets.all(2),
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: <Widget>[
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceEvenly,
+                                                    children: [
+                                                      Text(
+                                                        category['name'],
+                                                        style: TextStyle(
+                                                            fontSize: 12),
                                                       ),
                                                       Text(
-                                                          'Best Time: ${bestTime.isNotEmpty ? bestTime : "N/A"}'),
-                                                    ];
-                                                    if (showJoinButton) {
-                                                      columnChildren.add(
-                                                        ElevatedButton(
-                                                          onPressed: () =>
-                                                              joinTeam(
-                                                                  currentLeg),
-                                                          child: Text('Join'),
+                                                        '${category['distance'].toString()} km',
+                                                        style: TextStyle(
+                                                            fontSize: 12),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  FutureBuilder<String>(
+                                                    future: getUsername(
+                                                        participant),
+                                                    builder:
+                                                        (context, snapshot) {
+                                                      if (snapshot
+                                                              .connectionState ==
+                                                          ConnectionState
+                                                              .waiting) {
+                                                        return CircularProgressIndicator();
+                                                      }
+                                                      if (snapshot.hasError) {
+                                                        return Text(
+                                                            'Error loading username');
+                                                      }
+                                                      String username =
+                                                          snapshot.data ?? '';
+                                                      bool showJoinButton =
+                                                          username ==
+                                                                  "No username" &&
+                                                              (bestTime ==
+                                                                      "N/A" ||
+                                                                  bestTime
+                                                                      .isEmpty);
+                                                      List<Widget>
+                                                          columnChildren = [
+                                                        Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .center,
+                                                          children: [
+                                                            Icon(category[
+                                                                'icon']),
+                                                            SizedBox(width: 8),
+                                                            Text(
+                                                              username.isNotEmpty
+                                                                  ? username
+                                                                  : 'No username',
+                                                              style: TextStyle(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold),
+                                                            ),
+                                                          ],
                                                         ),
+                                                        Text(
+                                                            'Best Time: ${bestTime.isNotEmpty ? bestTime : "N/A"}'),
+                                                      ];
+                                                      if (showJoinButton) {
+                                                        columnChildren.add(
+                                                          ElevatedButton(
+                                                            onPressed: () =>
+                                                                joinTeam(
+                                                                    currentLeg),
+                                                            child: Text('Join'),
+                                                          ),
+                                                        );
+                                                      } else {
+                                                        columnChildren
+                                                            .add(SizedBox());
+                                                      }
+                                                      return Column(
+                                                        children:
+                                                            columnChildren,
                                                       );
-                                                    } else {
-                                                      columnChildren
-                                                          .add(SizedBox());
-                                                    }
-                                                    return Column(
-                                                      children: columnChildren,
-                                                    );
-                                                  },
-                                                ),
-                                              ],
+                                                    },
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -971,8 +1004,11 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                         ),
                                       ),
                                     ),
-                                    timeDifferenceWidget(
-                                        participantBestTime, opponentBestTime)
+                                    if (isLegFilled(
+                                            currentLeg, legParticipants) &&
+                                        bestTime != '0:00:00')
+                                      timeDifferenceWidget(participantBestTime,
+                                          opponentBestTime),
                                   ],
                                 ),
                               ),
@@ -1201,6 +1237,41 @@ class _Snow2SurfState extends State<Snow2Surf> {
           },
         ),
       ),
+    );
+  }
+
+  void showActivityDetailsDialog(
+      BuildContext context, List<Map<String, dynamic>> activities) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Activity Details'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              itemCount: activities.length,
+              itemBuilder: (BuildContext context, int index) {
+                var activity = activities[index];
+                return ListTile(
+                  title: Text(activity['name'] ?? 'Unnamed activity'),
+                  subtitle:
+                      Text('${activity['distance']} km at ${activity['date']}'),
+                  trailing: Text('Time: ${activity['time']}'),
+                );
+              },
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Close'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }

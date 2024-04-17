@@ -386,6 +386,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
         .where('timestamp',
             isGreaterThanOrEqualTo: Timestamp.fromDate(adjustedStartDate))
         .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
+        .orderBy('timestamp', descending: true)
         .get();
 
     // Parse activities data
