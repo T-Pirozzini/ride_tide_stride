@@ -116,6 +116,21 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
     });
   }
 
+  void fetchInitialReadByData() async {
+    try {
+      var snapshot = await FirebaseFirestore.instance
+          .collection('Challenges')
+          .doc(widget.challengeId)
+          .collection('messages')
+          .orderBy('time', descending: true)
+          .get();
+
+      updateUnreadStatus(snapshot.docs);
+    } catch (e) {
+      print('Error fetching messages: $e');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -131,9 +146,7 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
         .orderBy('time', descending: true)
         .snapshots();
 
-    _messagesStream!.first.then((snapshot) {
-      updateUnreadStatus(snapshot.docs);
-    });
+    fetchInitialReadByData();
   }
 
   Stream<QuerySnapshot>? _messagesStream;
@@ -793,7 +806,6 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
             // Handle message reading logic
             List<DocumentSnapshot> messageDocs = snapshot.data?.docs ?? [];
             updateUnreadStatus(messageDocs);
-
             _markMessagesAsRead(messageDocs);
 
             final messages = snapshot.data?.docs.map((doc) {

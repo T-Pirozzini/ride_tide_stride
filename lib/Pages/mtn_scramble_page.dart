@@ -136,7 +136,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
         .collection('messages')
         .orderBy('time',
             descending: true) // Assuming 'time' is your timestamp field
-        .snapshots();    
+        .snapshots();
 
     _messagesStream!.first.then((snapshot) {
       updateUnreadStatus(snapshot.docs);
