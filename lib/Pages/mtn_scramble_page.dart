@@ -103,16 +103,6 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
       }
     }
 
-    // bool hasUnread = unreadCount > 0;
-
-    // Ensure setState is called after the current build process.
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   if (unread != hasUnread) {
-    //     setState(() {
-    //       unread = hasUnread;
-    //     });
-    //   }
-    // });
     Future.microtask(() {
       if (unreadMessageCount != newUnreadCount) {
         setState(() {
@@ -120,6 +110,21 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
         });
       }
     });
+  }
+
+  void fetchInitialReadByData() async {
+    try {
+      var snapshot = await FirebaseFirestore.instance
+          .collection('Challenges')
+          .doc(widget.challengeId)
+          .collection('messages')
+          .orderBy('time', descending: true)
+          .get();
+
+      updateUnreadStatus(snapshot.docs);
+    } catch (e) {
+      print('Error fetching messages: $e');
+    }
   }
 
   @override
@@ -138,19 +143,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
             descending: true) // Assuming 'time' is your timestamp field
         .snapshots();
 
-    _messagesStream!.first.then((snapshot) {
-      updateUnreadStatus(snapshot.docs);
-    });
-    // _messagesStream!.listen((snapshot) {
-    //   updateUnreadStatus(snapshot.docs);
-    // });
-    // Future.microtask(() {
-    //   if (_messagesStream != null) {
-    //     _messagesStream!.first.then((snapshot) {
-    //       updateUnreadStatus(snapshot.docs);
-    //     });
-    //   }
-    // });
+    fetchInitialReadByData();
   }
 
   Stream<QuerySnapshot>? _messagesStream;
@@ -814,7 +807,6 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
             // Handle message reading logic
             List<DocumentSnapshot> messageDocs = snapshot.data?.docs ?? [];
             updateUnreadStatus(messageDocs);
-
             _markMessagesAsRead(messageDocs);
 
             final messages = snapshot.data?.docs.map((doc) {

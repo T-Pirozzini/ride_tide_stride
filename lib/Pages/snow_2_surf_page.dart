@@ -9,6 +9,7 @@ import 'package:lottie/lottie.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:ride_tide_stride/pages/chat_widget.dart';
 import 'package:ride_tide_stride/models/chat_message.dart';
+import 'package:badges/badges.dart' as badges;
 
 class Snow2Surf extends StatefulWidget {
   final String challengeId;
@@ -42,6 +43,8 @@ class _Snow2SurfState extends State<Snow2Surf> {
   String formattedCurrentMonth = '';
   bool hasJoined = false;
   String joinedLeg = '';
+  bool unread = false;
+  int unreadMessageCount = 0;
 
   void _sendMessage(String messageText) async {
     if (messageText.isEmpty) {
@@ -50,7 +53,8 @@ class _Snow2SurfState extends State<Snow2Surf> {
     final messageData = {
       'time': FieldValue.serverTimestamp(), // Firestore server timestamp
       'user': currentUser?.email ?? 'Anonymous',
-      'message': messageText
+      'message': messageText,
+      'readBy': [currentUser?.email],
     };
 
     // Write the message to Firestore
@@ -62,6 +66,62 @@ class _Snow2SurfState extends State<Snow2Surf> {
           .add(messageData);
     } catch (e) {
       print('Error saving message: $e');
+    }
+  }
+
+  void _markMessagesAsRead(List<DocumentSnapshot> messageDocs) {
+    for (var doc in messageDocs) {
+      Map<String, dynamic>? data = doc.data() as Map<String, dynamic>?;
+      if (data != null &&
+          !(data['readBy'] as List<dynamic>? ?? [])
+              .contains(currentUser?.email)) {
+        FirebaseFirestore.instance
+            .collection('Challenges')
+            .doc(widget.challengeId)
+            .collection('messages')
+            .doc(doc.id)
+            .update({
+          'readBy': FieldValue.arrayUnion([currentUser?.email])
+        }).then((_) {
+          print(
+              "Message marked as read for: ${currentUser?.email}"); // Debug output
+        }).catchError((error) {
+          print("Failed to mark message as read: $error"); // Debug output
+        });
+      }
+    }
+  }
+
+  void updateUnreadStatus(List<DocumentSnapshot> messageDocs) {
+    int newUnreadCount = 0;
+    for (var doc in messageDocs) {
+      var data = doc.data() as Map<String, dynamic>;
+      if (!(data['readBy'] as List<dynamic>).contains(currentUser?.email)) {
+        newUnreadCount++;
+      }
+    }
+
+    Future.microtask(() {
+      if (unreadMessageCount != newUnreadCount) {
+        setState(() {
+          unreadMessageCount = newUnreadCount;
+        });
+      }
+    });
+  }
+
+  void fetchInitialReadByData() async {
+    try {
+      var snapshot = await FirebaseFirestore.instance
+          .collection('Challenges')
+          .doc(widget.challengeId)
+          .collection('messages')
+          .orderBy('time', descending: true)
+          .get();
+
+      updateUnreadStatus(snapshot.docs);
+    } catch (e) {
+      print('Error fetching messages: $e');
     }
   }
 
@@ -83,6 +143,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
         .orderBy('time',
             descending: false) // Assuming 'time' is your timestamp field
         .snapshots();
+    fetchInitialReadByData();
   }
 
   Stream<QuerySnapshot>? _messagesStream;
@@ -649,10 +710,24 @@ class _Snow2SurfState extends State<Snow2Surf> {
         ),
         actions: <Widget>[
           IconButton(
-            icon: Icon(Icons.chat),
-            onPressed: () =>
-                _snow2SurfScaffoldKey.currentState?.openEndDrawer(),
-          ),
+              icon: badges.Badge(
+                badgeContent: Text(
+                  unreadMessageCount.toString(),
+                  style: TextStyle(color: Colors.white),
+                ),
+                showBadge: unreadMessageCount > 0,
+                child: Icon(
+                  Icons.chat,
+                  color: unread ? Colors.red : Colors.white,
+                ),
+              ),
+              onPressed: () {
+                setState(() {
+                  unread = false;
+                  unreadMessageCount = 0;
+                });
+                _snow2SurfScaffoldKey.currentState?.openEndDrawer();
+              }),
         ],
       ),
       body: SafeArea(
@@ -1082,13 +1157,24 @@ class _Snow2SurfState extends State<Snow2Surf> {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Text('Loading');
             }
+            // Handle message reading logic
+            List<DocumentSnapshot> messageDocs = snapshot.data?.docs ?? [];
+            updateUnreadStatus(messageDocs);
+            _markMessagesAsRead(messageDocs);
+
             final messages = snapshot.data?.docs.map((doc) {
                   final data = doc.data() as Map<String, dynamic>;
+                  Timestamp? timestamp = data['time'] as Timestamp?;
+
+                  // Create a default time if 'time' is null
+                  DateTime messageTime =
+                      timestamp != null ? timestamp.toDate() : DateTime.now();
+
                   return ChatMessage(
                     user: data['user'] ?? 'Anonymous',
                     message: data['message'] ?? '',
-                    time: (data['time'] as Timestamp).toDate(),
-                    readBy: data['readBy'] ?? [],
+                    time: messageTime,
+                    readBy: data['readBy'] as List? ?? [],
                   );
                 }).toList() ??
                 [];

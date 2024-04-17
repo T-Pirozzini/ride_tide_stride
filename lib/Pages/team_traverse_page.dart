@@ -104,9 +104,6 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
       }
     }
 
-    // bool hasUnread = unreadCount > 0;
-    // print("Has unread messages: $hasUnread"); // Debug statement
-
     Future.microtask(() {
       if (unreadMessageCount != newUnreadCount) {
         setState(() {
