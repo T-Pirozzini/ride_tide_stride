@@ -104,9 +104,6 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
       }
     }
 
-    // bool hasUnread = unreadCount > 0;
-    // print("Has unread messages: $hasUnread"); // Debug statement
-
     Future.microtask(() {
       if (unreadMessageCount != newUnreadCount) {
         setState(() {
@@ -114,6 +111,21 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
         });
       }
     });
+  }
+
+  void fetchInitialReadByData() async {
+    try {
+      var snapshot = await FirebaseFirestore.instance
+          .collection('Challenges')
+          .doc(widget.challengeId)
+          .collection('messages')
+          .orderBy('time', descending: true)
+          .get();
+
+      updateUnreadStatus(snapshot.docs);
+    } catch (e) {
+      print('Error fetching messages: $e');
+    }
   }
 
   @override
@@ -131,9 +143,7 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
         .orderBy('time', descending: true)
         .snapshots();
 
-    _messagesStream!.first.then((snapshot) {
-      updateUnreadStatus(snapshot.docs);
-    });
+    fetchInitialReadByData();
   }
 
   Stream<QuerySnapshot>? _messagesStream;
@@ -372,6 +382,7 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
         .where('timestamp',
             isGreaterThanOrEqualTo: Timestamp.fromDate(adjustedStartDate))
         .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
+        .orderBy('timestamp', descending: true)
         .get();
 
     // Parse activities data
@@ -793,7 +804,6 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
             // Handle message reading logic
             List<DocumentSnapshot> messageDocs = snapshot.data?.docs ?? [];
             updateUnreadStatus(messageDocs);
-
             _markMessagesAsRead(messageDocs);
 
             final messages = snapshot.data?.docs.map((doc) {
