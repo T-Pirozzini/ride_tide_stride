@@ -313,7 +313,8 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
           .update({
         'active': false,
         'success': true,
-        'teamElevation': totalElevation
+        'teamElevation': totalElevation,
+        'endDate': Timestamp.fromDate(now),
       });
     }
   }

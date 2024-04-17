@@ -39,12 +39,45 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
     return challengeDocs;
   }
 
+  int getBasePoints(String difficulty) {
+    switch (difficulty) {
+      case 'Intro':
+        return 100;
+      case 'Advanced':
+        return 200;
+      case 'Expert':
+        return 300;
+      default:
+        return 0;
+    }
+  }
+
+  double getTimeMultiplier(int daysTaken) {
+    if (daysTaken <= 10) return 1.0;
+    if (daysTaken <= 20) return 0.9;
+    if (daysTaken <= 30) return 0.8;
+    return 0.7; // If more than 30 days are taken
+  }
+
+  double getParticipantDeduction(int numParticipants) {
+    return numParticipants > 1
+        ? 0.95
+        : 1.0; // 5% reduction per extra participant
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFDFD3C3),
       appBar: AppBar(
-        title: Text('Challenge Results'),
+        title: Text(
+          'Challenge Results',
+          style: GoogleFonts.tektur(
+              textStyle: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w300,
+                  letterSpacing: 1.2)),
+        ),
       ),
       body: FutureBuilder<List<QueryDocumentSnapshot>>(
         future: challengeResults,
@@ -73,9 +106,33 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
               bool isSuccess = challenge['success'] ?? false;
               String challengeImage = challenge['currentMap'];
               Timestamp timestamp = challenge['timestamp'];
-              DateTime myDateTime = timestamp.toDate();
-              String formattedDate =
-                  DateFormat('MMM d, yyyy').format(myDateTime);
+              Timestamp? endDate = challenge['endDate'];
+              List participants = challenge['participants'];
+              String difficulty = challenge['difficulty'];
+
+              // Convert Timestamp to DateTime and formatting
+              DateTime startDate = timestamp.toDate();
+              String formattedStartDate =
+                  DateFormat('MMM d, yyyy').format(startDate);
+              String formattedEndDate = endDate != null
+                  ? DateFormat('MMM d, yyyy').format(endDate.toDate())
+                  : 'In Progress';
+              String daysTakenText = endDate != null
+                  ? '${endDate.toDate().difference(startDate).inDays} days'
+                  : 'In Progress';
+
+              // Points calculation
+              double points = 0;
+              if (endDate != null) {
+                int daysTaken = endDate.toDate().difference(startDate).inDays;
+                double timeMultiplier = getTimeMultiplier(daysTaken);
+                double participantDeduction =
+                    getParticipantDeduction(participants.length);
+                points = getBasePoints(difficulty) *
+                    timeMultiplier *
+                    participantDeduction;
+              }
+
               String mapName = challenge['mapName'] ?? challenge['type'];
               String mapType = challenge['type'];
               String mapSpecs = mapType == 'Team Traverse'
@@ -108,9 +165,15 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'Start Date: $formattedDate',
-                              textAlign: TextAlign.center,
+                            Row(
+                              children: [
+                                Text('Start Date:',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold)),
+                                SizedBox(width: 5),
+                                Text('$formattedStartDate',
+                                    textAlign: TextAlign.center),
+                              ],
                             ),
                             isSuccess
                                 ? FittedBox(
@@ -155,25 +218,57 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        leading: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Image.asset(challengeImage,
-                              height: 80, width: 80, fit: BoxFit.cover),
+                        leading: Column(
+                          children: [
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.asset(challengeImage,
+                                    fit: BoxFit.cover),
+                              ),
+                            ),
+                            Text(
+                              '$mapSpecs',
+                              style: TextStyle(
+                                  fontSize: 14, fontWeight: FontWeight.bold),
+                            )
+                          ],
                         ),
                         title: Text(
                           challengeName,
                           style: TextStyle(
                               fontSize: 16, fontWeight: FontWeight.bold),
                         ),
-                        subtitle: Text(
-                          '$mapName',
-                          style: TextStyle(
-                              fontSize: 12, fontWeight: FontWeight.bold),
+                        subtitle: Row(
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.calendar_month_outlined),
+                                Text(daysTakenText,
+                                    textAlign: TextAlign.center),
+                              ],
+                            ),
+                            SizedBox(width: 5),
+                            Row(
+                              children: [
+                                Icon(Icons.person_outlined),
+                                Text(participants.length.toString()),
+                              ],
+                            ),
+                          ],
                         ),
                         trailing: Text(
-                          '$mapSpecs',
-                          style: TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.bold),
+                          isSuccess
+                              ? '${points.toStringAsFixed(0)} pts'
+                              : isActive
+                                  ? 'In Progress'
+                                  : '0 pts',
+                          style: isSuccess || !isActive
+                              ? TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  fontSize: 16)
+                              : TextStyle(fontSize: 16),
                         ),
                         onTap: () {
                           challengeResultsDialog(context, challenge);
