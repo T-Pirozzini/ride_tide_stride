@@ -172,7 +172,7 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
     DateTime startDate = widget.startDate.toDate();
     DateTime adjustedStartDate =
         DateTime(startDate.year, startDate.month, startDate.day);
-    DateTime endDate = adjustedStartDate.add(Duration(days: 30));
+    // DateTime endDate = adjustedStartDate.add(Duration(days: 30));
     Map<String, double> participantProgress = {};
 
     for (String email in widget.participantsEmails) {
@@ -182,8 +182,8 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
           .collection('activities')
           .where('user_email', isEqualTo: email)
           .where('timestamp',
-              isGreaterThanOrEqualTo: Timestamp.fromDate(adjustedStartDate))
-          .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endDate));
+              isGreaterThanOrEqualTo: Timestamp.fromDate(adjustedStartDate));
+      // .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endDate));
 
       // Adjust query for Competitive challenges
       if (widget.challengeCategory == "Competitive" &&
@@ -307,24 +307,14 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showSuccessDialog();
       });
-      if (endDate != null && now.isAfter(endDate!)) {
-        await FirebaseFirestore.instance
-            .collection('Challenges')
-            .doc(widget.challengeId)
-            .update({
-          'active': false,
-          'success': true,
-          'teamDistance': totalDistance
-        });
-      }
-    } else if (endDate != null && now.isAfter(endDate!)) {
       await FirebaseFirestore.instance
           .collection('Challenges')
           .doc(widget.challengeId)
           .update({
         'active': false,
-        'success': false,
-        'teamDistance': totalDistance
+        'success': true,
+        'teamDistance': totalDistance,
+        'endDate': Timestamp.fromDate(now),
       });
     }
   }
@@ -374,14 +364,14 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
     DateTime startDate = widget.startDate.toDate();
     DateTime adjustedStartDate =
         DateTime(startDate.year, startDate.month, startDate.day);
-    DateTime endDate = adjustedStartDate.add(Duration(days: 30));
+    // DateTime endDate = adjustedStartDate.add(Duration(days: 30));
     // Fetch activities for the given user email
     QuerySnapshot activitiesSnapshot = await FirebaseFirestore.instance
         .collection('activities')
         .where('user_email', isEqualTo: userEmail)
         .where('timestamp',
             isGreaterThanOrEqualTo: Timestamp.fromDate(adjustedStartDate))
-        .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
+        // .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
         .orderBy('timestamp', descending: true)
         .get();
 
@@ -544,7 +534,7 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     child: Text(
-                      '${DateFormat('MMMM dd, yyyy').format(widget.startDate.toDate())} - ${DateFormat('MMMM dd, yyyy').format(endDate!)}',
+                      'Start Date: ${DateFormat('MMMM dd, yyyy').format(widget.startDate.toDate())}',
                       style: TextStyle(fontSize: 16),
                     ),
                   ),
