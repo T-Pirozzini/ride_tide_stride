@@ -3,11 +3,11 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:ride_tide_stride/helpers/helper_data_sets.dart';
+import 'package:ride_tide_stride/helpers/helper_functions.dart';
 import 'package:ride_tide_stride/pages/chat_widget.dart';
 import 'package:ride_tide_stride/models/chat_message.dart';
 import 'package:badges/badges.dart' as badges;
@@ -47,7 +47,30 @@ class _Snow2SurfState extends State<Snow2Surf> {
   String joinedLeg = '';
   bool unread = false;
   int unreadMessageCount = 0;
+  Stream<QuerySnapshot>? _messagesStream;
 
+  initState() {
+    super.initState();
+    DateTime startDate = widget.startDate.toDate();
+    DateTime adjustedStartDate =
+        DateTime(startDate.year, startDate.month, startDate.day);
+    endDate = adjustedStartDate.add(Duration(days: 30));
+
+    getActivitiesWithinDateRange().listen((activities) {
+      processActivities(activities);
+    });
+    checkAndFinalizeChallenge();
+    _messagesStream = FirebaseFirestore.instance
+        .collection('Challenges')
+        .doc(widget.challengeId)
+        .collection('messages')
+        .orderBy('time',
+            descending: false) // Assuming 'time' is your timestamp field
+        .snapshots();
+    fetchInitialReadByData();
+  }
+
+// MESSAGE RELATED METHODS
   void _sendMessage(String messageText) async {
     if (messageText.isEmpty) {
       return; // Avoid sending empty messages
@@ -127,151 +150,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
     }
   }
 
-  initState() {
-    super.initState();
-    DateTime startDate = widget.startDate.toDate();
-    DateTime adjustedStartDate =
-        DateTime(startDate.year, startDate.month, startDate.day);
-    endDate = adjustedStartDate.add(Duration(days: 30));
-
-    getActivitiesWithinDateRange().listen((activities) {
-      processActivities(activities);
-    });
-    checkAndFinalizeChallenge();
-    _messagesStream = FirebaseFirestore.instance
-        .collection('Challenges')
-        .doc(widget.challengeId)
-        .collection('messages')
-        .orderBy('time',
-            descending: false) // Assuming 'time' is your timestamp field
-        .snapshots();
-    fetchInitialReadByData();
-  }
-
-  Stream<QuerySnapshot>? _messagesStream;
-
-  List<Map<String, dynamic>> categories = [
-    {
-      'name': 'Alpine Skiing',
-      'type': ['Snowboard', 'AlpineSki'],
-      'icon': Icons.downhill_skiing_outlined,
-      'distance': 2.0,
-      'bestTime': '0:00',
-    },
-    {
-      'name': 'Nordic Skiing',
-      'type': ['NordicSki'],
-      'icon': Symbols.nordic_walking,
-      'distance': 8.0,
-      'bestTime': '0:00',
-    },
-    {
-      'name': 'Road Running',
-      'type': ['VirtualRun', 'Road Run', 'Run'],
-      'icon': Symbols.sprint,
-      'distance': 7.0,
-      'bestTime': '0:00',
-    },
-    {
-      'name': 'Trail Running',
-      'type': ['Trail Run'],
-      'icon': Icons.directions_run_outlined,
-      'distance': 6.0,
-      'bestTime': '0:00',
-    },
-    {
-      'name': 'Mountain Biking',
-      'type': ['Mtn Bike'],
-      'icon': Icons.directions_bike_outlined,
-      'distance': 15.0,
-      'bestTime': '0:00',
-    },
-    {
-      'name': 'Kayaking',
-      'type': ['Kayaking'],
-      'icon': Icons.kayaking_outlined,
-      'distance': 3.0,
-      'bestTime': '0:00',
-    },
-    {
-      'name': 'Road Cycling',
-      'type': ['VirtualRide', 'Road Bike', 'Ride'],
-      'icon': Icons.directions_bike_outlined,
-      'distance': 25.0,
-      'bestTime': '0:00',
-    },
-    {
-      'name': 'Canoeing',
-      'type': ['Canoeing'],
-      'icon': Icons.rowing_outlined,
-      'distance': 5.0,
-      'bestTime': '0:00',
-    },
-  ];
-
-  Map<String, dynamic> opponents = {
-    "Intro": {
-      "name": ["Dipsy", "La La", "Poe", "Tinky"],
-      "image": [
-        "assets/images/dipsy.jpg",
-        "assets/images/lala.jpg",
-        "assets/images/poe.jpg",
-        "assets/images/tinky.jpg"
-      ],
-      "bestTimes": {
-        "Alpine Skiing": "0:15:00",
-        "Nordic Skiing": "0:50:00",
-        "Road Running": "0:45:00",
-        "Trail Running": "0:50:00",
-        "Mountain Biking": "01:10:00",
-        "Kayaking": "0:50:00",
-        "Road Cycling": "01:15:00",
-        "Canoeing": "1:15:00",
-      },
-      "teamName": "Teletubbies",
-    },
-    "Advanced": {
-      "name": ["Crash", "Todd", "Noise", "Baldy"],
-      "image": [
-        "assets/images/crash.png",
-        "assets/images/todd.png",
-        "assets/images/noise.png",
-        "assets/images/baldy.png"
-      ],
-      "bestTimes": {
-        "Alpine Skiing": "0:10:00",
-        "Nordic Skiing": "0:40:00",
-        "Road Running": "0:35:00",
-        "Trail Running": "0:40:00",
-        "Mountain Biking": "0:50:00",
-        "Kayaking": "0:42:00",
-        "Road Cycling": "00:50:00",
-        "Canoeing": "0:55:00",
-      },
-      "teamName": "Crash N' The Boys",
-    },
-    "Expert": {
-      "name": ["Mike", "Leo", "Raph", "Don"],
-      "image": [
-        "assets/images/mike.jpg",
-        "assets/images/leo.jpg",
-        "assets/images/raph.jpg",
-        "assets/images/don.jpg"
-      ],
-      "bestTimes": {
-        "Alpine Skiing": "0:07:00",
-        "Nordic Skiing": "0:30:00",
-        "Road Running": "0:22:00",
-        "Trail Running": "0:25:00",
-        "Mountain Biking": "0:40:00",
-        "Kayaking": "0:30:00",
-        "Road Cycling": "0:40:00",
-        "Canoeing": "0:45:00",
-      },
-      "teamName": "TMNT",
-    },
-  };
-
+// JOIN RELATED METHODS
   void joinTeam(String legName) async {
     final String? participantEmail = currentUser?.email;
 
@@ -349,7 +228,6 @@ class _Snow2SurfState extends State<Snow2Surf> {
     );
   }
 
-  // Add a method to check if the current user is in the participants list.
   bool isCurrentUserInParticipants(String legName) {
     final String? participantEmail = currentUser?.email;
     if (participantEmail != null) {
@@ -359,6 +237,17 @@ class _Snow2SurfState extends State<Snow2Surf> {
     return false;
   }
 
+  bool isLegFilled(String legName, Map<String, dynamic> legParticipants) {
+      if (legParticipants.containsKey(legName)) {
+        var legInfo = legParticipants[legName];
+        return legInfo != null &&
+            legInfo['participant'] != null &&
+            legInfo['participant'].trim().isNotEmpty;
+      }
+      return false;
+    }
+
+// DATA PROCESSING METHODS
   Stream<DocumentSnapshot> getChallengeData() {
     return FirebaseFirestore.instance
         .collection('Challenges')
@@ -435,7 +324,6 @@ class _Snow2SurfState extends State<Snow2Surf> {
         double bestAverageSpeed = bestActivityData['average_speed'];
         double activityDistance = category['distance'] * 1000;
 
-        double bestTimeInSeconds = activityDistance / bestAverageSpeed;
         String formattedBestTime =
             calculateBestTime(activityDistance, bestAverageSpeed);
 
@@ -462,66 +350,53 @@ class _Snow2SurfState extends State<Snow2Surf> {
     }
   }
 
-  Map<String, List<FlSpot>> prepareChartDataPerUser(
-      List<DocumentSnapshot> activities, double distance) {
-    Map<String, List<FlSpot>> userCharts = {};
-    activities.forEach((activity) {
-      Map<String, dynamic> data = activity.data() as Map<String, dynamic>;
-      String userEmail = data['user_email'];
-      double activityDistance = data['distance'];
-      if (activityDistance >= distance * 1000) {
-        // Ensure activity meets distance requirement
-        double averageSpeed = data['average_speed'];
-        DateTime timestamp = (data['timestamp'] as Timestamp).toDate();
-        double timeInSeconds = (distance * 1000) /
-            (averageSpeed / 3.6); // average speed km/h to m/s
-
-        if (!userCharts.containsKey(userEmail)) {
-          userCharts[userEmail] = [];
-        }
-        userCharts[userEmail]?.add(FlSpot(
-            timestamp.difference(widget.startDate.toDate()).inDays.toDouble(),
-            timeInSeconds));
-      }
-    });
-    return userCharts;
-  }
-
-  Map<String, double> getOpponentTimesForChallenge(String challengeType) {
-    Map<String, String> bestTimes = opponents[challengeType]['bestTimes'];
-    return bestTimes.map((activity, timeStr) {
-      return MapEntry(activity, parseTimeToSeconds(timeStr).toDouble());
-    });
-  }
-
-// Utility method to parse "HH:MM:SS" or "MM:SS" to seconds
-  int parseTimeToSeconds(String timeStr) {
-    List<int> parts = timeStr.split(':').map(int.parse).toList();
-    if (parts.length == 3) {
-      return parts[0] * 3600 + parts[1] * 60 + parts[2];
-    } else if (parts.length == 2) {
-      return parts[0] * 60 + parts[1];
-    }
-    return 0; // Return zero if the format doesn't match expected patterns
-  }
-
-  void showActivityDetailsForUser(String userEmail) async {
+  void showActivityDetailsForUser(
+      String userEmail, List<Map<String, dynamic>> categories) async {
     // Fetch activities from Firestore
-    var activities = await FirebaseFirestore.instance
+    var activitiesQuery = FirebaseFirestore.instance
         .collection('activities')
         .where('user_email', isEqualTo: userEmail)
         .where('timestamp', isGreaterThanOrEqualTo: widget.startDate.toDate())
-        .where('timestamp', isLessThanOrEqualTo: endDate)
-        .get();
+        .where('timestamp', isLessThanOrEqualTo: endDate);
 
-    // Process the activities as needed
-    List<Map<String, dynamic>> processedActivities = activities.docs.map((doc) {
+    var activitiesSnapshot = await activitiesQuery.get();
+
+    List<DocumentSnapshot> filteredActivities = [];
+    // Apply additional filters based on categories
+    for (var doc in activitiesSnapshot.docs) {
+      Map<String, dynamic> activityData = doc.data() as Map<String, dynamic>;
+      for (var category in categories) {
+        if (category['type'].contains(activityData['sport_type']) &&
+            (activityData['distance'] / 1000) >= category['distance']) {
+          filteredActivities.add(doc);
+          break; // To avoid adding the same activity under multiple categories
+        }
+      }
+    }
+
+    // Process the filtered activities
+    List<Map<String, dynamic>> processedActivities =
+        filteredActivities.map((doc) {
+      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+      // Find the category match for this activity to get the defined distance for calculation
+      var matchingCategory = categories.firstWhere(
+          (cat) =>
+              cat['type'].contains(data['sport_type']) &&
+              (data['distance'] / 1000) >= cat['distance'],
+          orElse: () => {'type': 'Unknown', 'distance': 0});
+
+      // Use the category's defined distance for best time calculation
+      double categoryDistance = matchingCategory != null
+          ? matchingCategory['distance'] * 1000
+          : data['distance'];
+      String formattedBestTime =
+          calculateBestTime(categoryDistance, data['average_speed']);
+
       return {
-        'type': doc.data()['type'] as String,
-        'distance':
-            double.parse((doc.data()['distance'] / 1000).toStringAsFixed(2)),
-        'bestTime': calculateBestTime(
-            doc.data()['distance'], doc.data()['average_speed']),
+        'type': data['type'] as String,
+        'distance': double.parse((data['distance'] / 1000).toStringAsFixed(2)),
+        'bestTime': formattedBestTime,
       };
     }).toList();
 
@@ -554,83 +429,40 @@ class _Snow2SurfState extends State<Snow2Surf> {
         );
       },
     );
-  }
+  }  
 
-  String calculateBestTime(double distanceInMeters, double averageSpeed) {
-    if (averageSpeed == 0) return 'N/A'; // Avoid division by zero
-    int totalSeconds = (distanceInMeters / averageSpeed).round();
-    int hours = totalSeconds ~/ 3600;
-    int minutes = (totalSeconds % 3600) ~/ 60;
-    int seconds = totalSeconds % 60;
+// CHART RELATED METHODS
+  Map<String, List<FlSpot>> prepareChartDataPerUser(
+      List<DocumentSnapshot> activities, double distance) {
+    Map<String, List<FlSpot>> userCharts = {};
+    activities.forEach((activity) {
+      Map<String, dynamic> data = activity.data() as Map<String, dynamic>;
+      String userEmail = data['user_email'];
+      double activityDistance = data['distance'];
+      if (activityDistance >= distance * 1000) {
+        // Ensure activity meets distance requirement
+        double averageSpeed = data['average_speed'];
+        DateTime timestamp = (data['timestamp'] as Timestamp).toDate();
+        double timeInSeconds = (distance * 1000) /
+            (averageSpeed / 3.6); // average speed km/h to m/s
 
-    // Format the time as HH:MM:SS
-    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-  }
-
-  Future<String> getUsername(String userEmail) async {
-    try {
-      final DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('Users')
-          .doc(userEmail)
-          .get();
-
-      // Cast the userDoc.data() to Map<String, dynamic> before using containsKey.
-      final userData = userDoc.data() as Map<String, dynamic>?;
-
-      if (userDoc.exists &&
-          userData != null &&
-          userData.containsKey('username')) {
-        return userData['username'] ?? 'No participant';
-      } else {
-        return 'No username';
+        if (!userCharts.containsKey(userEmail)) {
+          userCharts[userEmail] = [];
+        }
+        userCharts[userEmail]?.add(FlSpot(
+            timestamp.difference(widget.startDate.toDate()).inDays.toDouble(),
+            timeInSeconds));
       }
-    } catch (e) {
-      print("Error getting username: $e");
-      return 'No username';
-    }
+    });
+    return userCharts;
   }
 
-  Duration parseBestTime(String bestTime) {
-    List<String> parts = bestTime.split(':');
-    return Duration(
-        hours: int.parse(parts[0]),
-        minutes: int.parse(parts[1]),
-        seconds: int.parse(parts[2]));
-  }
-
-  Widget timeDifferenceWidget(
-      String participantBestTime, String opponentBestTime) {
-    // Parse the times to Duration, handling "N/A" as zero for the participant
-    Duration participantDuration = participantBestTime != "N/A"
-        ? parseBestTime(participantBestTime)
-        : Duration.zero;
-    Duration opponentDuration = parseBestTime(opponentBestTime);
-
-    // If participant has no time, show full opponent lead
-    if (participantBestTime == "N/A") {
-      return Text(
-        "- ${formatDuration(opponentDuration)}",
-        style: TextStyle(
-          color: Colors.red, // Or any color that signifies this condition
-          fontWeight: FontWeight.bold,
-        ),
-      );
-    }
-
-    // Calculate the difference otherwise
-    Duration difference = opponentDuration - participantDuration;
-    String differenceFormatted = difference.isNegative
-        ? '-${formatDuration(difference.abs())}'
-        : '+${formatDuration(difference)}';
-
-    return Text(
-      differenceFormatted,
-      style: TextStyle(
-        color: difference.isNegative ? Colors.red : Colors.green,
-        fontWeight: FontWeight.bold,
-      ),
-    );
-  }
+  Map<String, double> getOpponentTimesForChallenge(String challengeType) {
+    Map<String, String> bestTimes = opponents[challengeType]['bestTimes'];
+    return bestTimes.map((activity, timeStr) {
+      return MapEntry(activity, parseTimeToSeconds(timeStr).toDouble());
+    });
+  }    
 
   Duration getTotalOpponentTime(
       String difficultyLevel, List<dynamic> selectedLegs) {
@@ -700,20 +532,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
     String sign = participantIsWinning ? '-' : '+'; // Corrected this line
 
     return '$sign$formattedTimeDifference';
-  }
-
-  String formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    return "${twoDigits(duration.inHours)}:${twoDigits(duration.inMinutes.remainder(60))}:${twoDigits(duration.inSeconds.remainder(60))}";
-  }
-
-// Helper function to format time in seconds into a readable string
-  String formatTime(double seconds) {
-    int hours = seconds ~/ 3600;
-    int minutes = ((seconds % 3600) ~/ 60);
-    int remainingSeconds = seconds.toInt() % 60;
-    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
-  }
+  }  
 
   Future<void> checkAndFinalizeChallenge() async {
     DateTime now = DateTime.now();
@@ -789,16 +608,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
     );
   }
 
-  bool isLegFilled(String legName, Map<String, dynamic> legParticipants) {
-    if (legParticipants.containsKey(legName)) {
-      var legInfo = legParticipants[legName];
-      return legInfo != null &&
-          legInfo['participant'] != null &&
-          legInfo['participant'].trim().isNotEmpty;
-    }
-    return false;
-  }
-
+  
   @override
   Widget build(BuildContext context) {
     final Duration totalOpponentTime =
@@ -985,8 +795,10 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                       Expanded(
                                         child: GestureDetector(
                                           onTap: () =>
-                                              showActivityDetailsForUser(widget
-                                                  .participantsEmails[index]),
+                                              showActivityDetailsForUser(
+                                                  widget.participantsEmails[
+                                                      index],
+                                                  categories),
                                           child: Card(
                                             child: Padding(
                                               padding: EdgeInsets.all(2),
@@ -1371,6 +1183,40 @@ class _Snow2SurfState extends State<Snow2Surf> {
             );
           },
         ),
+      ),
+    );
+  }
+
+  Widget timeDifferenceWidget(
+      String participantBestTime, String opponentBestTime) {
+    // Parse the times to Duration, handling "N/A" as zero for the participant
+    Duration participantDuration = participantBestTime != "N/A"
+        ? parseBestTime(participantBestTime)
+        : Duration.zero;
+    Duration opponentDuration = parseBestTime(opponentBestTime);
+
+    // If participant has no time, show full opponent lead
+    if (participantBestTime == "N/A") {
+      return Text(
+        "- ${formatDuration(opponentDuration)}",
+        style: TextStyle(
+          color: Colors.red, // Or any color that signifies this condition
+          fontWeight: FontWeight.bold,
+        ),
+      );
+    }
+
+    // Calculate the difference otherwise
+    Duration difference = opponentDuration - participantDuration;
+    String differenceFormatted = difference.isNegative
+        ? '-${formatDuration(difference.abs())}'
+        : '+${formatDuration(difference)}';
+
+    return Text(
+      differenceFormatted,
+      style: TextStyle(
+        color: difference.isNegative ? Colors.red : Colors.green,
+        fontWeight: FontWeight.bold,
       ),
     );
   }
