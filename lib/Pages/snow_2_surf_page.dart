@@ -244,7 +244,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
         "Road Running": "0:35:00",
         "Trail Running": "0:40:00",
         "Mountain Biking": "0:50:00",
-        "Kayaking": "0:40:00",
+        "Kayaking": "0:42:00",
         "Road Cycling": "00:50:00",
         "Canoeing": "0:55:00",
       },
@@ -436,7 +436,8 @@ class _Snow2SurfState extends State<Snow2Surf> {
         double activityDistance = category['distance'] * 1000;
 
         double bestTimeInSeconds = activityDistance / bestAverageSpeed;
-        String formattedBestTime = formatTime(bestTimeInSeconds);
+        String formattedBestTime =
+            calculateBestTime(activityDistance, bestAverageSpeed);
 
         // Check if the user has joined this category's leg before attempting to update
         if (legParticipants.containsKey(category['name']) &&
@@ -461,15 +462,109 @@ class _Snow2SurfState extends State<Snow2Surf> {
     }
   }
 
-  List<FlSpot> prepareChartData(
+  Map<String, List<FlSpot>> prepareChartDataPerUser(
       List<DocumentSnapshot> activities, double distance) {
-    return activities.map((activity) {
+    Map<String, List<FlSpot>> userCharts = {};
+    activities.forEach((activity) {
       Map<String, dynamic> data = activity.data() as Map<String, dynamic>;
-      double averageSpeed = data['average_speed'];
-      DateTime timestamp = (data['timestamp'] as Timestamp).toDate();
-      double timeInSeconds = (distance * 1000) / averageSpeed;
-      return FlSpot(timestamp.day.toDouble(), timeInSeconds);
+      String userEmail = data['user_email'];
+      double activityDistance = data['distance'];
+      if (activityDistance >= distance * 1000) {
+        // Ensure activity meets distance requirement
+        double averageSpeed = data['average_speed'];
+        DateTime timestamp = (data['timestamp'] as Timestamp).toDate();
+        double timeInSeconds = (distance * 1000) /
+            (averageSpeed / 3.6); // average speed km/h to m/s
+
+        if (!userCharts.containsKey(userEmail)) {
+          userCharts[userEmail] = [];
+        }
+        userCharts[userEmail]?.add(FlSpot(
+            timestamp.difference(widget.startDate.toDate()).inDays.toDouble(),
+            timeInSeconds));
+      }
+    });
+    return userCharts;
+  }
+
+  Map<String, double> getOpponentTimesForChallenge(String challengeType) {
+    Map<String, String> bestTimes = opponents[challengeType]['bestTimes'];
+    return bestTimes.map((activity, timeStr) {
+      return MapEntry(activity, parseTimeToSeconds(timeStr).toDouble());
+    });
+  }
+
+// Utility method to parse "HH:MM:SS" or "MM:SS" to seconds
+  int parseTimeToSeconds(String timeStr) {
+    List<int> parts = timeStr.split(':').map(int.parse).toList();
+    if (parts.length == 3) {
+      return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    } else if (parts.length == 2) {
+      return parts[0] * 60 + parts[1];
+    }
+    return 0; // Return zero if the format doesn't match expected patterns
+  }
+
+  void showActivityDetailsForUser(String userEmail) async {
+    // Fetch activities from Firestore
+    var activities = await FirebaseFirestore.instance
+        .collection('activities')
+        .where('user_email', isEqualTo: userEmail)
+        .where('timestamp', isGreaterThanOrEqualTo: widget.startDate.toDate())
+        .where('timestamp', isLessThanOrEqualTo: endDate)
+        .get();
+
+    // Process the activities as needed
+    List<Map<String, dynamic>> processedActivities = activities.docs.map((doc) {
+      return {
+        'type': doc.data()['type'] as String,
+        'distance':
+            double.parse((doc.data()['distance'] / 1000).toStringAsFixed(2)),
+        'bestTime': calculateBestTime(
+            doc.data()['distance'], doc.data()['average_speed']),
+      };
     }).toList();
+
+    // Show the dialog with the processed activities
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Activities for $userEmail'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              itemCount: processedActivities.length,
+              itemBuilder: (BuildContext context, int index) {
+                var activity = processedActivities[index];
+                return ListTile(
+                  title: Text(activity['type']),
+                  subtitle: Text('Distance: ${activity['distance']} km'),
+                  trailing: Text('Best Time: ${activity['bestTime']}'),
+                );
+              },
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Close'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  String calculateBestTime(double distanceInMeters, double averageSpeed) {
+    if (averageSpeed == 0) return 'N/A'; // Avoid division by zero
+    int totalSeconds = (distanceInMeters / averageSpeed).round();
+    int hours = totalSeconds ~/ 3600;
+    int minutes = (totalSeconds % 3600) ~/ 60;
+    int seconds = totalSeconds % 60;
+
+    // Format the time as HH:MM:SS
+    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
   Future<String> getUsername(String userEmail) async {
@@ -889,18 +984,9 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                     children: [
                                       Expanded(
                                         child: GestureDetector(
-                                          onTap: () {
-                                            if (activities.isNotEmpty) {
-                                              showActivityDetailsDialog(
-                                                  context, activities);
-                                            } else {
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(SnackBar(
-                                                content: Text(
-                                                    "No activities available for this leg."),
-                                              ));
-                                            }
-                                          },
+                                          onTap: () =>
+                                              showActivityDetailsForUser(widget
+                                                  .participantsEmails[index]),
                                           child: Card(
                                             child: Padding(
                                               padding: EdgeInsets.all(2),
@@ -1005,7 +1091,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                             ),
                                           ),
                                         ),
-                                      ),
+                                      )
                                     ],
                                   ),
                                 ),
@@ -1184,9 +1270,11 @@ class _Snow2SurfState extends State<Snow2Surf> {
                   stream: getActivitiesWithinDateRange(),
                   builder: (context, snapshot) {
                     if (snapshot.hasData) {
-                      List<FlSpot> chartData = prepareChartData(
-                          snapshot.data!, categories.first['distance']);
-                      return buildActivityChart(chartData);
+                      Map<String, List<FlSpot>> chartData =
+                          prepareChartDataPerUser(
+                              snapshot.data!, categories.first['distance']);
+                      return buildActivityChart(
+                          chartData, widget.challengeDifficulty);
                     } else if (snapshot.hasError) {
                       return Text('Error loading data');
                     }
@@ -1287,84 +1375,99 @@ class _Snow2SurfState extends State<Snow2Surf> {
     );
   }
 
-  void showActivityDetailsDialog(
-      BuildContext context, List<Map<String, dynamic>> activities) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Activity Details'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              itemCount: activities.length,
-              itemBuilder: (BuildContext context, int index) {
-                var activity = activities[index];
-                return ListTile(
-                  title: Text(activity['name'] ?? 'Unnamed activity'),
-                  subtitle:
-                      Text('${activity['distance']} km at ${activity['date']}'),
-                  trailing: Text('Time: ${activity['time']}'),
-                );
-              },
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Close'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+  Widget buildActivityChart(
+      Map<String, List<FlSpot>> userSpots, String challengeType) {
+    List<LineChartBarData> lines = [];
+    List<Color> colors = [
+      Colors.blue,
+      Colors.red,
+      Colors.green,
+      Colors.purple
+    ]; // Define more colors if necessary
 
-  Widget buildActivityChart(List<FlSpot> spots) {
+    userSpots.entries.toList().asMap().forEach((index, entry) {
+      List<FlSpot> spots = entry.value;
+      Color currentUserColor = colors[index % colors.length];
+      Map<String, double> bestTimesInSeconds =
+          getOpponentTimesForChallenge(challengeType);
+
+      // User's performance line
+      lines.add(LineChartBarData(
+        spots: spots,
+        isCurved: false,
+        color: currentUserColor,
+        barWidth: 2,
+        dotData: FlDotData(show: true),
+        belowBarData: BarAreaData(show: false),
+      ));
+
+      // Opponent's best time threshold lines
+      bestTimesInSeconds.forEach((activity, timeInSeconds) {
+        // Assigning the threshold line the same color as the user line
+        lines.add(LineChartBarData(
+          spots: [FlSpot(1, timeInSeconds), FlSpot(30, timeInSeconds)],
+          isCurved: false,
+          color: currentUserColor,
+          barWidth: 1,
+          isStrokeCapRound: true,
+          dashArray: [10, 5],
+          dotData: FlDotData(show: false),
+          aboveBarData: BarAreaData(show: false), // Remove the line above
+          belowBarData: BarAreaData(show: false), // Remove the line below
+        ));
+      });
+    });
+
     return LineChart(
       LineChartData(
         minY: 0,
+        maxY: lines
+            .map((line) => line.spots.map((spot) => spot.y).reduce(max))
+            .reduce(max),
         gridData: FlGridData(show: true),
         titlesData: FlTitlesData(
-          bottomTitles: AxisTitles(
-            sideTitles:
-                SideTitles(showTitles: true, getTitlesWidget: _getBottomTitles),
-          ),
-          leftTitles: AxisTitles(
-            sideTitles:
-                SideTitles(showTitles: true, getTitlesWidget: _getLeftTitles),
-          ),
-        ),
-        lineBarsData: [
-          LineChartBarData(
-            spots: spots,
-            isCurved: true,
-            color: Colors.blue,
-            barWidth: 2,
-            dotData: FlDotData(show: true),
-            belowBarData: BarAreaData(show: false),
-          )
-        ],
+            show: true,
+            bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+              showTitles: true,
+              interval: 5,
+              reservedSize: 20,
+              getTitlesWidget: _getBottomTitles,
+            )),
+            leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+              interval: 500,
+              showTitles: true,
+              getTitlesWidget: _leftTitleWidgets,
+              reservedSize: 30,
+            )),
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false))),
+        lineBarsData: lines,
       ),
     );
   }
 
   Widget _getBottomTitles(double value, TitleMeta meta) {
-    // Convert day of month back to actual date if needed or use a DateFormatter
+    DateTime startDate = widget.startDate.toDate();
+    DateTime labelDate = startDate.add(Duration(days: value.toInt()));
+
     return SideTitleWidget(
       axisSide: meta.axisSide,
       space: 8.0,
-      child: Text(value.toInt().toString()),
+      child: Text(
+        DateFormat('MM/dd')
+            .format(labelDate), // Formats date as '04/17', '04/21', etc.
+        style: TextStyle(fontSize: 10), // Adjust the font size as needed
+      ),
     );
   }
 
-  Widget _getLeftTitles(double value, TitleMeta meta) {
-    // Format seconds to a time string
+  Widget _leftTitleWidgets(double value, TitleMeta meta) {
     int hours = value ~/ 3600;
     int minutes = ((value % 3600) / 60).toInt();
-    int seconds = (value % 60).toInt();
-    return Text('$hours:$minutes:$seconds');
+    String formattedTime = '$hours:${minutes.toString().padLeft(2, '0')}';
+    return Text(formattedTime,
+        style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold));
   }
 }
