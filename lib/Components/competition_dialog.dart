@@ -158,6 +158,13 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
       challengeData['mapName'] = challengeNamesTeamTraverse[_currentPage];
       challengeData['mapDistance'] =
           challengeDistancesTeamTraverse[_currentPage];
+      if (challengeNamesTeamTraverse == "P.E.I") {
+        challengeData['difficulty'] = "Intro";
+      } else if (challengeNamesTeamTraverse == "Van Isle") {
+        challengeData['difficulty'] = "Advanced";
+      } else {
+        challengeData['difficulty'] = "Expert";
+      }
     }
 
     // If the selected challenge is "Mtn Scramble", add specific details
@@ -170,6 +177,13 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
       challengeData['mapName'] = challengeNamesMtnScramble[_currentPage];
       challengeData['mapElevation'] =
           challengeElevationsMtnScramble[_currentPage];
+      if (challengeNamesMtnScramble == "Mount Fuji") {
+        challengeData['difficulty'] = "Intro";
+      } else if (challengeNamesMtnScramble == "Mount Kilimanjaro") {
+        challengeData['difficulty'] = "Advanced";
+      } else {
+        challengeData['difficulty'] = "Expert";
+      }
     }
 
     // If the selected challenge is "Snow2Surf", add specific details
@@ -200,7 +214,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Select Legs'),          
+          title: Text('Select Legs'),
           content: SingleChildScrollView(
             child: StatefulBuilder(
               // Add this wrapper
@@ -295,7 +309,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
 
     return AlertDialog(
       title: Center(child: Text('Create a Challenge')),
-      titlePadding: EdgeInsets.only(top: 5),      
+      titlePadding: EdgeInsets.only(top: 5),
       content: Builder(builder: (context) {
         return SingleChildScrollView(
           child: Container(
