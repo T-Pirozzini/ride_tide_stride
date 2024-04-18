@@ -54,9 +54,12 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
   }
 
   double getTimeMultiplier(int daysTaken) {
-    if (daysTaken <= 10) return 1.0;
-    if (daysTaken <= 20) return 0.9;
-    if (daysTaken <= 30) return 0.8;
+    if (daysTaken <= 5) return 1.0;
+    if (daysTaken <= 10) return 0.9;
+    if (daysTaken <= 15) return 0.8;
+    if (daysTaken <= 20) return 0.7;
+    if (daysTaken <= 25) return 0.6;
+    if (daysTaken <= 30) return 0.5;
     return 0.7; // If more than 30 days are taken
   }
 
@@ -78,6 +81,104 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
                   fontSize: 24,
                   fontWeight: FontWeight.w300,
                   letterSpacing: 1.2)),
+        ),
+      ),
+      bottomSheet: GestureDetector(
+        onTap: () => showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Center(
+              child: Text('Points Breakdown',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+            content: SingleChildScrollView(
+              child: ListBody(
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.star, color: Colors.orange),
+                      SizedBox(width: 8),
+                      Expanded(
+                          child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Base Points:',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Text('Intro (100), Advanced (200), Expert (300)'),
+                        ],
+                      )),
+                    ],
+                  ),
+                  SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Icon(Icons.timer, color: Colors.blue),
+                      SizedBox(width: 8),
+                      Expanded(
+                          child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Time Multiplyer:',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text(
+                              'Points are reduced based on how many days it took to complete the challenge.'),
+                        ],
+                      )),
+                    ],
+                  ),
+                  SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Icon(Icons.group, color: Colors.red),
+                      SizedBox(width: 8),
+                      Expanded(
+                          child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Participant Deduction:',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                              'Total points are reduced by 5% per additional participant.'),
+                        ],
+                      )),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('Close'),
+                style: TextButton.styleFrom(foregroundColor: Colors.deepPurple),
+              ),
+            ],
+          ),
+        ),
+        child: Container(
+          color: Color(0xFF283D3B),
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            // mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.info_outline,
+                color: Colors.white,
+              ),
+              SizedBox(width: 4),
+              Text(
+                'Click for points breakdown.',
+                style: TextStyle(fontSize: 14, color: Colors.white),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
       body: Column(
