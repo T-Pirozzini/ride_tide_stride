@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
@@ -10,6 +11,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:ride_tide_stride/pages/chat_widget.dart';
 import 'package:ride_tide_stride/models/chat_message.dart';
 import 'package:badges/badges.dart' as badges;
+import 'package:fl_chart/fl_chart.dart';
 
 class Snow2Surf extends StatefulWidget {
   final String challengeId;
@@ -459,6 +461,17 @@ class _Snow2SurfState extends State<Snow2Surf> {
     }
   }
 
+  List<FlSpot> prepareChartData(
+      List<DocumentSnapshot> activities, double distance) {
+    return activities.map((activity) {
+      Map<String, dynamic> data = activity.data() as Map<String, dynamic>;
+      double averageSpeed = data['average_speed'];
+      DateTime timestamp = (data['timestamp'] as Timestamp).toDate();
+      double timeInSeconds = (distance * 1000) / averageSpeed;
+      return FlSpot(timestamp.day.toDouble(), timeInSeconds);
+    }).toList();
+  }
+
   Future<String> getUsername(String userEmail) async {
     try {
       final DocumentSnapshot userDoc = await FirebaseFirestore.instance
@@ -803,6 +816,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
               ),
             ),
             Expanded(
+              flex: 3,
               child: StreamBuilder<DocumentSnapshot>(
                 stream: getChallengeData(),
                 builder: (context, snapshot) {
@@ -956,16 +970,24 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                                             ),
                                                           ],
                                                         ),
-                                                        Text(
-                                                            'Best Time: ${bestTime.isNotEmpty ? bestTime : "N/A"}'),
+                                                        username ==
+                                                                "No username"
+                                                            ? SizedBox.shrink()
+                                                            : Text(
+                                                                'Best Time: $bestTime'),
                                                       ];
                                                       if (showJoinButton) {
                                                         columnChildren.add(
-                                                          ElevatedButton(
-                                                            onPressed: () =>
-                                                                joinTeam(
-                                                                    currentLeg),
-                                                            child: Text('Join'),
+                                                          SizedBox(
+                                                            height: 20,
+                                                            child:
+                                                                ElevatedButton(
+                                                              onPressed: () =>
+                                                                  joinTeam(
+                                                                      currentLeg),
+                                                              child:
+                                                                  Text('Join'),
+                                                            ),
                                                           ),
                                                         );
                                                       } else {
@@ -1017,16 +1039,22 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                 child: Card(
                                   child: Padding(
                                     padding: EdgeInsets.all(8),
-                                    child: Column(
+                                    child: Row(
                                       mainAxisAlignment:
-                                          MainAxisAlignment.center,
+                                          MainAxisAlignment.spaceEvenly,
                                       children: <Widget>[
-                                        CircleAvatar(
-                                          backgroundImage: AssetImage(
-                                              opponent["image"][index]),
+                                        Column(
+                                          children: [
+                                            CircleAvatar(
+                                              backgroundImage: AssetImage(
+                                                  opponent["image"][index]),
+                                            ),
+                                            Text(opponent["name"][index]),
+                                          ],
                                         ),
-                                        Text(opponent["name"][index]),
-                                        Text("Best Time: ${opponentBestTime}"),
+                                        Text("${opponentBestTime}",
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold)),
                                       ],
                                     ),
                                   ),
@@ -1147,6 +1175,25 @@ class _Snow2SurfState extends State<Snow2Surf> {
                   return Text("No data available");
                 }
               },
+            ),
+            Expanded(
+              flex: 2,
+              child: Container(
+                padding: EdgeInsets.all(10),
+                child: StreamBuilder<List<DocumentSnapshot>>(
+                  stream: getActivitiesWithinDateRange(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      List<FlSpot> chartData = prepareChartData(
+                          snapshot.data!, categories.first['distance']);
+                      return buildActivityChart(chartData);
+                    } else if (snapshot.hasError) {
+                      return Text('Error loading data');
+                    }
+                    return CircularProgressIndicator();
+                  },
+                ),
+              ),
             ),
             StreamBuilder<List<DocumentSnapshot>>(
               stream: getActivitiesWithinDateRange(),
@@ -1273,5 +1320,51 @@ class _Snow2SurfState extends State<Snow2Surf> {
         );
       },
     );
+  }
+
+  Widget buildActivityChart(List<FlSpot> spots) {
+    return LineChart(
+      LineChartData(
+        minY: 0,
+        gridData: FlGridData(show: true),
+        titlesData: FlTitlesData(
+          bottomTitles: AxisTitles(
+            sideTitles:
+                SideTitles(showTitles: true, getTitlesWidget: _getBottomTitles),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles:
+                SideTitles(showTitles: true, getTitlesWidget: _getLeftTitles),
+          ),
+        ),
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            color: Colors.blue,
+            barWidth: 2,
+            dotData: FlDotData(show: true),
+            belowBarData: BarAreaData(show: false),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _getBottomTitles(double value, TitleMeta meta) {
+    // Convert day of month back to actual date if needed or use a DateFormatter
+    return SideTitleWidget(
+      axisSide: meta.axisSide,
+      space: 8.0,
+      child: Text(value.toInt().toString()),
+    );
+  }
+
+  Widget _getLeftTitles(double value, TitleMeta meta) {
+    // Format seconds to a time string
+    int hours = value ~/ 3600;
+    int minutes = ((value % 3600) / 60).toInt();
+    int seconds = (value % 60).toInt();
+    return Text('$hours:$minutes:$seconds');
   }
 }
