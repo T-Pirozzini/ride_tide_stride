@@ -158,6 +158,13 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
       challengeData['mapName'] = challengeNamesTeamTraverse[_currentPage];
       challengeData['mapDistance'] =
           challengeDistancesTeamTraverse[_currentPage];
+      if (challengeNamesTeamTraverse == "P.E.I") {
+        challengeData['difficulty'] = "Intro";
+      } else if (challengeNamesTeamTraverse == "Van Isle") {
+        challengeData['difficulty'] = "Advanced";
+      } else {
+        challengeData['difficulty'] = "Expert";
+      }
     }
 
     // If the selected challenge is "Mtn Scramble", add specific details
@@ -170,6 +177,13 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
       challengeData['mapName'] = challengeNamesMtnScramble[_currentPage];
       challengeData['mapElevation'] =
           challengeElevationsMtnScramble[_currentPage];
+      if (challengeNamesMtnScramble == "Mount Fuji") {
+        challengeData['difficulty'] = "Intro";
+      } else if (challengeNamesMtnScramble == "Mount Kilimanjaro") {
+        challengeData['difficulty'] = "Advanced";
+      } else {
+        challengeData['difficulty'] = "Expert";
+      }
     }
 
     // If the selected challenge is "Snow2Surf", add specific details
@@ -200,7 +214,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Select Legs'),          
+          title: Text('Select Legs'),
           content: SingleChildScrollView(
             child: StatefulBuilder(
               // Add this wrapper
@@ -294,8 +308,8 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
     }
 
     return AlertDialog(
-      title: Center(child: Text('Create a Challenge')),
-      titlePadding: EdgeInsets.only(top: 5),      
+      // title: Center(child: Text('Create a Challenge')),
+      // titlePadding: EdgeInsets.only(top: 5),
       content: Builder(builder: (context) {
         return SingleChildScrollView(
           child: Container(
@@ -305,7 +319,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  height: 60,
+                  height: 80,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: _challenges
@@ -318,7 +332,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                               },
                               child: CircleAvatar(
                                 maxRadius: _selectedChallenge == challenge.name
-                                    ? 30.0
+                                    ? 50.0
                                     : 20.0,
                                 child: ClipOval(
                                   child: Image.asset(challenge.assetPath),
@@ -329,8 +343,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                   ),
                 ),
                 SizedBox(height: 5),
-                Container(
-                  height: 230,
+                Expanded(
                   child: usePageView
                       ? Column(
                           children: [
@@ -591,7 +604,9 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                   ),
                 ),
                 SizedBox(height: 5),
-                Flexible(
+                Container(
+                  width: 250,
+                  height: 30,
                   child: TextFormField(
                     controller: _challengeNameController,
                     decoration: InputDecoration(
@@ -603,7 +618,9 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                   ),
                 ),
                 SizedBox(height: 5),
-                Flexible(
+                Container(
+                  width: 250,
+                  height: 30,
                   child: TextFormField(
                     controller: _challengeDescriptionController,
                     decoration: InputDecoration(
