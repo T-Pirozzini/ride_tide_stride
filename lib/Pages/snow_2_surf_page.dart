@@ -56,9 +56,6 @@ class _Snow2SurfState extends State<Snow2Surf> {
         DateTime(startDate.year, startDate.month, startDate.day);
     endDate = adjustedStartDate.add(Duration(days: 30));
 
-    getActivitiesWithinDateRange().listen((activities) {
-      processActivities(activities);
-    });
     checkAndFinalizeChallenge();
     _messagesStream = FirebaseFirestore.instance
         .collection('Challenges')
@@ -276,16 +273,21 @@ class _Snow2SurfState extends State<Snow2Surf> {
           .where('timestamp', isLessThanOrEqualTo: endDate)
           .snapshots()
           .listen((snapshot) {
-        // When a new snapshot is emitted, add all documents to the allDocuments list.
-        allDocuments.addAll(snapshot.docs);
+        // Apply additional filters based on categories
+        var filteredActivities = snapshot.docs.where((doc) {
+          Map<String, dynamic> activityData =
+              doc.data() as Map<String, dynamic>;
+          return categories.any((category) =>
+              category['type'].contains(activityData['sport_type']) &&
+              (activityData['distance'] / 1000) >= category['distance']);
+        }).toList();
 
-        // Add the updated allDocuments list to the stream.
+        // Add the filtered documents to the allActivities list.
+        allDocuments.addAll(filteredActivities);
+
         controller.add(allDocuments);
       });
     }
-
-    // Return the stream from the controller. This stream will now emit updates
-    // whenever any of the subscribed streams emit.
     return controller.stream;
   }
 
@@ -394,6 +396,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
           orElse: () => {'type': 'Unknown', 'distance': 0});
 
       // Use the category's defined distance for best time calculation
+      // ignore: unnecessary_null_comparison
       double categoryDistance = matchingCategory != null
           ? matchingCategory['distance'] * 1000
           : data['distance'];
@@ -551,10 +554,10 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                 ),
                               ),
                             ],
-                          ),                          
+                          ),
                         ],
                       ),
-                    ),                    
+                    ),
                   ],
                 );
               },
@@ -571,33 +574,74 @@ class _Snow2SurfState extends State<Snow2Surf> {
     );
   }
 
+// Helper function to calculate the total time in seconds based on the average speed and category distance.
+  double calculateTotalTime(double averageSpeedMps, double categoryDistanceKm) {
+    double averageSpeedKmph = averageSpeedMps * 3.6; // Convert m/s to km/h
+    double pacePerKm =
+        60 / averageSpeedKmph; // Find pace in minutes per kilometer
+    return pacePerKm * categoryDistanceKm; // Total time in minutes
+  }
+
 // CHART RELATED METHODS
   Map<String, List<FlSpot>> prepareChartDataPerUser(
-      List<DocumentSnapshot> activities, double distance) {
+    List<DocumentSnapshot>? activities,
+    List<Map<String, dynamic>> categories,
+  ) {
     Map<String, List<FlSpot>> userCharts = {};
+    DateTime formattedStartDate = widget.startDate.toDate();
+
+    if (activities == null) {
+      return userCharts;
+    }
+
     activities.forEach((activity) {
-      if (!processedActivityIds.contains(activity.id)) {
-        return; // Skip this activity if it's not in the processed list
-      }
-
       Map<String, dynamic> data = activity.data() as Map<String, dynamic>;
-      String userEmail = data['user_email'];
-      double activityDistance = data['distance'];
-      if (activityDistance >= distance * 1000) {
-        double averageSpeed = data['average_speed'];
-        DateTime timestamp = (data['timestamp'] as Timestamp).toDate();
-        double timeInSeconds =
-            (distance * 1000) / (averageSpeed / 3.6); // Converting km/h to m/s
 
-        if (!userCharts.containsKey(userEmail)) {
-          userCharts[userEmail] = [];
-        }
-        userCharts[userEmail]?.add(FlSpot(
-            timestamp.difference(widget.startDate.toDate()).inDays.toDouble(),
-            timeInSeconds));
+      var matchingCategory = categories.firstWhere(
+          (cat) =>
+              cat['type'].contains(data['sport_type']) &&
+              (data['distance'] / 1000) >= cat['distance'],
+          orElse: () => {'type': 'Unknown', 'distance': 0});
+
+      double categoryDistance = matchingCategory['distance'];
+
+      // Calculate the total time in minutes based on pace and distance
+      double totalMinutes =
+          calculateTotalTime(data['average_speed'], categoryDistance);
+
+      // Convert the activity date to days from the start date
+      DateTime activityDate = (data['timestamp'] as Timestamp).toDate();
+      double totalSecondsFromStart =
+          activityDate.difference(formattedStartDate).inSeconds.toDouble();
+      // Then convert seconds to days, including the fraction of the day
+      double daysFromStart = totalSecondsFromStart / (24 * 3600);
+
+      // Convert the total time in minutes to seconds for the y-value in FlSpot
+      double totalTimeInSeconds = totalMinutes * 60;
+
+      String userEmail = data['user_email'];
+      if (!userCharts.containsKey(userEmail)) {
+        userCharts[userEmail] = [];
       }
+
+      // Print out for debugging
+      print(
+          'User: $userEmail, Activity Date: $activityDate, Days From Start: $daysFromStart, Total Time in Seconds: $totalTimeInSeconds');
+
+      // Add the FlSpot using daysFromStart as the x-value and totalTimeInSeconds as the y-value
+      userCharts[userEmail]?.add(FlSpot(daysFromStart, totalTimeInSeconds));
     });
+
     return userCharts;
+  }
+
+  double calculateBestTimeInSeconds(
+      double distanceInMeters, double averageSpeed) {
+    if (averageSpeed == 0)
+      return double
+          .infinity; // Use double.infinity to represent an impossible condition
+    return distanceInMeters /
+        averageSpeed; // Returns time in seconds as a double
   }
 
   Map<String, double> getOpponentTimesForChallenge(String challengeType) {
@@ -1223,22 +1267,29 @@ class _Snow2SurfState extends State<Snow2Surf> {
                 child: StreamBuilder<List<DocumentSnapshot>>(
                   stream: getActivitiesWithinDateRange(),
                   builder: (context, snapshot) {
-                    if (snapshot.hasData) {
-                      Map<String, List<FlSpot>> chartData =
-                          prepareChartDataPerUser(
-                              snapshot.data!, categories.first['distance']);
-                      // return buildActivityChart(
-                      //     chartData, widget.challengeDifficulty);
-                    } else if (snapshot.hasError) {
-                      return Text('Error loading data');
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return CircularProgressIndicator();
                     }
-                    return CircularProgressIndicator();
+                    if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    }
+                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return Text("No activities found");
+                    }
+
+                    // Assuming categories are defined at a higher scope or passed correctly
+                    Map<String, List<FlSpot>> chartData =
+                        prepareChartDataPerUser(snapshot.data!, categories);
+
+                    return buildActivityChart(
+                        chartData, widget.challengeDifficulty);
                   },
                 ),
               ),
             ),
             StreamBuilder<List<DocumentSnapshot>>(
-              stream: getActivitiesWithinDateRange(),
+              stream:
+                  getActivitiesWithinDateRange(), // Assuming getActivitiesWithinDateRangeAsStream() returns a Stream<List<DocumentSnapshot>>
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: CircularProgressIndicator());
@@ -1251,19 +1302,29 @@ class _Snow2SurfState extends State<Snow2Surf> {
                       child:
                           Text("No activities found in the given date range"));
                 }
-
                 // Once activities are fetched
                 List<DocumentSnapshot> activities = snapshot.data!;
-                return Container(
-                  margin: EdgeInsets.all(10),
-                  decoration: BoxDecoration(
+                return InkWell(
+                  onTap: () {
+                    processActivities(activities);
+                    print('clicked');
+                  },
+                  splashColor: Colors.tealAccent,
+                  child: Card(
                     color: Colors.grey[200],
-                    shape: BoxShape.circle,
-                  ),
-                  padding: EdgeInsets.all(2),
-                  child: IconButton(
-                    icon: Icon(Icons.refresh, size: 20),
-                    onPressed: () => processActivities(activities),
+                    elevation: 4,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Sync Best Times!',
+                              style: GoogleFonts.tektur(fontSize: 16)),
+                          Icon(Icons.refresh, size: 20),
+                        ],
+                      ),
+                    ),
                   ),
                 );
               },
@@ -1366,12 +1427,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
   Widget buildActivityChart(
       Map<String, List<FlSpot>> userSpots, String challengeType) {
     List<LineChartBarData> lines = [];
-    List<Color> colors = [
-      Colors.blue,
-      Colors.red,
-      Colors.green,
-      Colors.purple
-    ]; // Define more colors if necessary
+    List<Color> colors = [Colors.blue, Colors.red, Colors.green, Colors.purple];
 
     userSpots.entries.toList().asMap().forEach((index, entry) {
       List<FlSpot> spots = entry.value;
@@ -1379,83 +1435,88 @@ class _Snow2SurfState extends State<Snow2Surf> {
       Map<String, double> bestTimesInSeconds =
           getOpponentTimesForChallenge(challengeType);
 
+      print('Spots: $spots');
+
       // User's performance line
       lines.add(LineChartBarData(
         spots: spots,
-        isCurved: false,
+        isCurved: true,
         color: currentUserColor,
         barWidth: 2,
         dotData: FlDotData(show: true),
         belowBarData: BarAreaData(show: false),
       ));
 
+      List<Color> thresholdColors = [
+        Colors.blue,
+        Colors.red,
+        Colors.green,
+        Colors.orange,
+        Colors
+            .purple, // Make sure this list is at least as long as the number of opponents
+        // Add more colors if needed
+      ];
+
+      int opponentIndex = 0;
       // Opponent's best time threshold lines
-      bestTimesInSeconds.forEach((activity, timeInSeconds) {
+      bestTimesInSeconds.forEach((opponent, timeInSeconds) {
         // Assigning the threshold line the same color as the user line
+        Color currentColor =
+            thresholdColors[opponentIndex % thresholdColors.length];
         lines.add(LineChartBarData(
           spots: [FlSpot(1, timeInSeconds), FlSpot(30, timeInSeconds)],
-          isCurved: false,
-          color: currentUserColor,
-          barWidth: 1,
+          isCurved: true,
+          color: currentColor,
+          barWidth: 2,
           isStrokeCapRound: true,
           dashArray: [10, 5],
           dotData: FlDotData(show: false),
           aboveBarData: BarAreaData(show: false), // Remove the line above
           belowBarData: BarAreaData(show: false), // Remove the line below
         ));
+        opponentIndex++;
       });
     });
 
-    return LineChart(
-      LineChartData(
-        minY: 0,
-        maxY: lines
-            .map((line) => line.spots.map((spot) => spot.y).reduce(max))
-            .reduce(max),
-        gridData: FlGridData(show: true),
-        titlesData: FlTitlesData(
-            show: true,
-            bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
-              showTitles: true,
-              interval: 5,
-              reservedSize: 20,
-              getTitlesWidget: _getBottomTitles,
-            )),
-            leftTitles: AxisTitles(
-                sideTitles: SideTitles(
-              interval: 500,
-              showTitles: true,
-              getTitlesWidget: _leftTitleWidgets,
-              reservedSize: 30,
-            )),
-            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false))),
-        lineBarsData: lines,
+    return LineChart(LineChartData(
+      minY: 0,
+      maxY: 3300, // 55 minutes in seconds
+      gridData: FlGridData(show: true),
+      titlesData: FlTitlesData(
+        bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+          showTitles: true,
+          getTitlesWidget: (value, meta) {
+            DateTime startDate = widget.startDate
+                .toDate(); // Convert Timestamp to DateTime if needed
+            DateTime date = startDate.add(Duration(days: value.round()));
+            return Text(DateFormat('MM/dd').format(date));
+          },
+          interval: 5,
+          reservedSize: 30,
+        )),
+        leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+          showTitles: true,
+          getTitlesWidget: (value, meta) {
+            int minutes = (value / 60).toInt();
+            int seconds = (value % 60).toInt();
+            return Text(
+                '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}');
+          },
+          interval: 300, // Every 5 minutes
+          reservedSize: 50,
+        )),
+        rightTitles: AxisTitles(
+            sideTitles: SideTitles(
+          showTitles: false,
+        )),
+        topTitles: AxisTitles(
+            sideTitles: SideTitles(
+          showTitles: false,
+        )),
       ),
-    );
-  }
-
-  Widget _getBottomTitles(double value, TitleMeta meta) {
-    DateTime startDate = widget.startDate.toDate();
-    DateTime labelDate = startDate.add(Duration(days: value.toInt()));
-
-    return SideTitleWidget(
-      axisSide: meta.axisSide,
-      space: 8.0,
-      child: Text(
-        DateFormat('MM/dd')
-            .format(labelDate), // Formats date as '04/17', '04/21', etc.
-        style: TextStyle(fontSize: 10), // Adjust the font size as needed
-      ),
-    );
-  }
-
-  Widget _leftTitleWidgets(double value, TitleMeta meta) {
-    int hours = value ~/ 3600;
-    int minutes = ((value % 3600) / 60).toInt();
-    String formattedTime = '$hours:${minutes.toString().padLeft(2, '0')}';
-    return Text(formattedTime,
-        style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold));
+      lineBarsData: lines,
+    ));
   }
 }
