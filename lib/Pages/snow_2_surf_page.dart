@@ -399,8 +399,16 @@ class _Snow2SurfState extends State<Snow2Surf> {
           : data['distance'];
       String formattedBestTime =
           calculateBestTime(categoryDistance, data['average_speed']);
-      String timestamp = data['timestamp'].toDate().toString();
+      String timestamp =
+          DateFormat('yyyy-MM-dd').format(data['timestamp'].toDate());
       String actualTime = formatTime(data['moving_time'].toDouble());
+
+      double averageSpeedKmph = data['average_speed'] * 3.6; // Convert to km/h
+      double pacePerKm = 60 / averageSpeedKmph;
+      int minutes = pacePerKm.floor();
+      int seconds = ((pacePerKm - minutes) * 60).round();
+
+      String paceDisplay = '$minutes:${seconds.toString().padLeft(2, '0')}';
 
       return {
         'type': data['type'] as String,
@@ -410,15 +418,27 @@ class _Snow2SurfState extends State<Snow2Surf> {
         'actualTime': actualTime,
         'bestTime': formattedBestTime,
         'date': timestamp,
+        'averageSpeed': paceDisplay,
       };
     }).toList();
+
+    String username = await getUsername(userEmail);
 
     // Show the dialog with the processed activities
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Activities for $userEmail'),
+          backgroundColor: Colors.grey.shade200,
+          title: Column(
+            children: [
+              Text(
+                'Qualifying Efforts',
+                style: GoogleFonts.tektur(),
+              ),
+              Text(username),
+            ],
+          ),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
@@ -427,17 +447,114 @@ class _Snow2SurfState extends State<Snow2Surf> {
                 var activity = processedActivities[index];
                 return Column(
                   children: [
-                    ListTile(
-                      title: Text(activity['sport_type'] != null &&
-                              activity['sport_type'].isNotEmpty
-                          ? activity['sport_type']
-                          : activity['type']),
-                      subtitle: Text('Distance: ${activity['distance']} km'),
-                      trailing: Text('Best Time: ${activity['bestTime']}'),
-                    ),
-                    Text('${activity['date']}'),
-                    Text('${activity['actualTime']}'),
-                    Text('${activity['categoryDistance']}'),
+                    Card(
+                      color: Color(0xFFDFD3C3),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              Text(
+                                activity['sport_type'] != null &&
+                                        activity['sport_type'].isNotEmpty
+                                    ? activity['sport_type']
+                                    : activity['type'],
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              Text((activity['date'])),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 1,
+                                child: Card(
+                                  color: Color(0xFF283D3B),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        'Actual Effort',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white),
+                                      ),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.timer,
+                                              color: Colors.white),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            '${activity['distance']} km',
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          ),
+                                        ],
+                                      ),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.straighten,
+                                              color: Colors.white),
+                                          SizedBox(width: 8),
+                                          Text('${activity['actualTime']}',
+                                              style: TextStyle(
+                                                  color: Colors.white)),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 1,
+                                child: Card(
+                                  color: Color(0xFF283D3B),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      Column(
+                                        children: [
+                                          Text(
+                                            'Best Time',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white),
+                                          ),
+                                          Text('${activity['bestTime']}',
+                                              style: TextStyle(
+                                                  color: Colors.tealAccent[400],
+                                                  fontSize: 16)),
+                                        ],
+                                      ),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.info, color: Colors.white),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            '(${activity['averageSpeed']} / ${activity['categoryDistance'] / 1000} km)',
+                                            style: TextStyle(
+                                                fontStyle: FontStyle.italic,
+                                                color: Colors.white),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),                          
+                        ],
+                      ),
+                    ),                    
                   ],
                 );
               },
