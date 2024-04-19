@@ -238,14 +238,14 @@ class _Snow2SurfState extends State<Snow2Surf> {
   }
 
   bool isLegFilled(String legName, Map<String, dynamic> legParticipants) {
-      if (legParticipants.containsKey(legName)) {
-        var legInfo = legParticipants[legName];
-        return legInfo != null &&
-            legInfo['participant'] != null &&
-            legInfo['participant'].trim().isNotEmpty;
-      }
-      return false;
+    if (legParticipants.containsKey(legName)) {
+      var legInfo = legParticipants[legName];
+      return legInfo != null &&
+          legInfo['participant'] != null &&
+          legInfo['participant'].trim().isNotEmpty;
     }
+    return false;
+  }
 
 // DATA PROCESSING METHODS
   Stream<DocumentSnapshot> getChallengeData() {
@@ -289,6 +289,8 @@ class _Snow2SurfState extends State<Snow2Surf> {
     return controller.stream;
   }
 
+  Set<String> processedActivityIds = {};
+
   void processActivities(List<DocumentSnapshot> activities) async {
     DocumentReference challengeRef = FirebaseFirestore.instance
         .collection('Challenges')
@@ -308,8 +310,13 @@ class _Snow2SurfState extends State<Snow2Surf> {
       var matchingActivities = activities.where((activity) {
         Map<String, dynamic> activityData =
             activity.data() as Map<String, dynamic>;
-        return category['type'].contains(activityData['sport_type']) &&
+        bool matches = category['type'].contains(activityData['sport_type']) &&
             (activityData['distance'] / 1000) >= category['distance'];
+        if (matches) {
+          processedActivityIds
+              .add(activity.id); // Assuming each activity has a unique ID
+        }
+        return matches;
       }).toList();
 
       if (matchingActivities.isNotEmpty) {
@@ -364,7 +371,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
     List<DocumentSnapshot> filteredActivities = [];
     // Apply additional filters based on categories
     for (var doc in activitiesSnapshot.docs) {
-      Map<String, dynamic> activityData = doc.data() as Map<String, dynamic>;
+      Map<String, dynamic> activityData = doc.data();
       for (var category in categories) {
         if (category['type'].contains(activityData['sport_type']) &&
             (activityData['distance'] / 1000) >= category['distance']) {
@@ -392,11 +399,17 @@ class _Snow2SurfState extends State<Snow2Surf> {
           : data['distance'];
       String formattedBestTime =
           calculateBestTime(categoryDistance, data['average_speed']);
+      String timestamp = data['timestamp'].toDate().toString();
+      String actualTime = formatTime(data['moving_time'].toDouble());
 
       return {
         'type': data['type'] as String,
+        'sport_type': data['sport_type'] as String,
         'distance': double.parse((data['distance'] / 1000).toStringAsFixed(2)),
+        'categoryDistance': categoryDistance,
+        'actualTime': actualTime,
         'bestTime': formattedBestTime,
+        'date': timestamp,
       };
     }).toList();
 
@@ -412,10 +425,20 @@ class _Snow2SurfState extends State<Snow2Surf> {
               itemCount: processedActivities.length,
               itemBuilder: (BuildContext context, int index) {
                 var activity = processedActivities[index];
-                return ListTile(
-                  title: Text(activity['type']),
-                  subtitle: Text('Distance: ${activity['distance']} km'),
-                  trailing: Text('Best Time: ${activity['bestTime']}'),
+                return Column(
+                  children: [
+                    ListTile(
+                      title: Text(activity['sport_type'] != null &&
+                              activity['sport_type'].isNotEmpty
+                          ? activity['sport_type']
+                          : activity['type']),
+                      subtitle: Text('Distance: ${activity['distance']} km'),
+                      trailing: Text('Best Time: ${activity['bestTime']}'),
+                    ),
+                    Text('${activity['date']}'),
+                    Text('${activity['actualTime']}'),
+                    Text('${activity['categoryDistance']}'),
+                  ],
                 );
               },
             ),
@@ -429,22 +452,25 @@ class _Snow2SurfState extends State<Snow2Surf> {
         );
       },
     );
-  }  
+  }
 
 // CHART RELATED METHODS
   Map<String, List<FlSpot>> prepareChartDataPerUser(
       List<DocumentSnapshot> activities, double distance) {
     Map<String, List<FlSpot>> userCharts = {};
     activities.forEach((activity) {
+      if (!processedActivityIds.contains(activity.id)) {
+        return; // Skip this activity if it's not in the processed list
+      }
+
       Map<String, dynamic> data = activity.data() as Map<String, dynamic>;
       String userEmail = data['user_email'];
       double activityDistance = data['distance'];
       if (activityDistance >= distance * 1000) {
-        // Ensure activity meets distance requirement
         double averageSpeed = data['average_speed'];
         DateTime timestamp = (data['timestamp'] as Timestamp).toDate();
-        double timeInSeconds = (distance * 1000) /
-            (averageSpeed / 3.6); // average speed km/h to m/s
+        double timeInSeconds =
+            (distance * 1000) / (averageSpeed / 3.6); // Converting km/h to m/s
 
         if (!userCharts.containsKey(userEmail)) {
           userCharts[userEmail] = [];
@@ -462,7 +488,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
     return bestTimes.map((activity, timeStr) {
       return MapEntry(activity, parseTimeToSeconds(timeStr).toDouble());
     });
-  }    
+  }
 
   Duration getTotalOpponentTime(
       String difficultyLevel, List<dynamic> selectedLegs) {
@@ -532,7 +558,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
     String sign = participantIsWinning ? '-' : '+'; // Corrected this line
 
     return '$sign$formattedTimeDifference';
-  }  
+  }
 
   Future<void> checkAndFinalizeChallenge() async {
     DateTime now = DateTime.now();
@@ -608,7 +634,6 @@ class _Snow2SurfState extends State<Snow2Surf> {
     );
   }
 
-  
   @override
   Widget build(BuildContext context) {
     final Duration totalOpponentTime =
@@ -796,8 +821,8 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                         child: GestureDetector(
                                           onTap: () =>
                                               showActivityDetailsForUser(
-                                                  widget.participantsEmails[
-                                                      index],
+                                                  participantsForLeg[
+                                                      'participant'],
                                                   categories),
                                           child: Card(
                                             child: Padding(
@@ -1085,8 +1110,8 @@ class _Snow2SurfState extends State<Snow2Surf> {
                       Map<String, List<FlSpot>> chartData =
                           prepareChartDataPerUser(
                               snapshot.data!, categories.first['distance']);
-                      return buildActivityChart(
-                          chartData, widget.challengeDifficulty);
+                      // return buildActivityChart(
+                      //     chartData, widget.challengeDifficulty);
                     } else if (snapshot.hasError) {
                       return Text('Error loading data');
                     }
