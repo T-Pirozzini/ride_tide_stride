@@ -681,6 +681,18 @@ class _Snow2SurfState extends State<Snow2Surf> {
 
     final challengeData = challengeSnapshot.data() as Map<String, dynamic>;
     final legParticipants = challengeData['legParticipants'] ?? {};
+    final bestTimes = [];
+
+    legParticipants.forEach((activity, details) {
+      if (details is Map<String, dynamic> &&
+          details['best_time'] != null &&
+          details['best_time'] != '0:00:00') {
+        bestTimes.add(details['best_time']);
+      }
+    });
+
+    print('BestTimes: $bestTimes');
+
     int legsCompleted = 0;
 
     Duration totalTime = legParticipants.entries.fold<Duration>(Duration.zero,
@@ -701,7 +713,8 @@ class _Snow2SurfState extends State<Snow2Surf> {
     return {
       "totalTime": totalTime,
       "legsCompleted": legsCompleted,
-      "legsRemaining": 4 - legsCompleted // Assuming 4 legs are required
+      "legsRemaining": 4 - legsCompleted, // Assuming 4 legs are required
+      "bestTimes": bestTimes,
     };
   }
 
@@ -1167,30 +1180,42 @@ class _Snow2SurfState extends State<Snow2Surf> {
                 if (snapshot.hasData) {
                   final int legsCompleted = snapshot.data!['legsCompleted'];
                   final int legsRemaining = snapshot.data!['legsRemaining'];
+                  final List bestTimes = snapshot.data!['bestTimes'];
 
-                  if (legsCompleted < 4) {
+                  if (legsCompleted < 4 || bestTimes.length < 4) {
                     // Not all legs have times
-                    return Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          color: Theme.of(context)
-                              .errorColor, // Or any color that fits your design
+                    return Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              color: Theme.of(context)
+                                  .errorColor, // Or any color that fits your design
+                            ),
+                            SizedBox(
+                                width:
+                                    8), // Provides spacing between the icon and the text
+                            Flexible(
+                              child: Column(
+                                children: [
+                                  Text(
+                                    "Complete one qualifying activity for each matchup.",
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors
+                                          .black54, // Or any color that fits your design
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                        SizedBox(
-                            width:
-                                8), // Provides spacing between the icon and the text
-                        Text(
-                          "Please fill all positions. $legsRemaining remaining.",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors
-                                .black54, // Or any color that fits your design
-                          ),
-                        ),
-                      ],
+                      ),
                     );
                   }
                   // Extract the necessary data
@@ -1220,6 +1245,30 @@ class _Snow2SurfState extends State<Snow2Surf> {
                           Card(
                             child: Padding(
                               padding: const EdgeInsets.all(8.0),
+                              child: RichText(
+                                text: TextSpan(
+                                  text: '',
+                                  style: TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black),
+                                  children: <TextSpan>[
+                                    TextSpan(
+                                      text: timeDifferenceDisplay,
+                                      style: TextStyle(
+                                          color: timeDifferenceDisplay
+                                                  .startsWith('-')
+                                              ? Colors.red
+                                              : Colors.green),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
                               child: Text(
                                 '$formattedOpponentTotalTime',
                                 style: TextStyle(
@@ -1228,30 +1277,6 @@ class _Snow2SurfState extends State<Snow2Surf> {
                             ),
                           ),
                         ],
-                      ),
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: RichText(
-                            text: TextSpan(
-                              text: '',
-                              style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black),
-                              children: <TextSpan>[
-                                TextSpan(
-                                  text: timeDifferenceDisplay,
-                                  style: TextStyle(
-                                      color:
-                                          timeDifferenceDisplay.startsWith('-')
-                                              ? Colors.red
-                                              : Colors.green),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
                       ),
                     ],
                   );
@@ -1478,9 +1503,36 @@ class _Snow2SurfState extends State<Snow2Surf> {
       });
     });
 
+    String formatDuration(double seconds) {
+      int totalSeconds = seconds.toInt();
+      int minutes = totalSeconds ~/ 60;
+      int remainingSeconds = totalSeconds % 60;
+      return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+    }
+
     return LineChart(LineChartData(
       minY: 0,
       maxY: 3300, // 55 minutes in seconds
+      lineTouchData: LineTouchData(
+        touchTooltipData: LineTouchTooltipData(
+          // tooltipBgColor: Colors.blueGrey.withOpacity(0.8),
+          getTooltipItems: (List<LineBarSpot> spots) {
+            return spots.map((LineBarSpot touchedSpot) {
+              if (touchedSpot.barIndex == 0) {
+                return LineTooltipItem(
+                  'Your time: ${formatDuration(touchedSpot.y)}',
+                  TextStyle(color: Colors.white),
+                );
+              } else {
+                return LineTooltipItem(
+                  'Opponent time: ${formatDuration(touchedSpot.y)}',
+                  TextStyle(color: Colors.white),
+                );
+              }
+            }).toList();
+          },
+        ),
+      ),
       gridData: FlGridData(show: true),
       titlesData: FlTitlesData(
         bottomTitles: AxisTitles(
