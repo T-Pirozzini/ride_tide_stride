@@ -646,9 +646,19 @@ class _Snow2SurfState extends State<Snow2Surf> {
 
   Map<String, double> getOpponentTimesForChallenge(String challengeType) {
     Map<String, String> bestTimes = opponents[challengeType]['bestTimes'];
-    return bestTimes.map((activity, timeStr) {
-      return MapEntry(activity, parseTimeToSeconds(timeStr).toDouble());
+
+    Map<String, double> filteredTimes = {};
+
+    // Only include times for legs that are part of challengeLegs
+    bestTimes.forEach((leg, timeStr) {
+      if (widget.challengeLegs.contains(leg)) {
+        // Ensure leg is part of the challengeLegs
+        double timeInSeconds = parseTimeToSeconds(timeStr).toDouble();
+        filteredTimes[leg] = timeInSeconds;
+      }
     });
+
+    return filteredTimes;
   }
 
   Duration getTotalOpponentTime(
@@ -982,7 +992,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
                           bool isUserInThisLeg =
                               participant == (currentUser?.email ?? '');
 
-                          print(participant);
+                          print('Participant: $participant');
 
                           return Row(
                             children: [
@@ -1452,54 +1462,49 @@ class _Snow2SurfState extends State<Snow2Surf> {
   Widget buildActivityChart(
       Map<String, List<FlSpot>> userSpots, String challengeType) {
     List<LineChartBarData> lines = [];
-    List<Color> colors = [Colors.blue, Colors.red, Colors.green, Colors.purple];
 
-    userSpots.entries.toList().asMap().forEach((index, entry) {
+    userSpots.entries.toList().asMap().forEach((index, entry) async {
       List<FlSpot> spots = entry.value;
-      Color currentUserColor = colors[index % colors.length];
+      String userEmail = entry.key;
+      print('User Email: $userEmail');
+      getLegParticipants(widget.challengeId).then((legParticipants) {
+        print('Leg Participants: $legParticipants');
+        Color userColor = getUserColor(userEmail, legParticipants);
+        print('User Color: $userColor');
+
+        // User's performance line
+        lines.add(LineChartBarData(
+          spots: spots,
+          isCurved: true,
+          color: userColor,
+          barWidth: 2,
+          dotData: FlDotData(show: true),
+          belowBarData: BarAreaData(show: false),
+        ));
+      });
+
       Map<String, double> bestTimesInSeconds =
           getOpponentTimesForChallenge(challengeType);
+      print('bestTimesInSeconds: $bestTimesInSeconds');
+      print('Challenge Legs: ${widget.challengeLegs}');
 
-      print('Spots: $spots');
-
-      // User's performance line
-      lines.add(LineChartBarData(
-        spots: spots,
-        isCurved: true,
-        color: currentUserColor,
-        barWidth: 2,
-        dotData: FlDotData(show: true),
-        belowBarData: BarAreaData(show: false),
-      ));
-
-      List<Color> thresholdColors = [
-        Colors.blue,
-        Colors.red,
-        Colors.green,
-        Colors.orange,
-        Colors
-            .purple, // Make sure this list is at least as long as the number of opponents
-        // Add more colors if needed
-      ];
-
-      int opponentIndex = 0;
-      // Opponent's best time threshold lines
+      // Use the same index for user and threshold lines
       bestTimesInSeconds.forEach((opponent, timeInSeconds) {
-        // Assigning the threshold line the same color as the user line
-        Color currentColor =
-            thresholdColors[opponentIndex % thresholdColors.length];
-        lines.add(LineChartBarData(
-          spots: [FlSpot(1, timeInSeconds), FlSpot(30, timeInSeconds)],
-          isCurved: true,
-          color: currentColor,
-          barWidth: 2,
-          isStrokeCapRound: true,
-          dashArray: [10, 5],
-          dotData: FlDotData(show: false),
-          aboveBarData: BarAreaData(show: false), // Remove the line above
-          belowBarData: BarAreaData(show: false), // Remove the line below
-        ));
-        opponentIndex++;
+        print('Opponent: $opponent, Time: $timeInSeconds');
+        if (timeInSeconds > 0) {
+          // Only add if the time is valid
+          lines.add(LineChartBarData(
+            spots: [FlSpot(1, timeInSeconds), FlSpot(30, timeInSeconds)],
+            isCurved: true,
+            color: getOpponentColor(opponent),
+            barWidth: 2,
+            isStrokeCapRound: true,
+            dashArray: [10, 5],
+            dotData: FlDotData(show: false),
+            aboveBarData: BarAreaData(show: false), // Remove the line above
+            belowBarData: BarAreaData(show: false), // Remove the line below
+          ));
+        }
       });
     });
 
@@ -1513,22 +1518,15 @@ class _Snow2SurfState extends State<Snow2Surf> {
     return LineChart(LineChartData(
       minY: 0,
       maxY: 3300, // 55 minutes in seconds
+      maxX: 30,
       lineTouchData: LineTouchData(
         touchTooltipData: LineTouchTooltipData(
-          // tooltipBgColor: Colors.blueGrey.withOpacity(0.8),
           getTooltipItems: (List<LineBarSpot> spots) {
             return spots.map((LineBarSpot touchedSpot) {
-              if (touchedSpot.barIndex == 0) {
-                return LineTooltipItem(
-                  'Your time: ${formatDuration(touchedSpot.y)}',
-                  TextStyle(color: Colors.white),
-                );
-              } else {
-                return LineTooltipItem(
-                  'Opponent time: ${formatDuration(touchedSpot.y)}',
-                  TextStyle(color: Colors.white),
-                );
-              }
+              return LineTooltipItem(
+                'Time: ${formatDuration(touchedSpot.y)}', // Generic time label
+                TextStyle(color: Colors.white),
+              );
             }).toList();
           },
         ),
@@ -1542,9 +1540,10 @@ class _Snow2SurfState extends State<Snow2Surf> {
             DateTime startDate = widget.startDate
                 .toDate(); // Convert Timestamp to DateTime if needed
             DateTime date = startDate.add(Duration(days: value.round()));
-            return Text(DateFormat('MM/dd').format(date));
+            return Text(DateFormat('dd').format(date),
+                style: TextStyle(fontSize: 10));
           },
-          interval: 5,
+          interval: 3,
           reservedSize: 30,
         )),
         leftTitles: AxisTitles(
@@ -1554,21 +1553,56 @@ class _Snow2SurfState extends State<Snow2Surf> {
             int minutes = (value / 60).toInt();
             int seconds = (value % 60).toInt();
             return Text(
-                '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}');
+                '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
+                style: TextStyle(fontSize: 10));
           },
           interval: 300, // Every 5 minutes
           reservedSize: 50,
         )),
-        rightTitles: AxisTitles(
-            sideTitles: SideTitles(
-          showTitles: false,
-        )),
-        topTitles: AxisTitles(
-            sideTitles: SideTitles(
-          showTitles: false,
-        )),
+        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
       ),
       lineBarsData: lines,
     ));
+  }
+
+  Color getOpponentColor(String challengeLeg) {
+    for (var category in categories) {
+      if (category['name'] == challengeLeg) {
+        print('Category: ${category['name']}, Color: ${category['color']}');
+        return category['color'];
+      }
+    }
+    return Colors.grey; // Default color if no match is found
+  }
+
+  Future<Map<String, dynamic>> getLegParticipants(String challengeId) async {
+    // Get a reference to the Firestore instance
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    // Fetch the document for the specific challenge
+    DocumentSnapshot<Map<String, dynamic>> snapshot =
+        await firestore.collection('Challenges').doc(challengeId).get();
+
+    // Extract the legParticipants map from the document
+    Map<String, dynamic> legParticipants = snapshot.data()?['legParticipants'];
+
+    return legParticipants; // Return an empty map if there is no data
+  }
+
+  Color getUserColor(String userEmail, Map<String, dynamic> legParticipants) {
+    // Find user's activity
+    String userActivity = legParticipants.entries
+        .firstWhere((entry) => entry.value['participant'] == userEmail)
+        .key;
+
+    // Search for the activity in categories
+    for (var category in categories) {
+      if (category['name'] == userActivity) {
+        return category['color'];
+      }
+    }
+    // If no match found, return a default color
+    return Colors.grey; // or any other default color
   }
 }
