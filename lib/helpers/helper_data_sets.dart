@@ -80,8 +80,8 @@ Map<String, dynamic> opponents = {
     "bestTimes": {
       "Alpine Skiing": "0:15:00",
       "Nordic Skiing": "0:50:00",
-      "Road Running": "0:45:00",
-      "Trail Running": "0:50:00",
+      "Road Running": "0:40:00",
+      "Trail Running": "0:45:00",
       "Mountain Biking": "01:10:00",
       "Kayaking": "0:50:00",
       "Road Cycling": "01:15:00",
@@ -100,8 +100,8 @@ Map<String, dynamic> opponents = {
     "bestTimes": {
       "Alpine Skiing": "0:10:00",
       "Nordic Skiing": "0:40:00",
-      "Road Running": "0:35:00",
-      "Trail Running": "0:40:00",
+      "Road Running": "0:30:00",
+      "Trail Running": "0:35:00",
       "Mountain Biking": "0:50:00",
       "Kayaking": "0:42:00",
       "Road Cycling": "00:50:00",
@@ -120,7 +120,7 @@ Map<String, dynamic> opponents = {
     "bestTimes": {
       "Alpine Skiing": "0:07:00",
       "Nordic Skiing": "0:30:00",
-      "Road Running": "0:22:00",
+      "Road Running": "0:23:00",
       "Trail Running": "0:25:00",
       "Mountain Biking": "0:40:00",
       "Kayaking": "0:30:00",
