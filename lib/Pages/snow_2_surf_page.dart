@@ -646,9 +646,19 @@ class _Snow2SurfState extends State<Snow2Surf> {
 
   Map<String, double> getOpponentTimesForChallenge(String challengeType) {
     Map<String, String> bestTimes = opponents[challengeType]['bestTimes'];
-    return bestTimes.map((activity, timeStr) {
-      return MapEntry(activity, parseTimeToSeconds(timeStr).toDouble());
+
+    Map<String, double> filteredTimes = {};
+
+    // Only include times for legs that are part of challengeLegs
+    bestTimes.forEach((leg, timeStr) {
+      if (widget.challengeLegs.contains(leg)) {
+        // Ensure leg is part of the challengeLegs
+        double timeInSeconds = parseTimeToSeconds(timeStr).toDouble();
+        filteredTimes[leg] = timeInSeconds;
+      }
     });
+
+    return filteredTimes;
   }
 
   Duration getTotalOpponentTime(
@@ -681,6 +691,18 @@ class _Snow2SurfState extends State<Snow2Surf> {
 
     final challengeData = challengeSnapshot.data() as Map<String, dynamic>;
     final legParticipants = challengeData['legParticipants'] ?? {};
+    final bestTimes = [];
+
+    legParticipants.forEach((activity, details) {
+      if (details is Map<String, dynamic> &&
+          details['best_time'] != null &&
+          details['best_time'] != '0:00:00') {
+        bestTimes.add(details['best_time']);
+      }
+    });
+
+    print('BestTimes: $bestTimes');
+
     int legsCompleted = 0;
 
     Duration totalTime = legParticipants.entries.fold<Duration>(Duration.zero,
@@ -701,7 +723,8 @@ class _Snow2SurfState extends State<Snow2Surf> {
     return {
       "totalTime": totalTime,
       "legsCompleted": legsCompleted,
-      "legsRemaining": 4 - legsCompleted // Assuming 4 legs are required
+      "legsRemaining": 4 - legsCompleted, // Assuming 4 legs are required
+      "bestTimes": bestTimes,
     };
   }
 
@@ -969,7 +992,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
                           bool isUserInThisLeg =
                               participant == (currentUser?.email ?? '');
 
-                          print(participant);
+                          print('Participant: $participant');
 
                           return Row(
                             children: [
@@ -985,106 +1008,119 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                                   participantsForLeg[
                                                       'participant'],
                                                   categories),
-                                          child: Card(
-                                            child: Padding(
-                                              padding: EdgeInsets.all(2),
-                                              child: Column(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: <Widget>[
-                                                  Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceEvenly,
-                                                    children: [
-                                                      Text(
-                                                        category['name'],
-                                                        style: TextStyle(
-                                                            fontSize: 12),
-                                                      ),
-                                                      Text(
-                                                        '${category['distance'].toString()} km',
-                                                        style: TextStyle(
-                                                            fontSize: 12),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  FutureBuilder<String>(
-                                                    future: getUsername(
-                                                        participant),
-                                                    builder:
-                                                        (context, snapshot) {
-                                                      if (snapshot
-                                                              .connectionState ==
-                                                          ConnectionState
-                                                              .waiting) {
-                                                        return CircularProgressIndicator();
-                                                      }
-                                                      if (snapshot.hasError) {
-                                                        return Text(
-                                                            'Error loading username');
-                                                      }
-                                                      String username =
-                                                          snapshot.data ?? '';
-                                                      bool showJoinButton =
-                                                          username ==
-                                                                  "No username" &&
-                                                              (bestTime ==
-                                                                      "N/A" ||
-                                                                  bestTime
-                                                                      .isEmpty);
-                                                      List<Widget>
-                                                          columnChildren = [
-                                                        Row(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .center,
-                                                          children: [
-                                                            Icon(category[
-                                                                'icon']),
-                                                            SizedBox(width: 8),
-                                                            Text(
-                                                              username.isNotEmpty
-                                                                  ? username
-                                                                  : 'No username',
-                                                              style: TextStyle(
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold),
-                                                            ),
-                                                          ],
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              border: Border.all(
+                                                color: category[
+                                                    'color'], // Set border color
+                                                width: 1.0, // Set border width
+                                              ),
+                                              borderRadius: BorderRadius.circular(
+                                                  4.0), // Set the border radius if you need a rounded corner
+                                            ),
+                                            child: Card(
+                                              child: Padding(
+                                                padding: EdgeInsets.all(2),
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: <Widget>[
+                                                    Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceEvenly,
+                                                      children: [
+                                                        Text(
+                                                          category['name'],
+                                                          style: TextStyle(
+                                                              fontSize: 12),
                                                         ),
-                                                        username ==
-                                                                "No username"
-                                                            ? SizedBox.shrink()
-                                                            : Text(
-                                                                'Best Time: $bestTime'),
-                                                      ];
-                                                      if (showJoinButton) {
-                                                        columnChildren.add(
-                                                          SizedBox(
-                                                            height: 20,
-                                                            child:
-                                                                ElevatedButton(
-                                                              onPressed: () =>
-                                                                  joinTeam(
-                                                                      currentLeg),
-                                                              child:
-                                                                  Text('Join'),
-                                                            ),
+                                                        Text(
+                                                          '${category['distance'].toString()} km',
+                                                          style: TextStyle(
+                                                              fontSize: 12),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    FutureBuilder<String>(
+                                                      future: getUsername(
+                                                          participant),
+                                                      builder:
+                                                          (context, snapshot) {
+                                                        if (snapshot
+                                                                .connectionState ==
+                                                            ConnectionState
+                                                                .waiting) {
+                                                          return CircularProgressIndicator();
+                                                        }
+                                                        if (snapshot.hasError) {
+                                                          return Text(
+                                                              'Error loading username');
+                                                        }
+                                                        String username =
+                                                            snapshot.data ?? '';
+                                                        bool showJoinButton =
+                                                            username ==
+                                                                    "No username" &&
+                                                                (bestTime ==
+                                                                        "N/A" ||
+                                                                    bestTime
+                                                                        .isEmpty);
+                                                        List<Widget>
+                                                            columnChildren = [
+                                                          Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .center,
+                                                            children: [
+                                                              Icon(category[
+                                                                  'icon']),
+                                                              SizedBox(
+                                                                  width: 8),
+                                                              Text(
+                                                                username.isNotEmpty
+                                                                    ? username
+                                                                    : 'No username',
+                                                                style: TextStyle(
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold),
+                                                              ),
+                                                            ],
                                                           ),
+                                                          username ==
+                                                                  "No username"
+                                                              ? SizedBox
+                                                                  .shrink()
+                                                              : Text(
+                                                                  'Best Time: $bestTime'),
+                                                        ];
+                                                        if (showJoinButton) {
+                                                          columnChildren.add(
+                                                            SizedBox(
+                                                              height: 20,
+                                                              child:
+                                                                  ElevatedButton(
+                                                                onPressed: () =>
+                                                                    joinTeam(
+                                                                        currentLeg),
+                                                                child: Text(
+                                                                    'Join'),
+                                                              ),
+                                                            ),
+                                                          );
+                                                        } else {
+                                                          columnChildren
+                                                              .add(SizedBox());
+                                                        }
+                                                        return Column(
+                                                          children:
+                                                              columnChildren,
                                                         );
-                                                      } else {
-                                                        columnChildren
-                                                            .add(SizedBox());
-                                                      }
-                                                      return Column(
-                                                        children:
-                                                            columnChildren,
-                                                      );
-                                                    },
-                                                  ),
-                                                ],
+                                                      },
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
                                             ),
                                           ),
@@ -1167,30 +1203,42 @@ class _Snow2SurfState extends State<Snow2Surf> {
                 if (snapshot.hasData) {
                   final int legsCompleted = snapshot.data!['legsCompleted'];
                   final int legsRemaining = snapshot.data!['legsRemaining'];
+                  final List bestTimes = snapshot.data!['bestTimes'];
 
-                  if (legsCompleted < 4) {
+                  if (legsCompleted < 4 || bestTimes.length < 4) {
                     // Not all legs have times
-                    return Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          color: Theme.of(context)
-                              .errorColor, // Or any color that fits your design
+                    return Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              color: Theme.of(context)
+                                  .errorColor, // Or any color that fits your design
+                            ),
+                            SizedBox(
+                                width:
+                                    8), // Provides spacing between the icon and the text
+                            Flexible(
+                              child: Column(
+                                children: [
+                                  Text(
+                                    "Complete one qualifying activity for each matchup.",
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors
+                                          .black54, // Or any color that fits your design
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                        SizedBox(
-                            width:
-                                8), // Provides spacing between the icon and the text
-                        Text(
-                          "Please fill all positions. $legsRemaining remaining.",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors
-                                .black54, // Or any color that fits your design
-                          ),
-                        ),
-                      ],
+                      ),
                     );
                   }
                   // Extract the necessary data
@@ -1220,6 +1268,30 @@ class _Snow2SurfState extends State<Snow2Surf> {
                           Card(
                             child: Padding(
                               padding: const EdgeInsets.all(8.0),
+                              child: RichText(
+                                text: TextSpan(
+                                  text: '',
+                                  style: TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black),
+                                  children: <TextSpan>[
+                                    TextSpan(
+                                      text: timeDifferenceDisplay,
+                                      style: TextStyle(
+                                          color: timeDifferenceDisplay
+                                                  .startsWith('-')
+                                              ? Colors.red
+                                              : Colors.green),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
                               child: Text(
                                 '$formattedOpponentTotalTime',
                                 style: TextStyle(
@@ -1228,30 +1300,6 @@ class _Snow2SurfState extends State<Snow2Surf> {
                             ),
                           ),
                         ],
-                      ),
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: RichText(
-                            text: TextSpan(
-                              text: '',
-                              style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black),
-                              children: <TextSpan>[
-                                TextSpan(
-                                  text: timeDifferenceDisplay,
-                                  style: TextStyle(
-                                      color:
-                                          timeDifferenceDisplay.startsWith('-')
-                                              ? Colors.red
-                                              : Colors.green),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
                       ),
                     ],
                   );
@@ -1427,96 +1475,149 @@ class _Snow2SurfState extends State<Snow2Surf> {
   Widget buildActivityChart(
       Map<String, List<FlSpot>> userSpots, String challengeType) {
     List<LineChartBarData> lines = [];
-    List<Color> colors = [Colors.blue, Colors.red, Colors.green, Colors.purple];
 
-    userSpots.entries.toList().asMap().forEach((index, entry) {
+    userSpots.entries.toList().asMap().forEach((index, entry) async {
       List<FlSpot> spots = entry.value;
-      Color currentUserColor = colors[index % colors.length];
+      String userEmail = entry.key;
+      getLegParticipants(widget.challengeId).then((legParticipants) {
+        Color userColor = getUserColor(userEmail, legParticipants);
+
+        // User's performance line
+        lines.add(LineChartBarData(
+          spots: spots,
+          isCurved: true,
+          color: userColor,
+          barWidth: 2,
+          dotData: FlDotData(show: true),
+          belowBarData: BarAreaData(show: false),
+        ));
+      });
+
       Map<String, double> bestTimesInSeconds =
           getOpponentTimesForChallenge(challengeType);
 
-      print('Spots: $spots');
-
-      // User's performance line
-      lines.add(LineChartBarData(
-        spots: spots,
-        isCurved: true,
-        color: currentUserColor,
-        barWidth: 2,
-        dotData: FlDotData(show: true),
-        belowBarData: BarAreaData(show: false),
-      ));
-
-      List<Color> thresholdColors = [
-        Colors.blue,
-        Colors.red,
-        Colors.green,
-        Colors.orange,
-        Colors
-            .purple, // Make sure this list is at least as long as the number of opponents
-        // Add more colors if needed
-      ];
-
-      int opponentIndex = 0;
-      // Opponent's best time threshold lines
+      // Use the same index for user and threshold lines
       bestTimesInSeconds.forEach((opponent, timeInSeconds) {
-        // Assigning the threshold line the same color as the user line
-        Color currentColor =
-            thresholdColors[opponentIndex % thresholdColors.length];
-        lines.add(LineChartBarData(
-          spots: [FlSpot(1, timeInSeconds), FlSpot(30, timeInSeconds)],
-          isCurved: true,
-          color: currentColor,
-          barWidth: 2,
-          isStrokeCapRound: true,
-          dashArray: [10, 5],
-          dotData: FlDotData(show: false),
-          aboveBarData: BarAreaData(show: false), // Remove the line above
-          belowBarData: BarAreaData(show: false), // Remove the line below
-        ));
-        opponentIndex++;
+        if (timeInSeconds > 0) {
+          // Only add if the time is valid
+          lines.add(LineChartBarData(
+            spots: [FlSpot(1, timeInSeconds), FlSpot(30, timeInSeconds)],
+            isCurved: true,
+            color: getOpponentColor(opponent),
+            barWidth: 2,
+            isStrokeCapRound: true,
+            dashArray: [10, 5],
+            dotData: FlDotData(show: false),
+            aboveBarData: BarAreaData(show: false), // Remove the line above
+            belowBarData: BarAreaData(show: false), // Remove the line below
+          ));
+        }
       });
     });
 
-    return LineChart(LineChartData(
-      minY: 0,
-      maxY: 3300, // 55 minutes in seconds
-      gridData: FlGridData(show: true),
-      titlesData: FlTitlesData(
-        bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-          showTitles: true,
-          getTitlesWidget: (value, meta) {
-            DateTime startDate = widget.startDate
-                .toDate(); // Convert Timestamp to DateTime if needed
-            DateTime date = startDate.add(Duration(days: value.round()));
-            return Text(DateFormat('MM/dd').format(date));
-          },
-          interval: 5,
-          reservedSize: 30,
-        )),
-        leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-          showTitles: true,
-          getTitlesWidget: (value, meta) {
-            int minutes = (value / 60).toInt();
-            int seconds = (value % 60).toInt();
-            return Text(
-                '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}');
-          },
-          interval: 300, // Every 5 minutes
-          reservedSize: 50,
-        )),
-        rightTitles: AxisTitles(
-            sideTitles: SideTitles(
-          showTitles: false,
-        )),
-        topTitles: AxisTitles(
-            sideTitles: SideTitles(
-          showTitles: false,
+    String formatDuration(double seconds) {
+      int totalSeconds = seconds.toInt();
+      int minutes = totalSeconds ~/ 60;
+      int remainingSeconds = totalSeconds % 60;
+      return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+    }
+
+    return Card(
+      color: Color(0xFF283D3B),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: LineChart(LineChartData(
+          backgroundColor: Colors.white,
+          minY: 0,
+          maxY: 3300, // 55 minutes in seconds
+          maxX: 30,
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipItems: (List<LineBarSpot> spots) {
+                return spots.map((LineBarSpot touchedSpot) {
+                  return LineTooltipItem(
+                    'Time: ${formatDuration(touchedSpot.y)}', // Generic time label
+                    TextStyle(color: Colors.white),
+                  );
+                }).toList();
+              },
+            ),
+          ),
+          gridData: FlGridData(show: true),
+          titlesData: FlTitlesData(
+            bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                DateTime startDate = widget.startDate
+                    .toDate(); // Convert Timestamp to DateTime if needed
+                DateTime date = startDate.add(Duration(days: value.round()));
+                return Text(DateFormat('dd').format(date),
+                    style: TextStyle(fontSize: 10, color: Colors.white));
+              },
+              interval: 3,
+              reservedSize: 30,
+            )),
+            leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                int minutes = (value / 60).toInt();
+                int seconds = (value % 60).toInt();
+                return Text(
+                  '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
+                  style: TextStyle(fontSize: 10, color: Colors.white),
+                );
+              },
+              interval: 300, // Every 5 minutes
+              reservedSize: 50,
+            )),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+          lineBarsData: lines,
         )),
       ),
-      lineBarsData: lines,
-    ));
+    );
+  }
+
+  Color getOpponentColor(String challengeLeg) {
+    for (var category in categories) {
+      if (category['name'] == challengeLeg) {
+        print('Category: ${category['name']}, Color: ${category['color']}');
+        return category['color'];
+      }
+    }
+    return Colors.grey; // Default color if no match is found
+  }
+
+  Future<Map<String, dynamic>> getLegParticipants(String challengeId) async {
+    // Get a reference to the Firestore instance
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    // Fetch the document for the specific challenge
+    DocumentSnapshot<Map<String, dynamic>> snapshot =
+        await firestore.collection('Challenges').doc(challengeId).get();
+
+    // Extract the legParticipants map from the document
+    Map<String, dynamic> legParticipants = snapshot.data()?['legParticipants'];
+
+    return legParticipants; // Return an empty map if there is no data
+  }
+
+  Color getUserColor(String userEmail, Map<String, dynamic> legParticipants) {
+    // Find user's activity
+    String userActivity = legParticipants.entries
+        .firstWhere((entry) => entry.value['participant'] == userEmail)
+        .key;
+
+    // Search for the activity in categories
+    for (var category in categories) {
+      if (category['name'] == userActivity) {
+        return category['color'];
+      }
+    }
+    // If no match found, return a default color
+    return Colors.grey; // or any other default color
   }
 }

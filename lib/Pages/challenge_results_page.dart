@@ -189,7 +189,7 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             subtitle: Text(
-              showTopFinishes
+              !showTopFinishes
                   ? 'Show all challenges, including those in progress'
                   : 'Show only completed challenges, sorted by points',
               style: TextStyle(fontSize: 14),
