@@ -873,7 +873,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
           children: [
             Container(
               color: Colors.white,
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(4),
               child: Column(
                 children: [
                   Center(
@@ -881,7 +881,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
                       "Difficulty Level: ${widget.challengeDifficulty}",
                       style: GoogleFonts.roboto(
                         textStyle: TextStyle(
-                          fontSize: 24,
+                          fontSize: 18,
                           fontWeight: FontWeight.w300,
                           letterSpacing: 1.2,
                         ),
@@ -893,7 +893,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
                       padding: const EdgeInsets.symmetric(horizontal: 8.0),
                       child: Text(
                         '${DateFormat('MMMM dd, yyyy').format(widget.startDate.toDate())} - ${DateFormat('MMMM dd, yyyy').format(endDate!)}',
-                        style: TextStyle(fontSize: 16),
+                        style: TextStyle(fontSize: 14),
                       ),
                     ),
                   ),
@@ -1009,6 +1009,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
                                                       'participant'],
                                                   categories),
                                           child: Container(
+                                            margin: EdgeInsets.all(2),
                                             decoration: BoxDecoration(
                                               border: Border.all(
                                                 color: category[
@@ -1156,26 +1157,38 @@ class _Snow2SurfState extends State<Snow2Surf> {
                               ),
                               Expanded(
                                 flex: 2,
-                                child: Card(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(8),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children: <Widget>[
-                                        Column(
-                                          children: [
-                                            CircleAvatar(
-                                              backgroundImage: AssetImage(
-                                                  opponent["image"][index]),
-                                            ),
-                                            Text(opponent["name"][index]),
-                                          ],
-                                        ),
-                                        Text("${opponentBestTime}",
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold)),
-                                      ],
+                                child: Container(
+                                  margin: EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color:
+                                          category['color'], // Set border color
+                                      width: 1.0, // Set border width
+                                    ),
+                                    borderRadius: BorderRadius.circular(
+                                        4.0), // Set the border radius if you need a rounded corner
+                                  ),
+                                  child: Card(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(2),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
+                                        children: <Widget>[
+                                          Column(
+                                            children: [
+                                              CircleAvatar(
+                                                backgroundImage: AssetImage(
+                                                    opponent["image"][index]),
+                                              ),
+                                              Text(opponent["name"][index]),
+                                            ],
+                                          ),
+                                          Text("${opponentBestTime}",
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold)),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1253,26 +1266,32 @@ class _Snow2SurfState extends State<Snow2Surf> {
                   return Column(
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
                           Card(
                             child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                '$formattedTotalParticipantTime',
-                                style: TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.bold),
+                              padding: const EdgeInsets.all(4.0),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.timer_outlined),
+                                  Text(
+                                    '$formattedTotalParticipantTime',
+                                    style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
                           Card(
                             child: Padding(
-                              padding: const EdgeInsets.all(8.0),
+                              padding: const EdgeInsets.all(6.0),
                               child: RichText(
                                 text: TextSpan(
                                   text: '',
                                   style: TextStyle(
-                                      fontSize: 24,
+                                      fontSize: 20,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.black),
                                   children: <TextSpan>[
@@ -1291,11 +1310,17 @@ class _Snow2SurfState extends State<Snow2Surf> {
                           ),
                           Card(
                             child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                '$formattedOpponentTotalTime',
-                                style: TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.bold),
+                              padding: const EdgeInsets.all(4.0),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.timer_outlined),
+                                  Text(
+                                    '$formattedOpponentTotalTime',
+                                    style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -1311,7 +1336,7 @@ class _Snow2SurfState extends State<Snow2Surf> {
             Expanded(
               flex: 2,
               child: Container(
-                padding: EdgeInsets.all(10),
+                padding: EdgeInsets.fromLTRB(10, 0, 10, 0),
                 child: StreamBuilder<List<DocumentSnapshot>>(
                   stream: getActivitiesWithinDateRange(),
                   builder: (context, snapshot) {
@@ -1481,11 +1506,13 @@ class _Snow2SurfState extends State<Snow2Surf> {
       String userEmail = entry.key;
       getLegParticipants(widget.challengeId).then((legParticipants) {
         Color userColor = getUserColor(userEmail, legParticipants);
+        print("spots: $spots");
 
         // User's performance line
         lines.add(LineChartBarData(
           spots: spots,
           isCurved: true,
+          preventCurveOverShooting: true,
           color: userColor,
           barWidth: 2,
           dotData: FlDotData(show: true),

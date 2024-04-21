@@ -23,7 +23,8 @@ class MyApp extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         // Dismiss keyboard when tapping outside of a text field
-        FocusScope.of(context).requestFocus(FocusNode());
+        // This is the current best practice for dismissing the keyboard since flutter version 2+
+        FocusManager.instance.primaryFocus?.unfocus();
       },
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
