@@ -165,7 +165,7 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
           color: Color(0xFF283D3B),
           padding: const EdgeInsets.all(8.0),
           child: Row(
-            // mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 Icons.info_outline,
@@ -173,265 +173,293 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
               ),
               SizedBox(width: 4),
               Text(
-                'Click for points breakdown.',
-                style: TextStyle(fontSize: 14, color: Colors.white),
+                'Click here for points breakdown.',
+                style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white,
+                    fontStyle: FontStyle.italic),
                 textAlign: TextAlign.center,
               ),
             ],
           ),
         ),
       ),
-      body: Column(
-        children: [
-          SwitchListTile(
-            title: Text(
-              !showTopFinishes ? 'All Challenges' : 'Top Finishes',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text(
-              !showTopFinishes
-                  ? 'Show all challenges, including those in progress'
-                  : 'Show only completed challenges, sorted by points',
-              style: TextStyle(fontSize: 14),
-            ),
-            activeThumbImage: AssetImage('assets/images/trophy.png'),
-            inactiveThumbImage: AssetImage('assets/images/all.png'),
-            value: showTopFinishes,
-            onChanged: (bool value) {
-              setState(() {
-                showTopFinishes = value;
-              });
-            },
-          ),
-          Expanded(
-            child: FutureBuilder<List<QueryDocumentSnapshot>>(
-              future: challengeResults,
-              builder: (context, snapshot) {
-                // check for errors
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: $snapshot.error'));
-                }
-
-                // show a loading spinner while waiting for challenge data
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                // display the challenge data
-                var challenges = snapshot.data!;
-                if (showTopFinishes) {
-                  // Filter and sort for top finishes
-                  challenges = challenges.where((doc) {
-                    var data = doc.data() as Map<String, dynamic>;
-                    return !(data['active'] as bool? ??
-                        false); // Use '??' to provide a default value if null
-                  }).toList();
-                  challenges.sort((a, b) {
-                    var dataA = a.data() as Map<String, dynamic>;
-                    var dataB = b.data() as Map<String, dynamic>;
-                    var aPoints = dataA['points'] as int? ?? 0;
-                    var bPoints = dataB['points'] as int? ?? 0;
-                    return bPoints.compareTo(aPoints);
-                  });
-                }
-                challenges = challenges.reversed.toList();
-
-                return ListView.builder(
-                  itemCount: challenges.length,
-                  itemBuilder: (context, index) {
-                    // convert snapshot to a Map
-                    var challenge =
-                        challenges[index].data() as Map<String, dynamic>;
-
-                    String challengeName = challenge['name'];
-                    bool isActive = challenge['active'] ?? false;
-                    bool isSuccess = challenge['success'] ?? false;
-                    String challengeImage = challenge['currentMap'];
-                    Timestamp timestamp = challenge['timestamp'];
-                    Timestamp? endDate = challenge['endDate'];
-                    List participants = challenge['participants'];
-                    String difficulty = challenge['difficulty'];
-
-                    // Convert Timestamp to DateTime and formatting
-                    DateTime startDate = timestamp.toDate();
-                    String formattedStartDate =
-                        DateFormat('MMM d, yyyy').format(startDate);
-                    String formattedEndDate = endDate != null
-                        ? DateFormat('MMM d, yyyy').format(endDate.toDate())
-                        : 'In Progress';
-                    String daysTakenText = endDate != null
-                        ? '${endDate.toDate().difference(startDate).inDays} days'
-                        : 'In Progress';
-
-                    // Points calculation
-                    double points = 0;
-                    if (endDate != null) {
-                      int daysTaken =
-                          endDate.toDate().difference(startDate).inDays;
-                      double timeMultiplier = getTimeMultiplier(daysTaken);
-                      double participantDeduction =
-                          getParticipantDeduction(participants.length);
-                      points = getBasePoints(difficulty) *
-                          timeMultiplier *
-                          participantDeduction;
-                    }
-
-                    String mapName = challenge['mapName'] ?? challenge['type'];
-                    String mapType = challenge['type'];
-                    String mapSpecs = mapType == 'Team Traverse'
-                        ? '${challenge['mapDistance']}'
-                        : mapType == 'Mtn Scramble'
-                            ? '${challenge['mapElevation']} m'
-                            : challenge['difficulty'];
-
-                    // Determine background color based on challenge status
-                    Color backgroundColor;
-                    if (isSuccess) {
-                      backgroundColor = Color(0xBB283D3B); // Success color
-                    } else if (isActive) {
-                      backgroundColor = Colors.white;
-                      // Active (pending) color
-                    } else {
-                      backgroundColor =
-                          Color(0xBBF45B69); // Failed or inactive color
-                    }
-
-                    return Padding(
-                      padding: const EdgeInsets.all(2.0),
-                      child: Card(
-                        color: backgroundColor,
-                        elevation: 4,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text('Start Date:',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold)),
-                                      SizedBox(width: 5),
-                                      Text('$formattedStartDate',
-                                          textAlign: TextAlign.center),
-                                    ],
-                                  ),
-                                  isSuccess
-                                      ? FittedBox(
-                                          child: Text(
-                                            'Success!',
-                                            style: GoogleFonts.luckiestGuy(
-                                              textStyle: TextStyle(
-                                                letterSpacing: 4,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                          ),
-                                        )
-                                      : isActive
-                                          ? FittedBox(
-                                              child: Text(
-                                                'Pending. . .',
-                                                style: GoogleFonts.luckiestGuy(
-                                                  textStyle: TextStyle(
-                                                    letterSpacing: 2,
-                                                    fontSize: 12,
-                                                    color: Colors.black,
-                                                  ),
-                                                ),
-                                              ),
-                                            )
-                                          : FittedBox(
-                                              child: Text(
-                                                'Failed',
-                                                style: GoogleFonts.luckiestGuy(
-                                                  textStyle: TextStyle(
-                                                    letterSpacing: 4,
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                ],
-                              ),
-                            ),
-                            ListTile(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              leading: Column(
-                                children: [
-                                  Expanded(
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(10),
-                                      child: Image.asset(challengeImage,
-                                          fit: BoxFit.cover),
-                                    ),
-                                  ),
-                                  Text(
-                                    '$mapSpecs',
-                                    style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold),
-                                  )
-                                ],
-                              ),
-                              title: Text(
-                                challengeName,
-                                style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black),
-                              ),
-                              subtitle: Row(
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(Icons.calendar_month_outlined),
-                                      Text(daysTakenText,
-                                          textAlign: TextAlign.center),
-                                    ],
-                                  ),
-                                  SizedBox(width: 5),
-                                  Row(
-                                    children: [
-                                      Icon(Icons.person_outlined),
-                                      Text(participants.length.toString()),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              trailing: Text(
-                                isSuccess
-                                    ? '${points.toStringAsFixed(0)} pts'
-                                    : isActive
-                                        ? 'In Progress'
-                                        : '0 pts',
-                                style: isSuccess || !isActive
-                                    ? TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                        fontSize: 16)
-                                    : TextStyle(fontSize: 16),
-                              ),
-                              onTap: () {
-                                challengeResultsDialog(context, challenge);
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                );
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(0, 0, 0, 40),
+        child: Column(
+          children: [
+            SwitchListTile(
+              tileColor: Colors.white,
+              title: Text(
+                !showTopFinishes ? 'All Challenges' : 'Top Finishes',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              subtitle: Text(
+                !showTopFinishes
+                    ? 'Show all challenges, including those in progress'
+                    : 'Show only completed challenges, sorted by points',
+                style: TextStyle(fontSize: 12),
+              ),
+              activeThumbImage: AssetImage('assets/images/trophy.png'),
+              inactiveThumbImage: AssetImage('assets/images/all.png'),
+              value: showTopFinishes,
+              onChanged: (bool value) {
+                setState(() {
+                  showTopFinishes = value;
+                });
               },
             ),
-          ),
-        ],
+            Expanded(
+              child: FutureBuilder<List<QueryDocumentSnapshot>>(
+                future: challengeResults,
+                builder: (context, snapshot) {
+                  // check for errors
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: $snapshot.error'));
+                  }
+
+                  // show a loading spinner while waiting for challenge data
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  // display the challenge data
+                  var challenges = snapshot.data!;
+                  if (showTopFinishes) {
+                    // Filter and sort for top finishes
+                    challenges = challenges.where((doc) {
+                      var data = doc.data() as Map<String, dynamic>;
+                      return !(data['active'] as bool? ??
+                          false); // Use '??' to provide a default value if null
+                    }).toList();
+                    challenges.sort((a, b) {
+                      var dataA = a.data() as Map<String, dynamic>;
+                      var dataB = b.data() as Map<String, dynamic>;
+                      var aPoints = dataA['points'] as int? ?? 0;
+                      var bPoints = dataB['points'] as int? ?? 0;
+                      return bPoints.compareTo(aPoints);
+                    });
+                  }
+                  challenges = challenges.reversed.toList();
+
+                  return ListView.builder(
+                    itemCount: challenges.length,
+                    itemBuilder: (context, index) {
+                      // convert snapshot to a Map
+                      var challenge =
+                          challenges[index].data() as Map<String, dynamic>;
+
+                      String challengeName = challenge['name'];
+                      bool isActive = challenge['active'] ?? false;
+                      bool isSuccess = challenge['success'] ?? false;
+                      String challengeImage = challenge['currentMap'];
+                      Timestamp timestamp = challenge['timestamp'];
+                      Timestamp? endDate = challenge['endDate'];
+                      List participants = challenge['participants'];
+                      String difficulty = challenge['difficulty'];
+
+                      // Convert Timestamp to DateTime and formatting
+                      DateTime startDate = timestamp.toDate();
+                      String formattedStartDate =
+                          DateFormat('MMM d, yyyy').format(startDate);
+                      String formattedEndDate = endDate != null
+                          ? DateFormat('MMM d, yyyy').format(endDate.toDate())
+                          : 'In Progress';
+                      String daysTakenText = endDate != null
+                          ? '${endDate.toDate().difference(startDate).inDays} days'
+                          : 'In Progress';
+
+                      // Points calculation
+                      double points = 0;
+                      if (endDate != null) {
+                        int daysTaken =
+                            endDate.toDate().difference(startDate).inDays;
+                        double timeMultiplier = getTimeMultiplier(daysTaken);
+                        double participantDeduction =
+                            getParticipantDeduction(participants.length);
+                        points = getBasePoints(difficulty) *
+                            timeMultiplier *
+                            participantDeduction;
+                      }
+
+                      String mapName =
+                          challenge['mapName'] ?? challenge['type'];
+                      String mapType = challenge['type'];
+                      String mapSpecs = mapType == 'Team Traverse'
+                          ? '${challenge['mapDistance']}'
+                          : mapType == 'Mtn Scramble'
+                              ? '${challenge['mapElevation']} m'
+                              : challenge['difficulty'];
+
+                      // Determine background color based on challenge status
+                      Color backgroundColor;
+                      if (isSuccess) {
+                        backgroundColor = Color(0xBB283D3B); // Success color
+                      } else if (isActive) {
+                        backgroundColor = Colors.grey[300]!;
+                        // Active (pending) color
+                      } else {
+                        backgroundColor =
+                            Color(0xBBF45B69); // Failed or inactive color
+                      }
+
+                      return Padding(
+                        padding: const EdgeInsets.all(2.0),
+                        child: Card(
+                          color: backgroundColor,
+                          elevation: 4,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 4.0, vertical: 2.0),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          'Start Date:',
+                                          style: !isActive
+                                              ? TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white)
+                                              : TextStyle(color: Colors.black),
+                                        ),
+                                        SizedBox(width: 5),
+                                        Text('$formattedStartDate',
+                                            textAlign: TextAlign.center,
+                                            style: !isActive
+                                                ? TextStyle(color: Colors.white)
+                                                : TextStyle(
+                                                    color: Colors.black)),
+                                      ],
+                                    ),
+                                    isSuccess
+                                        ? FittedBox(
+                                            child: Text(
+                                              'Success!',
+                                              style: GoogleFonts.luckiestGuy(
+                                                textStyle: TextStyle(
+                                                  letterSpacing: 4,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                        : isActive
+                                            ? FittedBox(
+                                                child: Text(
+                                                  'Pending. . .',
+                                                  style:
+                                                      GoogleFonts.luckiestGuy(
+                                                    textStyle: TextStyle(
+                                                      letterSpacing: 2,
+                                                      fontSize: 12,
+                                                      color: Colors.black,
+                                                    ),
+                                                  ),
+                                                ),
+                                              )
+                                            : FittedBox(
+                                                child: Text(
+                                                  'Failed',
+                                                  style:
+                                                      GoogleFonts.luckiestGuy(
+                                                    textStyle: TextStyle(
+                                                      letterSpacing: 4,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                  ],
+                                ),
+                              ),
+                              ListTile(
+                                dense: true,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                leading: Column(
+                                  children: [
+                                    Expanded(
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: Image.asset(challengeImage,
+                                            fit: BoxFit.cover),
+                                      ),
+                                    ),
+                                    Text(
+                                      '$mapSpecs',
+                                      style: !isActive
+                                          ? TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white)
+                                          : TextStyle(color: Colors.black),
+                                    )
+                                  ],
+                                ),
+                                title: Text(
+                                  challengeName,
+                                  style: !isActive
+                                      ? TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white)
+                                      : TextStyle(color: Colors.black),
+                                ),
+                                subtitle: Row(
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(Icons.calendar_month_outlined),
+                                        Text(daysTakenText,
+                                            textAlign: TextAlign.center),
+                                      ],
+                                    ),
+                                    SizedBox(width: 5),
+                                    Row(
+                                      children: [
+                                        Icon(Icons.person_outlined),
+                                        Text(participants.length.toString()),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                trailing: Text(
+                                    isSuccess
+                                        ? '${points.toStringAsFixed(0)} pts'
+                                        : isActive
+                                            ? 'In Progress'
+                                            : '0 pts',
+                                    style: isSuccess || !isActive
+                                        ? GoogleFonts.tektur(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.tealAccent,
+                                            fontSize: 18)
+                                        : GoogleFonts.tektur(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black,
+                                            fontSize: 18)),
+                                onTap: () {
+                                  challengeResultsDialog(context, challenge);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
