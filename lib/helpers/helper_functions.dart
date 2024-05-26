@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 
 
   Future<String> getUserNameString(String email) async {
@@ -81,6 +80,14 @@ import 'package:flutter/material.dart';
   String formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
     return "${twoDigits(duration.inHours)}:${twoDigits(duration.inMinutes.remainder(60))}:${twoDigits(duration.inSeconds.remainder(60))}";
+  }
+
+  String formatDurationSeconds(int seconds) {
+    final Duration duration = Duration(seconds: seconds);
+    final int hours = duration.inHours;
+    final int minutes = (duration.inMinutes % 60);
+    final int remainingSeconds = (duration.inSeconds % 60);
+    return '$hours:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
   

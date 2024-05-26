@@ -1,10 +1,10 @@
 import 'package:strava_client/strava_client.dart';
 
-class ExampleAuthentication {
+class StravaAuthentication {
   final StravaClient stravaClient;
-  ExampleAuthentication(this.stravaClient);
+  StravaAuthentication(this.stravaClient);
 
-  Future<TokenResponse> testAuthentication(
+  Future<TokenResponse> Authentication(
       List<AuthenticationScope> scopes, String redirectUrl) {
     return stravaClient.authentication.authenticate(
         scopes: scopes,
@@ -14,7 +14,7 @@ class ExampleAuthentication {
         preferEphemeral: true);
   }
 
-  Future<void> testDeauthorize() {
+  Future<void> Deauthorize() {
     return stravaClient.authentication.deAuthorize();
   }
 }
