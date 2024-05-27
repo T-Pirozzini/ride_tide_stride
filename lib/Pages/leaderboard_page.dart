@@ -130,6 +130,18 @@ class _LeaderboardState extends State<Leaderboard> {
                 },
                 child: const Text('View Awards'),
               ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pushNamed('/usersPage');
+                },
+                child: const Text('View Users'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pushNamed('/activitiesPage');
+                },
+                child: const Text('View Monthly Activities'),
+              ),
             ],
           ),
         ),
