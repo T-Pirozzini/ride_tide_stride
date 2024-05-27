@@ -9,5 +9,10 @@ final allActivitiesProvider = FutureProvider<List<Activity>>((ref) {
 
 final monthlyActivitiesProvider = FutureProvider<List<Activity>>((ref) {
   final firestoreService = FirestoreService();
-  return firestoreService.fetchMonthlyActivities();
+  return firestoreService.fetchCurrentMonthActivities();
+});
+
+final userActivitiesProvider = FutureProvider<List<Activity>>((ref) {
+  final firestoreService = FirestoreService();
+  return firestoreService.fetchAllUserActivities();
 });

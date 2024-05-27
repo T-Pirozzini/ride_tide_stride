@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class User {
-  const User({
+class UserDetails {
+  const UserDetails({
     required this.username,
     required this.email,    
     required this.role,

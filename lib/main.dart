@@ -5,7 +5,7 @@ import 'package:ride_tide_stride/auth/auth_page.dart';
 import 'package:ride_tide_stride/firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:ride_tide_stride/pages/activities_page.dart';
+import 'package:ride_tide_stride/screens/activities/activities_page.dart';
 import 'package:ride_tide_stride/pages/users_page.dart';
 import 'package:ride_tide_stride/screens/awards/awards_page.dart';
 import 'package:ride_tide_stride/pages/challenge_results_page.dart';
