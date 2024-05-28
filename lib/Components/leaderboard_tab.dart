@@ -67,9 +67,11 @@ class LeaderboardTab extends StatelessWidget {
             Widget buildListTile(String title, String trailingText) {
               return ListTile(
                 tileColor: Colors.white,
-                title: Text('${entry['full_name']}'),
+                title: Text('${entry['full_name']}',
+                    style: Theme.of(context).textTheme.bodyMedium),
                 leading: customPlaceWidget('$currentPlace'),
-                subtitle: Text(title),
+                subtitle:
+                    Text(title, style: Theme.of(context).textTheme.bodySmall),
                 trailing: customTotalWidget(trailingText),
               );
             }

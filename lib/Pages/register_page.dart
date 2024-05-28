@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -48,6 +50,8 @@ class _RegisterPageState extends State<RegisterPage> {
         'email': emailTextController.text,
         'dateCreated': DateTime.now(),
         'role': 'user',
+        'id': userCredential.user!.uid,
+        'color': '#${Colors.primaries[Random().nextInt(Colors.primaries.length)].value.toRadixString(16).substring(2)}',
       });
 
       // pop loading circle

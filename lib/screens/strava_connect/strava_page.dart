@@ -610,19 +610,22 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                           ),
                         ),
                       )
-                    : Row(
-                        children: [
-                          const Text(
-                            'Strava Access ID: ',
-                            style: TextStyle(
-                                fontSize: 10, fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            _textEditingController.text,
-                            style: const TextStyle(
-                                fontSize: 12, fontStyle: FontStyle.italic),
-                          ),
-                        ],
+                    : FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          children: [
+                            const Text(
+                              'Strava Access ID: ',
+                              style: TextStyle(
+                                  fontSize: 10, fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              _textEditingController.text,
+                              style: const TextStyle(
+                                  fontSize: 10, fontStyle: FontStyle.italic),
+                            ),
+                          ],
+                        ),
                       ),
                 const SizedBox(
                   height: 5,
