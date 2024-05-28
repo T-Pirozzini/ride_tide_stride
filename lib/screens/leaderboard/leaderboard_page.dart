@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:ride_tide_stride/components/leaderboard_tab.dart';
-import 'package:ride_tide_stride/components/timer.dart';
+import 'package:ride_tide_stride/screens/leaderboard/timer.dart';
+import 'package:ride_tide_stride/theme.dart';
 
 class Leaderboard extends StatefulWidget {
   const Leaderboard({Key? key}) : super(key: key);
@@ -62,95 +63,107 @@ class _LeaderboardState extends State<Leaderboard> {
 
     return DefaultTabController(
       length: 3,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFDFD3C3),
-        appBar: AppBar(
-          title: Text(
-            'Leaderboard',
-            style: GoogleFonts.tektur(
-                textStyle: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w300,
-                    letterSpacing: 1.2,
-                    color: Colors.white)),
-          ),
-          bottom: TabBar(
-            labelStyle:
-                GoogleFonts.tektur(textStyle: TextStyle(color: Colors.white)),
-            tabs: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.timelapse),
-                  SizedBox(width: 4),
-                  Tab(text: 'Time'),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.straighten),
-                  SizedBox(width: 4),
-                  Tab(text: 'Distance'),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.landscape),
-                  SizedBox(width: 4),
-                  Tab(text: 'Elevation'),
-                ],
-              ),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppColors.secondaryColor,
+              AppColors.backgroundColor,
             ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          actions: [
-            CountdownTimerWidget(
-              endTime: endTime,
-              onTimerEnd: _saveResultsToFirestore,
+        ),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            title: Text(
+              'Leaderboard',
+              style: GoogleFonts.tektur(
+                  textStyle: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w300,
+                      letterSpacing: 1.2,
+                      color: Colors.white)),
             ),
-          ],
-        ),
-        bottomNavigationBar: BottomAppBar(
-          color: Colors
-              .white, // This sets the background color of the BottomAppBar
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <Widget>[
-              // Place your buttons here
-              // ElevatedButton(
-              //   onPressed: () {
-              //     Navigator.of(context).pushNamed('/resultsPage');
-              //   },
-              //   child: const Text('View Past Results'),
-              // ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pushNamed('/awardsPage');
-                },
-                child: const Text('View Awards'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pushNamed('/usersPage');
-                },
-                child: const Text('View Users'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pushNamed('/activitiesPage');
-                },
-                child: const Text('View Monthly Activities'),
+            bottom: TabBar(
+              labelStyle:
+                  GoogleFonts.tektur(textStyle: TextStyle(color: Colors.white)),
+              tabs: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.timelapse),
+                    SizedBox(width: 4),
+                    Tab(text: 'Time'),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.straighten),
+                    SizedBox(width: 4),
+                    Tab(text: 'Distance'),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.landscape),
+                    SizedBox(width: 4),
+                    Tab(text: 'Elevation'),
+                  ],
+                ),
+              ],
+            ),
+            actions: [
+              CountdownTimerWidget(
+                endTime: endTime,
+                onTimerEnd: _saveResultsToFirestore,
               ),
             ],
           ),
-        ),
-        body: const TabBarView(
-          children: [
-            LeaderboardTab(title: 'Moving Time'),
-            LeaderboardTab(title: 'Total Distance (km)'),
-            LeaderboardTab(title: 'Total Elevation'),
-          ],
+          bottomNavigationBar: BottomAppBar(
+            color: Colors
+                .white, // This sets the background color of the BottomAppBar
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: <Widget>[
+                // Place your buttons here
+                // ElevatedButton(
+                //   onPressed: () {
+                //     Navigator.of(context).pushNamed('/resultsPage');
+                //   },
+                //   child: const Text('View Past Results'),
+                // ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pushNamed('/awardsPage');
+                  },
+                  child: const Text('View Awards'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pushNamed('/usersPage');
+                  },
+                  child: const Text('View Users'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pushNamed('/activitiesPage');
+                  },
+                  child: const Text('View Monthly Activities'),
+                ),
+              ],
+            ),
+          ),
+          body: const TabBarView(
+            children: [
+              LeaderboardTab(title: 'Moving Time'),
+              LeaderboardTab(title: 'Total Distance (km)'),
+              LeaderboardTab(title: 'Total Elevation'),
+            ],
+          ),
         ),
       ),
     );

@@ -10,6 +10,7 @@ import 'package:ride_tide_stride/pages/users_page.dart';
 import 'package:ride_tide_stride/screens/awards/awards_page.dart';
 import 'package:ride_tide_stride/pages/challenge_results_page.dart';
 import 'package:ride_tide_stride/pages/results_page.dart';
+import 'package:ride_tide_stride/theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,37 +32,7 @@ class MyApp extends StatelessWidget {
       },
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Color(0xFF283D3B),
-          ),
-          useMaterial3: false,
-          primarySwatch: const MaterialColor(
-            0xFF283D3B,
-            <int, Color>{
-              50: Color(0xFFA09A6A),
-              100: Color(0xFFA09A6A),
-              200: Color(0xFFA09A6A),
-              300: Color(0xFFA09A6A),
-              400: Color(0xFFA09A6A),
-              500: Color(0xFFA09A6A),
-              600: Color(0xFFA09A6A),
-              700: Color(0xFFA09A6A),
-              800: Color(0xFFA09A6A),
-              900: Color(0xFFA09A6A),
-            },
-          ),
-          floatingActionButtonTheme: const FloatingActionButtonThemeData(
-            backgroundColor: Color(0xFF283D3B),
-          ),
-          dialogTheme: const DialogTheme(
-            backgroundColor: Colors.white,
-          ),
-          fontFamily: GoogleFonts.openSans().fontFamily,
-          buttonTheme: const ButtonThemeData(
-            buttonColor: Color(0xFFD0B8A8),
-          ),
-        ),
+        theme: primaryTheme,
         title: 'Ride.Tide.Stride',
         home: const AuthPage(),
         routes: {

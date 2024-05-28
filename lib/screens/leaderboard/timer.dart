@@ -22,7 +22,7 @@ class CountdownTimerWidget extends StatelessWidget {
           ),
           CountdownTimer(
             endTime: endTime,
-            textStyle: const TextStyle(fontSize: 14, color: Colors.white),
+            textStyle: const TextStyle(fontSize: 12, color: Colors.white),
             onEnd: onTimerEnd,
           ),
         ],

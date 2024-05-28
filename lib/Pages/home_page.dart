@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ride_tide_stride/pages/competition_lobby.dart';
-import 'package:ride_tide_stride/pages/leaderboard_page.dart';
+import 'package:ride_tide_stride/screens/leaderboard/leaderboard_page.dart';
 import 'package:ride_tide_stride/screens/strava_connect/strava_page.dart';
 import 'package:ride_tide_stride/pages/talk_smack.dart';
 
