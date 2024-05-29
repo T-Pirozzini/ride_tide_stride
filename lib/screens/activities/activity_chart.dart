@@ -1,12 +1,31 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:ride_tide_stride/models/activity_type.dart';
 import 'package:ride_tide_stride/theme.dart';
 
-class ElevationChart extends StatelessWidget {
-  final List<double> elevationData;
+class ActivityChart extends StatelessWidget {
+  final List<double> activityData;
   final List<String> months;
+  final String title;
+  final ActivityDataType activityType;
 
-  ElevationChart({required this.elevationData, required this.months});
+  ActivityChart({
+    required this.activityData,
+    required this.months,
+    required this.title,
+    required this.activityType,
+  });
+
+  String getUnit() {
+    switch (activityType) {
+      case ActivityDataType.elevation:
+        return 'm';
+      case ActivityDataType.distance:
+        return 'km';
+      case ActivityDataType.movingTime:
+        return 'min';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +42,7 @@ class ElevationChart extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Elevation',
+                title,
                 style: Theme.of(context)
                     .textTheme
                     .headlineMedium!
@@ -82,15 +101,17 @@ class ElevationChart extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           fontSize: 8,
                         );
-                        Widget text =
-                            Text('${value.toStringAsFixed(0)} m', style: style);
+                        Widget text = Text(
+                            '${value.toStringAsFixed(0)} ${getUnit()}',
+                            style: style);
                         return SideTitleWidget(
                           axisSide: meta.axisSide,
                           space: 4,
                           child: text,
                         );
                       },
-                      reservedSize: 40,
+                      reservedSize: 50,
+                      interval: calculateInterval(activityData),
                     ),
                   ),
                   leftTitles: AxisTitles(
@@ -103,7 +124,7 @@ class ElevationChart extends StatelessWidget {
                 borderData: FlBorderData(
                   show: false,
                 ),
-                barGroups: elevationData
+                barGroups: activityData
                     .asMap()
                     .map((index, elevation) => MapEntry(
                           index,
@@ -127,5 +148,12 @@ class ElevationChart extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  double calculateInterval(List<double> data) {
+    final maxDataValue = data.reduce((a, b) => a > b ? a : b);
+    final desiredIntervals =
+        8; // Adjust this value to show more or fewer titles
+    return maxDataValue / desiredIntervals;
   }
 }

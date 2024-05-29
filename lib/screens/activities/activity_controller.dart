@@ -17,7 +17,11 @@ class ActivityController {
       final String month = DateFormat('yyyy-MM').format(date);
 
       if (!activitiesByMonth.containsKey(month)) {
-        activitiesByMonth[month] = {'count': 0, 'totalElevation': 0.0};
+        activitiesByMonth[month] = {
+          'count': 0,
+          'totalElevation': 0.0,
+          'totalDistance': 0.0,
+        };
       }
 
       activitiesByMonth[month]!['count'] =
@@ -25,6 +29,9 @@ class ActivityController {
       activitiesByMonth[month]!['totalElevation'] =
           (activitiesByMonth[month]!['totalElevation'] as double) +
               activity.elevationGain;
+      activitiesByMonth[month]!['totalDistance'] =
+          (activitiesByMonth[month]!['totalDistance'] as double) +
+              activity.distance;
     }
 
     // Convert the map to a list of entries and sort by the key in ascending order
@@ -43,6 +50,13 @@ class ActivityController {
     final groupedData = groupActivitiesByMonth(activities);
     return groupedData
         .map((entry) => entry.value['totalElevation'] as double)
+        .toList();
+  }
+
+  List<double> getDistanceData(List<Activity> activities) {
+    final groupedData = groupActivitiesByMonth(activities);
+    return groupedData
+        .map((entry) => (entry.value['totalDistance'] / 1000) as double)
         .toList();
   }
 

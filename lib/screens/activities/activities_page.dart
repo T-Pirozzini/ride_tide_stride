@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ride_tide_stride/models/activity_type.dart';
 import 'package:ride_tide_stride/providers/activity_provider.dart';
 import 'package:ride_tide_stride/screens/activities/activity_controller.dart';
-import 'package:ride_tide_stride/screens/activities/elevation_chart.dart';
+import 'package:ride_tide_stride/screens/activities/activity_chart.dart';
 import 'package:ride_tide_stride/theme.dart';
 
 class ActivitiesListPage extends ConsumerWidget {
@@ -31,15 +32,27 @@ class ActivitiesListPage extends ConsumerWidget {
                 activityController.groupActivitiesByMonth(activities);
             final elevationData =
                 activityController.getElevationData(activities);
+            final distanceData = activityController.getDistanceData(activities);
             final months = activityController.getMonths(activities);
 
             return Column(
               children: [
                 SizedBox(
                   height: 300,
-                  child: ElevationChart(
-                    elevationData: elevationData,
+                  child: ActivityChart(
+                    activityData: elevationData,
                     months: months,
+                    title: 'Elevation',
+                    activityType: ActivityDataType.elevation,
+                  ),
+                ),
+                SizedBox(
+                  height: 300,
+                  child: ActivityChart(
+                    activityData: distanceData,
+                    months: months,
+                    title: 'Distance',
+                    activityType: ActivityDataType.distance,
                   ),
                 ),
                 Expanded(
