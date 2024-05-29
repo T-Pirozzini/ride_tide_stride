@@ -7,6 +7,8 @@ class AppColors {
   static Color secondaryColor = const Color(0xFFD0B8A8);
   static Color secondaryAccent = Color.fromARGB(255, 10, 10, 10);
   static Color backgroundColor = const Color(0xFFDFD3C3);
+  static Color gradientStart = const Color(0xFFF1EDE6); // Lighter shade
+  static Color gradientEnd = const Color(0xFF283D3B); // Primary color
   static Color titleColor = Colors.black;
   static Color textColor = Colors.black;
   static Color subTextColor = Colors.grey;
@@ -21,7 +23,7 @@ ThemeData primaryTheme = ThemeData(
     seedColor: AppColors.primaryColor,
   ),
   // scaffold color
-  scaffoldBackgroundColor: AppColors.secondaryAccent,
+  scaffoldBackgroundColor: AppColors.secondaryColor,
 
   // app bar theme colors
   appBarTheme: AppBarTheme(
