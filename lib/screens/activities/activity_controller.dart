@@ -21,6 +21,7 @@ class ActivityController {
           'count': 0,
           'totalElevation': 0.0,
           'totalDistance': 0.0,
+          'totalMovingTime': 0.0,
         };
       }
 
@@ -32,6 +33,9 @@ class ActivityController {
       activitiesByMonth[month]!['totalDistance'] =
           (activitiesByMonth[month]!['totalDistance'] as double) +
               activity.distance;
+      activitiesByMonth[month]!['totalMovingTime'] =
+          (activitiesByMonth[month]!['totalMovingTime'] as double) +
+              activity.movingTime.toDouble();
     }
 
     // Convert the map to a list of entries and sort by the key in ascending order
@@ -57,6 +61,13 @@ class ActivityController {
     final groupedData = groupActivitiesByMonth(activities);
     return groupedData
         .map((entry) => (entry.value['totalDistance'] / 1000) as double)
+        .toList();
+  }
+
+  List<double> getMovingTimeData(List<Activity> activities) {
+    final groupedData = groupActivitiesByMonth(activities);
+    return groupedData
+        .map((entry) => entry.value['totalMovingTime'] as double)
         .toList();
   }
 

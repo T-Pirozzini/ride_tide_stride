@@ -104,3 +104,8 @@ String formatDateTimeToIso8601(DateTime dateTime) {
   return dateTime.toUtc().toIso8601String();
 }
 
+String formatMovingTime(double seconds) {
+  int hours = seconds ~/ 3600;
+  int minutes = ((seconds % 3600) ~/ 60);
+  return '${hours.toString().padLeft(2)}h ${minutes.toString().padLeft(2, '0')}m';
+}

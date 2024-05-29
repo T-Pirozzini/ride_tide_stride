@@ -6,12 +6,14 @@ class Activity {
     required this.startDateLocal,
     required this.elevationGain,
     required this.distance,
+    required this.movingTime,
   });
 
   final int id;
   final String startDateLocal;
   final double elevationGain;
   final double distance;
+  final int movingTime;
 
   factory Activity.fromDocument(DocumentSnapshot doc) {
     return Activity(
@@ -23,6 +25,7 @@ class Activity {
       distance: (doc['distance'] is int)
           ? (doc['distance'] as int).toDouble()
           : doc['distance'] as double,
+      movingTime: doc['moving_time'],
     );
   }
 }

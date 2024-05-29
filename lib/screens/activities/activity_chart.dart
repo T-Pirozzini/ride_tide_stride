@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:ride_tide_stride/helpers/helper_functions.dart';
 import 'package:ride_tide_stride/models/activity_type.dart';
 import 'package:ride_tide_stride/theme.dart';
 
@@ -23,7 +24,7 @@ class ActivityChart extends StatelessWidget {
       case ActivityDataType.distance:
         return 'km';
       case ActivityDataType.movingTime:
-        return 'min';
+        return ''; // We'll format time separately
     }
   }
 
@@ -60,7 +61,32 @@ class ActivityChart extends StatelessWidget {
             child: BarChart(
               BarChartData(
                 alignment: BarChartAlignment.spaceAround,
-                barTouchData: BarTouchData(enabled: false),
+                barTouchData: BarTouchData(
+                  enabled: true,
+                  touchTooltipData: BarTouchTooltipData(
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                      String weekDay = months[group.x.toInt()];
+                      return BarTooltipItem(
+                        '$weekDay\n',
+                        TextStyle(
+                          color: Colors.yellow,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                        children: <TextSpan>[
+                          TextSpan(
+                            text: formatTouchData(rod.toY),
+                            style: TextStyle(
+                              color: Colors.yellow,
+                              fontSize: 12,
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
                 titlesData: FlTitlesData(
                   show: true,
                   topTitles: AxisTitles(
@@ -101,9 +127,14 @@ class ActivityChart extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           fontSize: 8,
                         );
-                        Widget text = Text(
-                            '${value.toStringAsFixed(0)} ${getUnit()}',
-                            style: style);
+                        Widget text;
+                        if (activityType == ActivityDataType.movingTime) {
+                          text = Text(formatMovingTime(value), style: style);
+                        } else {
+                          text = Text(
+                              '${value.toStringAsFixed(0)} ${getUnit()}',
+                              style: style);
+                        }
                         return SideTitleWidget(
                           axisSide: meta.axisSide,
                           space: 4,
@@ -155,5 +186,16 @@ class ActivityChart extends StatelessWidget {
     final desiredIntervals =
         8; // Adjust this value to show more or fewer titles
     return maxDataValue / desiredIntervals;
+  }
+
+  String formatTouchData(double value) {
+    switch (activityType) {
+      case ActivityDataType.elevation:
+        return '${value.toStringAsFixed(2)} m';
+      case ActivityDataType.distance:
+        return '${value.toStringAsFixed(2)} km';
+      case ActivityDataType.movingTime:
+        return formatMovingTime(value);
+    }
   }
 }
