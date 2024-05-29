@@ -35,89 +35,93 @@ class ElevationChart extends StatelessWidget {
               child: FittedBox(
                   fit: BoxFit.cover,
                   child: Icon(Icons.landscape, color: Colors.white10))),
-          BarChart(
-            BarChartData(
-              alignment: BarChartAlignment.spaceAround,
-              barTouchData: BarTouchData(enabled: false),
-              titlesData: FlTitlesData(
-                show: true,
-                topTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: false,
+          Padding(
+            padding: const EdgeInsets.only(
+                top: 50.0), // Adjust top padding if needed
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                barTouchData: BarTouchData(enabled: false),
+                titlesData: FlTitlesData(
+                  show: true,
+                  topTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: false,
+                    ),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (double value, TitleMeta meta) {
+                        final style = TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 8,
+                        );
+                        Widget text;
+                        if (value.toInt() < months.length) {
+                          text = Text(months[value.toInt()], style: style);
+                        } else {
+                          text = Text('', style: style);
+                        }
+                        return SideTitleWidget(
+                          axisSide: meta.axisSide,
+                          space: 4,
+                          child: text,
+                        );
+                      },
+                      reservedSize: 32,
+                    ),
+                  ),
+                  rightTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (double value, TitleMeta meta) {
+                        final style = TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 8,
+                        );
+                        Widget text =
+                            Text('${value.toStringAsFixed(0)} m', style: style);
+                        return SideTitleWidget(
+                          axisSide: meta.axisSide,
+                          space: 4,
+                          child: text,
+                        );
+                      },
+                      reservedSize: 40,
+                    ),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: false,
+                    ),
                   ),
                 ),
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    getTitlesWidget: (double value, TitleMeta meta) {
-                      final style = TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 8,
-                      );
-                      Widget text;
-                      if (value.toInt() < months.length) {
-                        text = Text(months[value.toInt()], style: style);
-                      } else {
-                        text = Text('', style: style);
-                      }
-                      return SideTitleWidget(
-                        axisSide: meta.axisSide,
-                        space: 4,
-                        child: text,
-                      );
-                    },
-                    reservedSize: 32,
-                  ),
+                gridData: FlGridData(show: false),
+                borderData: FlBorderData(
+                  show: false,
                 ),
-                rightTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    getTitlesWidget: (double value, TitleMeta meta) {
-                      final style = TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 8,
-                      );
-                      Widget text =
-                          Text('${value.toStringAsFixed(0)} m', style: style);
-                      return SideTitleWidget(
-                        axisSide: meta.axisSide,
-                        space: 4,
-                        child: text,
-                      );
-                    },
-                    reservedSize: 40,
-                  ),
-                ),
-                leftTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: false,
-                  ),
-                ),
+                barGroups: elevationData
+                    .asMap()
+                    .map((index, elevation) => MapEntry(
+                          index,
+                          BarChartGroupData(
+                            x: index,
+                            barRods: [
+                              BarChartRodData(
+                                toY: elevation,
+                                color: Colors.tealAccent,
+                                width: 14,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                            ],
+                          ),
+                        ))
+                    .values
+                    .toList(),
               ),
-              gridData: FlGridData(show: false),
-              borderData: FlBorderData(
-                show: false,
-              ),
-              barGroups: elevationData
-                  .asMap()
-                  .map((index, elevation) => MapEntry(
-                        index,
-                        BarChartGroupData(
-                          x: index,
-                          barRods: [
-                            BarChartRodData(
-                              toY: elevation,
-                              color: Colors.tealAccent,
-                              width: 14,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                          ],
-                        ),
-                      ))
-                  .values
-                  .toList(),
             ),
           ),
         ],
