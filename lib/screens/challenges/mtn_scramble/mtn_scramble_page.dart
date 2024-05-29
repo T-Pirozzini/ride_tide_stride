@@ -7,9 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
-import 'package:ride_tide_stride/components/activity_icons.dart';
+import 'package:ride_tide_stride/shared/activity_icons.dart';
 import 'package:ride_tide_stride/models/chat_message.dart';
-import 'package:ride_tide_stride/pages/chat_widget.dart';
+import 'package:ride_tide_stride/screens/chat/chat_widget.dart';
 import 'package:badges/badges.dart' as badges;
 
 class MtnScramblePage extends StatefulWidget {

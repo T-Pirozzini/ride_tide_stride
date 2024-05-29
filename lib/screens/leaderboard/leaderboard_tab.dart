@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:ride_tide_stride/components/leaderboard_dialog.dart';
+import 'package:ride_tide_stride/screens/leaderboard/leaderboard_dialog.dart';
 
 class LeaderboardTab extends StatelessWidget {
   final String title;
@@ -35,7 +35,7 @@ class LeaderboardTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: getCurrentMonthData(), // Fetch data for the current month
+      stream: getCurrentMonthData(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const CircularProgressIndicator();
@@ -68,10 +68,10 @@ class LeaderboardTab extends StatelessWidget {
               return ListTile(
                 tileColor: Colors.white,
                 title: Text('${entry['full_name']}',
-                    style: Theme.of(context).textTheme.bodyMedium),
+                    style: Theme.of(context).textTheme.bodyLarge),
                 leading: customPlaceWidget('$currentPlace'),
                 subtitle:
-                    Text(title, style: Theme.of(context).textTheme.bodySmall),
+                    Text(title, style: Theme.of(context).textTheme.bodyMedium),
                 trailing: customTotalWidget(trailingText),
               );
             }
@@ -224,11 +224,22 @@ class LeaderboardTab extends StatelessWidget {
 
   Widget customPlaceWidget(String place) {
     const color = Color(0xFFA09A6A);
+    const firstColor = Color(0xFFFFD700); // Gold
+    const secondColor = Color(0xFFC0C0C0); // Silver
+    const thirdColor = Color(0xFFCD7F32); // Bronze
 
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: color, width: 2.0),
+        border: Border.all(
+            color: place == "1"
+                ? firstColor
+                : place == "2"
+                    ? secondColor
+                    : place == "3"
+                        ? thirdColor
+                        : color,
+            width: 2.0),
       ),
       padding: const EdgeInsets.all(8.0),
       constraints: const BoxConstraints(
@@ -241,9 +252,15 @@ class LeaderboardTab extends StatelessWidget {
           padding: const EdgeInsets.all(2.0),
           child: Text(
             place,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
-              color: color,
+              color: place == "1"
+                  ? firstColor
+                  : place == "2"
+                      ? secondColor
+                      : place == "3"
+                          ? thirdColor
+                          : color,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -251,6 +268,14 @@ class LeaderboardTab extends StatelessWidget {
       ),
     );
   }
+
+  //  place == 1
+  //               ? '🥇'
+  //               : place == 2
+  //                   ? '🥈'
+  //                   : place == 3
+  //                       ? '🥉'
+  //                       : place,
 
   Widget customTotalWidget(String total) {
     const color = Color(0xFF283D3B); // Customize the color as needed

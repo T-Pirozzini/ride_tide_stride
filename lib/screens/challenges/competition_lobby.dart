@@ -2,12 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:ride_tide_stride/components/competition_dialog.dart';
-import 'package:ride_tide_stride/components/competition_learn_more.dart';
-import 'package:ride_tide_stride/components/passwordDialog.dart';
+import 'package:ride_tide_stride/screens/challenges/competition_dialog.dart';
+import 'package:ride_tide_stride/screens/challenges/competition_learn_more.dart';
+import 'package:ride_tide_stride/screens/challenges/passwordDialog.dart';
 import 'package:ride_tide_stride/screens/challenges/mtn_scramble/mtn_scramble_page.dart';
 import 'package:ride_tide_stride/screens/challenges/snow2surf/snow_2_surf_page.dart';
-import 'package:ride_tide_stride/screens/challenges/team_traverse_page.dart';
+import 'package:ride_tide_stride/screens/challenges/team_traverse/team_traverse_page.dart';
 
 class CompetitionLobbyPage extends StatefulWidget {
   const CompetitionLobbyPage({super.key});

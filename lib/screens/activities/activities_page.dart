@@ -61,8 +61,7 @@ class _ActivitiesListPageState extends ConsumerState<ActivitiesListPage> {
               children: [
                 Expanded(
                   child: GestureDetector(
-                    onTap: () =>
-                        openBottomSheet(activitiesByMonth, 'Elevation'),
+                    // onTap: () => openBottomSheet(activitiesByMonth, 'Elevation'),
                     child: ActivityChart(
                       activityData: elevationData,
                       months: months,
@@ -73,7 +72,7 @@ class _ActivitiesListPageState extends ConsumerState<ActivitiesListPage> {
                 ),
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => openBottomSheet(activitiesByMonth, 'Distance'),
+                    // onTap: () => openBottomSheet(activitiesByMonth, 'Distance'),
                     child: ActivityChart(
                       activityData: distanceData,
                       months: months,
@@ -84,7 +83,7 @@ class _ActivitiesListPageState extends ConsumerState<ActivitiesListPage> {
                 ),
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => openBottomSheet(activitiesByMonth, 'Time'),
+                    // onTap: () => openBottomSheet(activitiesByMonth, 'Time'),
                     child: ActivityChart(
                       activityData: timeData,
                       months: months,
@@ -119,14 +118,6 @@ class _ActivitiesListPageState extends ConsumerState<ActivitiesListPage> {
             final totalElevation = entry.value['totalElevation'] as double;
             final totalDistance = entry.value['totalDistance'] as double;
             final totalMovingTime = entry.value['totalMovingTime'] as double;
-
-            String formatMovingTime(double minutes) {
-              final int hours = minutes ~/ 60;
-              final int remainingMinutes = (minutes % 60).toInt();
-              return hours > 0
-                  ? '${hours}h ${remainingMinutes}m'
-                  : '${remainingMinutes}m';
-            }
 
             return ListTile(
               title: Text('$month: $count'),

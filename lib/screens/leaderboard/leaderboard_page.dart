@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:ride_tide_stride/components/leaderboard_tab.dart';
+import 'package:ride_tide_stride/screens/leaderboard/leaderboard_tab.dart';
 import 'package:ride_tide_stride/screens/leaderboard/timer.dart';
 import 'package:ride_tide_stride/theme.dart';
 
@@ -62,7 +62,7 @@ class _LeaderboardState extends State<Leaderboard> {
             .millisecondsSinceEpoch;
 
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -77,19 +77,33 @@ class _LeaderboardState extends State<Leaderboard> {
         child: Scaffold(
           backgroundColor: Colors.transparent,
           appBar: AppBar(
-            title: Text(
-              'Leaderboard',
-              style: GoogleFonts.tektur(
-                  textStyle: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w300,
-                      letterSpacing: 1.2,
-                      color: Colors.white)),
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Text(
+                  'Leaderboard',
+                  style: GoogleFonts.tektur(
+                    textStyle: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w300,
+                        letterSpacing: 1.2,
+                        color: Colors.white),
+                  ),
+                ),
+              ],
             ),
             bottom: TabBar(
               labelStyle:
                   GoogleFonts.tektur(textStyle: TextStyle(color: Colors.white)),
               tabs: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.stars),
+                    SizedBox(width: 4),
+                    Tab(text: 'Overall'),
+                  ],
+                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -129,13 +143,6 @@ class _LeaderboardState extends State<Leaderboard> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: <Widget>[
-                // Place your buttons here
-                // ElevatedButton(
-                //   onPressed: () {
-                //     Navigator.of(context).pushNamed('/resultsPage');
-                //   },
-                //   child: const Text('View Past Results'),
-                // ),
                 ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).pushNamed('/awardsPage');
@@ -159,6 +166,7 @@ class _LeaderboardState extends State<Leaderboard> {
           ),
           body: const TabBarView(
             children: [
+              LeaderboardTab(title: 'Overall'),
               LeaderboardTab(title: 'Moving Time'),
               LeaderboardTab(title: 'Total Distance (km)'),
               LeaderboardTab(title: 'Total Elevation'),

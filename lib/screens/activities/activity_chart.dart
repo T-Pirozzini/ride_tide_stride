@@ -52,9 +52,15 @@ class ActivityChart extends StatelessWidget {
             ],
           ),
           Positioned.fill(
-              child: FittedBox(
-                  fit: BoxFit.cover,
-                  child: Icon(Icons.landscape, color: Colors.white10))),
+            child: FittedBox(
+              fit: BoxFit.cover,
+              child: activityType == ActivityDataType.movingTime
+                  ? Icon(Icons.timelapse, color: Colors.white10)
+                  : activityType == ActivityDataType.elevation
+                      ? Icon(Icons.terrain, color: Colors.white10)
+                      : Icon(Icons.straighten, color: Colors.white10),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.only(
                 top: 50.0), // Adjust top padding if needed
@@ -69,7 +75,7 @@ class ActivityChart extends StatelessWidget {
                       return BarTooltipItem(
                         '$weekDay\n',
                         TextStyle(
-                          color: Colors.yellow,
+                          color: Colors.tealAccent,
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
@@ -77,7 +83,7 @@ class ActivityChart extends StatelessWidget {
                           TextSpan(
                             text: formatTouchData(rod.toY),
                             style: TextStyle(
-                              color: Colors.yellow,
+                              color: Colors.tealAccent,
                               fontSize: 12,
                               fontWeight: FontWeight.normal,
                             ),
@@ -164,7 +170,12 @@ class ActivityChart extends StatelessWidget {
                             barRods: [
                               BarChartRodData(
                                 toY: elevation,
-                                color: Colors.tealAccent,
+                                color: activityType ==
+                                        ActivityDataType.movingTime
+                                    ? Colors.orangeAccent
+                                    : activityType == ActivityDataType.elevation
+                                        ? Colors.pinkAccent
+                                        : Colors.limeAccent,
                                 width: 14,
                                 borderRadius: BorderRadius.circular(6),
                               ),
