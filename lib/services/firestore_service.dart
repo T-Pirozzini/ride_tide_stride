@@ -37,7 +37,8 @@ class FirestoreService extends ChangeNotifier {
         startDateLocal: doc['start_date_local'],
         elevationGain: doc['elevation_gain'],
         distance: doc['distance'],
-        movingTime: doc['moving_time'],
+        movingTime: doc['moving_time'], 
+        fullname: doc['fullname'],       
       );
     }).toList();
   }
@@ -78,6 +79,7 @@ class FirestoreService extends ChangeNotifier {
         elevationGain: doc['elevation_gain'],
         distance: doc['distance'],
         movingTime: doc['moving_time'],
+        fullname: doc['fullname'],
       );
     }).toList();
   }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:ride_tide_stride/screens/leaderboard/leaderboard_tab.dart';
+import 'package:ride_tide_stride/screens/leaderboard/overall_leaderboard_tab.dart';
 import 'package:ride_tide_stride/screens/leaderboard/timer.dart';
 import 'package:ride_tide_stride/theme.dart';
 
@@ -93,39 +94,55 @@ class _LeaderboardState extends State<Leaderboard> {
               ],
             ),
             bottom: TabBar(
-              labelStyle:
-                  GoogleFonts.tektur(textStyle: TextStyle(color: Colors.white)),
+              labelStyle: GoogleFonts.tektur(
+                  textStyle: Theme.of(context)
+                      .textTheme
+                      .bodyLarge!
+                      .copyWith(color: Colors.white)),
               tabs: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Icon(Icons.stars),
-                    SizedBox(width: 4),
+                    Icon(Icons.stars,
+                        color: Colors.tealAccent.withOpacity(.2), size: 48),
                     Tab(text: 'Overall'),
                   ],
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Icon(Icons.timelapse),
-                    SizedBox(width: 4),
+                    Icon(Icons.timelapse,
+                        color: Colors.tealAccent.withOpacity(.2), size: 48),
                     Tab(text: 'Time'),
                   ],
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Icon(Icons.straighten),
-                    SizedBox(width: 4),
+                    Icon(Icons.straighten,
+                        color: Colors.tealAccent.withOpacity(.2), size: 48),
                     Tab(text: 'Distance'),
                   ],
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Icon(Icons.landscape),
-                    SizedBox(width: 4),
-                    Tab(text: 'Elevation'),
+                    Icon(Icons.landscape,
+                        color: Colors.tealAccent.withOpacity(.2), size: 48),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Tab(
+                        child: Text(
+                          'Elevation',
+                          style: GoogleFonts.tektur(
+                            textStyle: Theme.of(context)
+                                .textTheme
+                                .bodyLarge!
+                                .copyWith(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -166,7 +183,7 @@ class _LeaderboardState extends State<Leaderboard> {
           ),
           body: const TabBarView(
             children: [
-              LeaderboardTab(title: 'Overall'),
+              OverallLeaderboardTab(title: 'Overall'),
               LeaderboardTab(title: 'Moving Time'),
               LeaderboardTab(title: 'Total Distance (km)'),
               LeaderboardTab(title: 'Total Elevation'),
