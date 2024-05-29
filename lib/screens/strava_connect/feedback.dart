@@ -23,17 +23,12 @@ class UserFeedback extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(8.0),
       child: Column(
         children: [
-          Text(
-            "Suggestions/Feedback?",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          SizedBox(height: 16.0),
+          Text("Suggestions/Feedback?",
+              style: Theme.of(context).textTheme.headlineMedium),
+          SizedBox(height: 10.0),
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
@@ -44,16 +39,22 @@ class UserFeedback extends StatelessWidget {
               child: TextField(
                 controller: feedbackController,
                 decoration: InputDecoration(
-                  hintText: 'Share your thoughts...',
-                  border: InputBorder.none,
-                ),
+                    hintText: 'Share your thoughts...',
+                    border: InputBorder.none,
+                    hintStyle: Theme.of(context).textTheme.bodyLarge),
+                style: Theme.of(context).textTheme.bodyMedium,
                 maxLines: 5,
               ),
             ),
           ),
-          Text("Help me improve the app!",
-              style: TextStyle(fontStyle: FontStyle.italic)),
-          SizedBox(height: 20.0),
+          Text(
+            "Help me improve the app!",
+            style: Theme.of(context)
+                .textTheme
+                .bodyLarge!
+                .copyWith(fontStyle: FontStyle.italic),
+          ),
+          SizedBox(height: 10.0),
           ElevatedButton(
             onPressed: launchMailto,
             style: ElevatedButton.styleFrom(

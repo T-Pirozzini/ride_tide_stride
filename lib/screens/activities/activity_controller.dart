@@ -6,8 +6,14 @@ class ActivityController {
       List<Activity> activities) {
     final Map<String, Map<String, dynamic>> activitiesByMonth = {};
 
+    final DateTime now = DateTime.now();
+    final DateTime oneYearAgo = DateTime(now.year, now.month - 11, 1);
+
     for (var activity in activities) {
       final DateTime date = DateTime.parse(activity.startDateLocal);
+      if (date.isBefore(oneYearAgo)) {
+        continue; // Skip activities older than 12 months
+      }
       final String month = DateFormat('yyyy-MM').format(date);
 
       if (!activitiesByMonth.containsKey(month)) {
@@ -21,11 +27,16 @@ class ActivityController {
               activity.elevationGain;
     }
 
-    // Convert the map to a list of entries and sort by the key in descending order
+    // Convert the map to a list of entries and sort by the key in ascending order
     final sortedActivitiesByMonth = activitiesByMonth.entries.toList()
-      ..sort((a, b) => b.key.compareTo(a.key));
+      ..sort((a, b) => a.key.compareTo(b.key));
 
-    return sortedActivitiesByMonth;
+    // Return only the last 12 months of data
+    final int startIndex = sortedActivitiesByMonth.length > 12
+        ? sortedActivitiesByMonth.length - 12
+        : 0;
+
+    return sortedActivitiesByMonth.sublist(startIndex);
   }
 
   List<double> getElevationData(List<Activity> activities) {
