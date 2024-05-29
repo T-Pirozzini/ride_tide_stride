@@ -11,7 +11,7 @@ class AppColors {
   static Color textColor = Colors.black;
   static Color subTextColor = Colors.grey;
   static Color successColor = const Color.fromRGBO(9, 149, 110, 1);
-  static Color highlightColor = const Color.fromRGBO(212, 172, 13, 1);
+  static Color highlightColor = Colors.tealAccent;
 }
 
 ThemeData primaryTheme = ThemeData(
@@ -45,12 +45,23 @@ ThemeData primaryTheme = ThemeData(
   textTheme: const TextTheme().copyWith(
     bodySmall: TextStyle(
       color: AppColors.textColor,
-      fontSize: 14,
+      fontSize: 10,
       letterSpacing: 1,
     ),
     bodyMedium: TextStyle(
       color: AppColors.textColor,
-      fontSize: 16,
+      fontSize: 12,
+      letterSpacing: 1,
+    ),
+    bodyLarge: TextStyle(
+      color: AppColors.textColor,
+      fontSize: 14,
+      letterSpacing: 1,
+    ),
+    headlineSmall: TextStyle(
+      color: AppColors.titleColor,
+      fontSize: 14,
+      fontWeight: FontWeight.bold,
       letterSpacing: 1,
     ),
     headlineMedium: TextStyle(
@@ -59,9 +70,15 @@ ThemeData primaryTheme = ThemeData(
       fontWeight: FontWeight.bold,
       letterSpacing: 1,
     ),
-    titleMedium: TextStyle(
+    headlineLarge: TextStyle(
       color: AppColors.titleColor,
       fontSize: 18,
+      fontWeight: FontWeight.bold,
+      letterSpacing: 1,
+    ),
+    titleMedium: TextStyle(
+      color: AppColors.titleColor,
+      fontSize: 14,
       fontWeight: FontWeight.bold,
       letterSpacing: 2,
     ),

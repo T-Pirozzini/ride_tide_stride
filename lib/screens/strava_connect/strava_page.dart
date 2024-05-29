@@ -12,9 +12,10 @@ import 'package:ride_tide_stride/helpers/helper_functions.dart';
 import 'package:ride_tide_stride/screens/strava_connect/activity_card.dart';
 
 import 'package:ride_tide_stride/screens/strava_connect/strava_auth.dart';
-import 'package:ride_tide_stride/components/feedback.dart';
+import 'package:ride_tide_stride/screens/strava_connect/feedback.dart';
 import 'package:ride_tide_stride/screens/strava_connect/strava_redirect.dart';
 import 'package:ride_tide_stride/secret.dart';
+import 'package:ride_tide_stride/theme.dart';
 import 'package:strava_client/strava_client.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -415,9 +416,9 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
           padding: EdgeInsets.zero,
           children: <Widget>[
             Container(
-              height: 100,
+              height: 70,
               child: DrawerHeader(
-                margin: EdgeInsets.zero, // Remove default margin
+                margin: EdgeInsets.zero,
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Color(0xFFA09A6A),
@@ -428,7 +429,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Text(
                       'Heading out?',
@@ -443,13 +444,15 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
               ),
             ),
             ListTile(
-              title: Text('Sign Out', style: TextStyle(fontSize: 16)),
+              title: Text('Sign Out',
+                  style: Theme.of(context).textTheme.headlineMedium),
               leading: Icon(
                 Icons.exit_to_app,
                 color: Color.fromARGB(255, 79, 122, 118),
                 size: 32,
               ),
-              subtitle: Text('See you next time!'),
+              subtitle: Text('See you next time!',
+                  style: Theme.of(context).textTheme.bodyMedium),
               onTap: () async {
                 await _signOut();
                 Navigator.of(context).pop();
@@ -473,22 +476,26 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
             ),
             Divider(),
             ListTile(
-              title: Text('My Website', style: TextStyle(fontSize: 16)),
+              title: Text('My Website',
+                  style: Theme.of(context).textTheme.headlineMedium),
               leading: Icon(
                 Icons.code,
                 color: Color.fromARGB(255, 79, 122, 118),
                 size: 32,
               ),
-              subtitle: Text('Check out my other apps!'),
+              subtitle: Text('Check out my other apps!',
+                  style: Theme.of(context).textTheme.bodyMedium),
               onTap: () =>
                   launchUrl(Uri.parse('https://portfolio-2023-1a61.fly.dev/')),
             ),
             Divider(),
             ListTile(
-              title: Text('Delete Account', style: TextStyle(fontSize: 16)),
+              title: Text('Delete Account',
+                  style: Theme.of(context).textTheme.headlineMedium),
               leading: Icon(Icons.delete_outline,
                   color: Colors.red.shade300, size: 32),
-              subtitle: Text('Warning: This action is permanent'),
+              subtitle: Text('Warning: This action is permanent',
+                  style: Theme.of(context).textTheme.bodyMedium),
               onTap: () async {
                 bool shouldProceed =
                     await _showDeleteConfirmationDialog(context);
@@ -511,11 +518,12 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
       ),
       body: SingleChildScrollView(
         child: Container(
+          width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 !isLoggedIn
                     ? Padding(
@@ -538,39 +546,30 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                       color: Color(0xFF283D3B),
                                     ),
                                     const SizedBox(width: 8.0),
-                                    const Text(
+                                    Text(
                                       'Welcome to R.T.S!',
-                                      style: TextStyle(
-                                        color: Color(0xFF283D3B),
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineLarge,
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 15),
                                 Text(
                                   'To access all of the features:',
-                                  style: TextStyle(
-                                    color: Color(0xFF283D3B),
-                                    fontSize: 14,
-                                  ),
+                                  style: Theme.of(context).textTheme.bodyMedium,
                                 ),
                                 Text(
                                   'R.T.S. requires a connection to your Strava Account.',
-                                  style: TextStyle(
-                                    color: Color(0xFF283D3B),
-                                    fontSize: 14,
-                                  ),
+                                  style: Theme.of(context).textTheme.bodySmall,
                                 ),
                                 SizedBox(height: 15),
                                 Text(
                                   'Click the button below to connect to Strava and participate with other users in the Global Leaderboards and Challenges.',
-                                  style: TextStyle(
-                                    color: Color(0xFF283D3B),
-                                    fontSize: 14,
-                                    fontStyle: FontStyle.italic,
-                                  ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(fontStyle: FontStyle.italic),
                                 ),
                                 const SizedBox(height: 5),
                                 Center(
@@ -592,19 +591,17 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                     Expanded(
                                       child: Text(
                                           'Connecting to Strava is Optional',
-                                          style: TextStyle(
-                                              color: Color(0xFF283D3B),
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold)),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .headlineMedium),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 10),
                                 Text(
-                                  'You can "View the Leaderboards" or "Spectate Challenges" without connecting to Strava (use the bottom tabs to navigate).',
-                                  style: TextStyle(
-                                      color: Color(0xFF283D3B), fontSize: 14),
-                                ),
+                                    'You can "View the Leaderboards" or "Spectate Challenges" without connecting to Strava (use the bottom tabs to navigate).',
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium),
                               ],
                             ),
                           ),
@@ -653,11 +650,10 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(Icons.person,
-                                    color: Colors.tealAccent, size: 32),
+                                    color: Colors.tealAccent, size: 28),
                                 SizedBox(width: 8),
                                 FutureBuilder<Map<String, String>>(
-                                  future:
-                                      getUserInfo(), // Call getUserInfo() to get user's info
+                                  future: getUserInfo(),
                                   builder: (context, snapshot) {
                                     if (snapshot.connectionState ==
                                         ConnectionState.waiting) {
@@ -667,11 +663,10 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                       return Text(
                                         snapshot.data![
                                             'username']!, // Use retrieved username here
-                                        style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headlineLarge!
+                                            .copyWith(color: Colors.white),
                                       );
                                     }
                                     // Handle error or no data case
@@ -685,21 +680,33 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                     );
                                   },
                                 ),
-                                SizedBox(width: 25),
-                                IconButton(
-                                  onPressed: updateProfile,
-                                  icon: Icon(Icons.edit),
-                                  color: Colors.grey.shade300,
+                                SizedBox(width: 15),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                        color: Colors.tealAccent, width: 1),
+                                    color: AppColors.primaryColor,
+                                  ),
+                                  child: IconButton(
+                                    visualDensity: VisualDensity.compact,
+                                    onPressed: updateProfile,
+                                    icon: Icon(Icons.edit, size: 20),
+                                    color: AppColors.highlightColor,
+                                  ),
                                 ),
                               ],
                             ),
+                            Divider(color: Colors.tealAccent),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
                                   "Disconnect from Strava?",
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 12),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyLarge!
+                                      .copyWith(color: Colors.white),
                                 ),
                                 IconButton(
                                   onPressed: stravaDisconnect,
@@ -708,13 +715,14 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                 ),
                               ],
                             ),
-                            Divider(color: Colors.tealAccent),
+                            _infoRow(Icons.badge, 'ID', '${athleteData!['id']}',
+                                context),
                             SizedBox(height: 10),
                             _infoRow(
-                                Icons.badge, 'ID', '${athleteData!['id']}'),
-                            SizedBox(height: 10),
-                            _infoRow(Icons.location_city, 'HQ',
-                                '${athleteData!['city']}, ${athleteData!['state']}'),
+                                Icons.location_city,
+                                'HQ',
+                                '${athleteData!['city']}, ${athleteData!['state']}',
+                                context),
                             SizedBox(height: 10),
                             Center(
                               child: Material(
@@ -973,27 +981,25 @@ void deleteActivityFromFirestore(activityId) {
   });
 }
 
-// This function is to avoid repetition and make the code cleaner
-Widget _infoRow(IconData icon, String title, String value) {
+Widget _infoRow(IconData icon, String title, String value, context) {
   return Row(
     children: [
       Icon(icon, color: Colors.tealAccent, size: 20),
       SizedBox(width: 8),
       Text(
         '$title: ',
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
+        style: Theme.of(context)
+            .textTheme
+            .headlineSmall!
+            .copyWith(color: Colors.white),
       ),
       Expanded(
         child: Text(
           value,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-          ),
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium!
+              .copyWith(color: Colors.white),
         ),
       ),
     ],
