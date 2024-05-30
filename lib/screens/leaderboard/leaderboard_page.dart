@@ -94,6 +94,9 @@ class _LeaderboardState extends State<Leaderboard> {
               ],
             ),
             bottom: TabBar(
+              indicatorColor: Colors.tealAccent,
+              indicatorWeight: 3,
+              indicatorSize: TabBarIndicatorSize.tab,
               labelStyle: GoogleFonts.tektur(
                   textStyle: Theme.of(context)
                       .textTheme
@@ -104,7 +107,7 @@ class _LeaderboardState extends State<Leaderboard> {
                   alignment: Alignment.center,
                   children: [
                     Icon(Icons.stars,
-                        color: Colors.tealAccent.withOpacity(.2), size: 48),
+                        color: Colors.tealAccent.withOpacity(.4), size: 48),
                     Tab(text: 'Overall'),
                   ],
                 ),
@@ -112,7 +115,7 @@ class _LeaderboardState extends State<Leaderboard> {
                   alignment: Alignment.center,
                   children: [
                     Icon(Icons.timelapse,
-                        color: Colors.tealAccent.withOpacity(.2), size: 48),
+                        color: Colors.tealAccent.withOpacity(.4), size: 48),
                     Tab(text: 'Time'),
                   ],
                 ),
@@ -120,7 +123,7 @@ class _LeaderboardState extends State<Leaderboard> {
                   alignment: Alignment.center,
                   children: [
                     Icon(Icons.straighten,
-                        color: Colors.tealAccent.withOpacity(.2), size: 48),
+                        color: Colors.tealAccent.withOpacity(.4), size: 48),
                     Tab(text: 'Distance'),
                   ],
                 ),
@@ -128,7 +131,7 @@ class _LeaderboardState extends State<Leaderboard> {
                   alignment: Alignment.center,
                   children: [
                     Icon(Icons.landscape,
-                        color: Colors.tealAccent.withOpacity(.2), size: 48),
+                        color: Colors.tealAccent.withOpacity(.4), size: 48),
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Tab(
@@ -148,9 +151,12 @@ class _LeaderboardState extends State<Leaderboard> {
               ],
             ),
             actions: [
-              CountdownTimerWidget(
-                endTime: endTime,
-                onTimerEnd: _saveResultsToFirestore,
+              Padding(
+                padding: const EdgeInsets.all(2.0),
+                child: CountdownTimerWidget(
+                  endTime: endTime,
+                  onTimerEnd: _saveResultsToFirestore,
+                ),
               ),
             ],
           ),

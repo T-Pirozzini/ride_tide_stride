@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ride_tide_stride/helpers/helper_functions.dart';
 import 'package:ride_tide_stride/providers/activity_provider.dart';
 
 class OverallLeaderboardTab extends ConsumerWidget {
@@ -44,18 +45,38 @@ class OverallLeaderboardTab extends ConsumerWidget {
                   final fullName = uniqueParticipants.elementAt(index);
                   final totalElevation = elevationGains[fullName]!;
 
-                  return ListTile(
-                    title: Text(fullName),
-                    subtitle: Column(
-                      children: [
-                        Text(
-                            'Total Elevation: ${totalElevation.toStringAsFixed(2)} meters'),
-                        Text(
-                            'Total Distance: ${distanceGains[fullName]!.toStringAsFixed(2)} meters'),
-                        Text(
-                            'Total Moving Time: ${movingTimes[fullName]!} seconds')
-                      ],
-                    ),
+                  return Column(
+                    children: [
+                      Card(
+                        color: Colors.blue,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              children: [
+                                Container(
+                                  width: 50,
+                                  color: Colors.red,
+                                  child: Text(fullName),
+                                )
+                              ],
+                            ),
+                            Column(children: [
+                              Column(
+                                children: [
+                                  Text(
+                                      '${totalElevation.toStringAsFixed(0)} m'),
+                                  Text(
+                                      '${distanceGains[fullName]!.toStringAsFixed(0)} km'),
+                                  Text(
+                                      '${formatMovingTimeInt(movingTimes[fullName]!)}'),
+                                ],
+                              ),
+                            ]),
+                          ],
+                        ),
+                      ),
+                    ],
                   );
                 },
               ),
