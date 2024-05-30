@@ -8,7 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:ride_tide_stride/helpers/helper_data_sets.dart';
 import 'package:ride_tide_stride/helpers/helper_functions.dart';
-import 'package:ride_tide_stride/pages/chat_widget.dart';
+import 'package:ride_tide_stride/screens/chat/chat_widget.dart';
 import 'package:ride_tide_stride/models/chat_message.dart';
 import 'package:badges/badges.dart' as badges;
 import 'package:fl_chart/fl_chart.dart';

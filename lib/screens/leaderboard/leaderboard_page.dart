@@ -3,7 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:ride_tide_stride/components/leaderboard_tab.dart';
+import 'package:ride_tide_stride/screens/leaderboard/leaderboard_tab.dart';
+import 'package:ride_tide_stride/screens/leaderboard/overall_leaderboard_tab.dart';
 import 'package:ride_tide_stride/screens/leaderboard/timer.dart';
 import 'package:ride_tide_stride/theme.dart';
 
@@ -62,7 +63,7 @@ class _LeaderboardState extends State<Leaderboard> {
             .millisecondsSinceEpoch;
 
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -77,49 +78,85 @@ class _LeaderboardState extends State<Leaderboard> {
         child: Scaffold(
           backgroundColor: Colors.transparent,
           appBar: AppBar(
-            title: Text(
-              'Leaderboard',
-              style: GoogleFonts.tektur(
-                  textStyle: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w300,
-                      letterSpacing: 1.2,
-                      color: Colors.white)),
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Text(
+                  'Leaderboard',
+                  style: GoogleFonts.tektur(
+                    textStyle: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w300,
+                        letterSpacing: 1.2,
+                        color: Colors.white),
+                  ),
+                ),
+              ],
             ),
             bottom: TabBar(
-              labelStyle:
-                  GoogleFonts.tektur(textStyle: TextStyle(color: Colors.white)),
+              indicatorColor: Colors.tealAccent,
+              indicatorWeight: 3,
+              indicatorSize: TabBarIndicatorSize.tab,
+              labelStyle: GoogleFonts.tektur(
+                  textStyle: Theme.of(context)
+                      .textTheme
+                      .bodyLarge!
+                      .copyWith(color: Colors.white)),
               tabs: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Icon(Icons.timelapse),
-                    SizedBox(width: 4),
+                    Icon(Icons.stars,
+                        color: Colors.tealAccent.withOpacity(.4), size: 48),
+                    Tab(text: 'Overall'),
+                  ],
+                ),
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Icon(Icons.timelapse,
+                        color: Colors.tealAccent.withOpacity(.4), size: 48),
                     Tab(text: 'Time'),
                   ],
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Icon(Icons.straighten),
-                    SizedBox(width: 4),
+                    Icon(Icons.straighten,
+                        color: Colors.tealAccent.withOpacity(.4), size: 48),
                     Tab(text: 'Distance'),
                   ],
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Icon(Icons.landscape),
-                    SizedBox(width: 4),
-                    Tab(text: 'Elevation'),
+                    Icon(Icons.landscape,
+                        color: Colors.tealAccent.withOpacity(.4), size: 48),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Tab(
+                        child: Text(
+                          'Elevation',
+                          style: GoogleFonts.tektur(
+                            textStyle: Theme.of(context)
+                                .textTheme
+                                .bodyLarge!
+                                .copyWith(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ],
             ),
             actions: [
-              CountdownTimerWidget(
-                endTime: endTime,
-                onTimerEnd: _saveResultsToFirestore,
+              Padding(
+                padding: const EdgeInsets.all(2.0),
+                child: CountdownTimerWidget(
+                  endTime: endTime,
+                  onTimerEnd: _saveResultsToFirestore,
+                ),
               ),
             ],
           ),
@@ -129,13 +166,6 @@ class _LeaderboardState extends State<Leaderboard> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: <Widget>[
-                // Place your buttons here
-                // ElevatedButton(
-                //   onPressed: () {
-                //     Navigator.of(context).pushNamed('/resultsPage');
-                //   },
-                //   child: const Text('View Past Results'),
-                // ),
                 ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).pushNamed('/awardsPage');
@@ -159,6 +189,7 @@ class _LeaderboardState extends State<Leaderboard> {
           ),
           body: const TabBarView(
             children: [
+              OverallLeaderboardTab(title: 'Overall'),
               LeaderboardTab(title: 'Moving Time'),
               LeaderboardTab(title: 'Total Distance (km)'),
               LeaderboardTab(title: 'Total Elevation'),

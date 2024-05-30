@@ -6,10 +6,10 @@ import 'package:ride_tide_stride/firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:ride_tide_stride/screens/activities/activities_page.dart';
-import 'package:ride_tide_stride/pages/users_page.dart';
+import 'package:ride_tide_stride/screens/leaderboard/users_page.dart';
 import 'package:ride_tide_stride/screens/awards/awards_page.dart';
-import 'package:ride_tide_stride/pages/challenge_results_page.dart';
-import 'package:ride_tide_stride/pages/results_page.dart';
+import 'package:ride_tide_stride/screens/challenges/challenge_results_page.dart';
+
 import 'package:ride_tide_stride/theme.dart';
 
 Future<void> main() async {
@@ -36,7 +36,6 @@ class MyApp extends StatelessWidget {
         title: 'Ride.Tide.Stride',
         home: const AuthPage(),
         routes: {
-          '/resultsPage': (context) => ResultsPage(),
           '/awardsPage': (context) => AwardsPage(),
           '/challengeResultsPage': (context) => ChallengeResultsPage(),
           '/usersPage': (context) => UsersListPage(),

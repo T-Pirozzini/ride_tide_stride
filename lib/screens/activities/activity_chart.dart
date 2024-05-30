@@ -1,12 +1,32 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:ride_tide_stride/helpers/helper_functions.dart';
+import 'package:ride_tide_stride/models/activity_type.dart';
 import 'package:ride_tide_stride/theme.dart';
 
-class ElevationChart extends StatelessWidget {
-  final List<double> elevationData;
+class ActivityChart extends StatelessWidget {
+  final List<double> activityData;
   final List<String> months;
+  final String title;
+  final ActivityDataType activityType;
 
-  ElevationChart({required this.elevationData, required this.months});
+  ActivityChart({
+    required this.activityData,
+    required this.months,
+    required this.title,
+    required this.activityType,
+  });
+
+  String getUnit() {
+    switch (activityType) {
+      case ActivityDataType.elevation:
+        return 'm';
+      case ActivityDataType.distance:
+        return 'km';
+      case ActivityDataType.movingTime:
+        return ''; // We'll format time separately
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +43,7 @@ class ElevationChart extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Elevation',
+                title,
                 style: Theme.of(context)
                     .textTheme
                     .headlineMedium!
@@ -32,16 +52,47 @@ class ElevationChart extends StatelessWidget {
             ],
           ),
           Positioned.fill(
-              child: FittedBox(
-                  fit: BoxFit.cover,
-                  child: Icon(Icons.landscape, color: Colors.white10))),
+            child: FittedBox(
+              fit: BoxFit.cover,
+              child: activityType == ActivityDataType.movingTime
+                  ? Icon(Icons.timelapse, color: Colors.white10)
+                  : activityType == ActivityDataType.elevation
+                      ? Icon(Icons.terrain, color: Colors.white10)
+                      : Icon(Icons.straighten, color: Colors.white10),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.only(
                 top: 50.0), // Adjust top padding if needed
             child: BarChart(
               BarChartData(
                 alignment: BarChartAlignment.spaceAround,
-                barTouchData: BarTouchData(enabled: false),
+                barTouchData: BarTouchData(
+                  enabled: true,
+                  touchTooltipData: BarTouchTooltipData(
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                      String weekDay = months[group.x.toInt()];
+                      return BarTooltipItem(
+                        '$weekDay\n',
+                        TextStyle(
+                          color: Colors.tealAccent,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                        children: <TextSpan>[
+                          TextSpan(
+                            text: formatTouchData(rod.toY),
+                            style: TextStyle(
+                              color: Colors.tealAccent,
+                              fontSize: 12,
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
                 titlesData: FlTitlesData(
                   show: true,
                   topTitles: AxisTitles(
@@ -82,15 +133,22 @@ class ElevationChart extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           fontSize: 8,
                         );
-                        Widget text =
-                            Text('${value.toStringAsFixed(0)} m', style: style);
+                        Widget text;
+                        if (activityType == ActivityDataType.movingTime) {
+                          text = Text(formatMovingTime(value), style: style);
+                        } else {
+                          text = Text(
+                              '${value.toStringAsFixed(0)} ${getUnit()}',
+                              style: style);
+                        }
                         return SideTitleWidget(
                           axisSide: meta.axisSide,
                           space: 4,
                           child: text,
                         );
                       },
-                      reservedSize: 40,
+                      reservedSize: 50,
+                      interval: calculateInterval(activityData),
                     ),
                   ),
                   leftTitles: AxisTitles(
@@ -103,7 +161,7 @@ class ElevationChart extends StatelessWidget {
                 borderData: FlBorderData(
                   show: false,
                 ),
-                barGroups: elevationData
+                barGroups: activityData
                     .asMap()
                     .map((index, elevation) => MapEntry(
                           index,
@@ -112,7 +170,12 @@ class ElevationChart extends StatelessWidget {
                             barRods: [
                               BarChartRodData(
                                 toY: elevation,
-                                color: Colors.tealAccent,
+                                color: activityType ==
+                                        ActivityDataType.movingTime
+                                    ? Colors.orangeAccent
+                                    : activityType == ActivityDataType.elevation
+                                        ? Colors.pinkAccent
+                                        : Colors.limeAccent,
                                 width: 14,
                                 borderRadius: BorderRadius.circular(6),
                               ),
@@ -127,5 +190,23 @@ class ElevationChart extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  double calculateInterval(List<double> data) {
+    final maxDataValue = data.reduce((a, b) => a > b ? a : b);
+    final desiredIntervals =
+        8; // Adjust this value to show more or fewer titles
+    return maxDataValue / desiredIntervals;
+  }
+
+  String formatTouchData(double value) {
+    switch (activityType) {
+      case ActivityDataType.elevation:
+        return '${value.toStringAsFixed(2)} m';
+      case ActivityDataType.distance:
+        return '${value.toStringAsFixed(2)} km';
+      case ActivityDataType.movingTime:
+        return formatMovingTime(value);
+    }
   }
 }

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ride_tide_stride/models/activity.dart';
 
 Future<String> getUserNameString(String email) async {
   // Check if email is "Empty Slot", and avoid fetching from Firestore
@@ -103,4 +104,17 @@ DateTime getEndOfMonth() {
 String formatDateTimeToIso8601(DateTime dateTime) {
   return dateTime.toUtc().toIso8601String();
 }
+
+String formatMovingTime(double seconds) {
+  int hours = seconds ~/ 3600;
+  int minutes = ((seconds % 3600) ~/ 60);
+  return '${hours.toString().padLeft(2)}h ${minutes.toString().padLeft(2, '0')}m';
+}
+
+String formatMovingTimeInt(int seconds) {
+  int hours = seconds ~/ 3600;
+  int minutes = ((seconds % 3600) ~/ 60);
+  return '${hours.toString().padLeft(2)}h ${minutes.toString().padLeft(2, '0')}m';
+}
+
 

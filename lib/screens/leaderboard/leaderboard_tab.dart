@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:ride_tide_stride/components/leaderboard_dialog.dart';
+import 'package:ride_tide_stride/helpers/helper_functions.dart';
+import 'package:ride_tide_stride/screens/leaderboard/custom_list_tile.dart';
+import 'package:ride_tide_stride/screens/leaderboard/leaderboard_dialog.dart';
 
 class LeaderboardTab extends StatelessWidget {
   final String title;
@@ -35,7 +37,7 @@ class LeaderboardTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: getCurrentMonthData(), // Fetch data for the current month
+      stream: getCurrentMonthData(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const CircularProgressIndicator();
@@ -54,39 +56,28 @@ class LeaderboardTab extends StatelessWidget {
             final entry = activityData[title]![index];
             final currentPlace = index + 1;
 
-            // Helper function to format duration
-            String formatDuration(int seconds) {
-              final Duration duration = Duration(seconds: seconds);
-              final int hours = duration.inHours;
-              final int minutes = (duration.inMinutes % 60);
-              final int remainingSeconds = (duration.inSeconds % 60);
-              return '$hours:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
-            }
-
-            // Helper function to build list tile
-            Widget buildListTile(String title, String trailingText) {
-              return ListTile(
-                tileColor: Colors.white,
-                title: Text('${entry['full_name']}',
-                    style: Theme.of(context).textTheme.bodyMedium),
-                leading: customPlaceWidget('$currentPlace'),
-                subtitle:
-                    Text(title, style: Theme.of(context).textTheme.bodySmall),
-                trailing: customTotalWidget(trailingText),
-              );
-            }
-
             // Decide which list tile to build based on the title
             Widget dataWidget;
             if (title == 'Moving Time') {
-              dataWidget = buildListTile('Total Moving Time',
-                  formatDuration(entry['total_moving_time']));
+              dataWidget = CustomListTile(
+                  title: 'Total Moving Time',
+                  trailingText: formatMovingTimeInt(entry['total_moving_time']),
+                  entry: entry,
+                  currentPlace: currentPlace);
             } else if (title == 'Total Distance (km)') {
-              dataWidget = buildListTile('Total Distance',
-                  '${(entry['total_distance'] / 1000).toStringAsFixed(2)} km');
+              dataWidget = CustomListTile(
+                  title: 'Total Distance',
+                  trailingText:
+                      '${(entry['total_distance'] / 1000).toStringAsFixed(0)} km',
+                  entry: entry,
+                  currentPlace: currentPlace);
             } else if (title == 'Total Elevation') {
-              dataWidget = buildListTile('Total Elevation',
-                  '${entry['total_elevation'].toStringAsFixed(1)} m');
+              dataWidget = CustomListTile(
+                  title: 'Total Elevation',
+                  trailingText:
+                      '${entry['total_elevation'].toStringAsFixed(0)} m',
+                  entry: entry,
+                  currentPlace: currentPlace);
             } else {
               dataWidget = const SizedBox();
             }
@@ -220,52 +211,6 @@ class LeaderboardTab extends StatelessWidget {
 
     // Return the sorted list for the given title
     return {title: dataList};
-  }
-
-  Widget customPlaceWidget(String place) {
-    const color = Color(0xFFA09A6A);
-
-    return Container(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: color, width: 2.0),
-      ),
-      padding: const EdgeInsets.all(8.0),
-      constraints: const BoxConstraints(
-        minWidth: 40.0,
-        minHeight: 40.0,
-      ),
-      child: FittedBox(
-        fit: BoxFit.contain,
-        child: Padding(
-          padding: const EdgeInsets.all(2.0),
-          child: Text(
-            place,
-            style: const TextStyle(
-              fontSize: 16,
-              color: color,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget customTotalWidget(String total) {
-    const color = Color(0xFF283D3B); // Customize the color as needed
-
-    return Container(
-      padding: const EdgeInsets.all(10.0), // Adjust padding as needed
-      child: Text(
-        total,
-        style: const TextStyle(
-          fontSize: 20, // Adjust font size as needed
-          color: color, // Text color
-          fontWeight: FontWeight.bold, // Bold text
-        ),
-      ),
-    );
   }
 
   Stream<QuerySnapshot> getCurrentMonthData() {
