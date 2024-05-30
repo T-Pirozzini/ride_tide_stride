@@ -8,6 +8,10 @@ class Activity {
     required this.distance,
     required this.movingTime,
     required this.fullname,
+    required this.name,
+    required this.type,
+    required this.power,
+    required this.averageSpeed,
   });
 
   final int id;
@@ -16,6 +20,10 @@ class Activity {
   final double distance;
   final int movingTime;
   final String fullname;
+  final String name;
+  final String type;
+  final double power;
+  final double averageSpeed;
 
   factory Activity.fromDocument(DocumentSnapshot doc) {
     return Activity(
@@ -29,6 +37,15 @@ class Activity {
           : doc['distance'] as double,
       movingTime: doc['moving_time'],
       fullname: doc['fullname'],
+      name: doc['name'],
+      type: doc['type'],
+      power: (doc['average_watts'] != null)
+          ? (doc['average_watts'] is int
+              ? (doc['average_watts'] as int).toDouble()
+              : doc['average_watts'] as double)
+          : 0.0,
+      averageSpeed: doc['average_speed'],
     );
+
   }
 }

@@ -37,8 +37,16 @@ class FirestoreService extends ChangeNotifier {
         startDateLocal: doc['start_date_local'],
         elevationGain: doc['elevation_gain'],
         distance: doc['distance'],
-        movingTime: doc['moving_time'], 
-        fullname: doc['fullname'],       
+        movingTime: doc['moving_time'],
+        fullname: doc['fullname'],
+        name: doc['name'],
+        type: doc['type'],
+        power: doc['average_watts'] != null
+            ? (doc['average_watts'] is int
+                ? (doc['average_watts'] as int).toDouble()
+                : doc['average_watts'] as double)
+            : 0.0,
+        averageSpeed: doc['average_speed'],
       );
     }).toList();
   }
@@ -53,6 +61,24 @@ class FirestoreService extends ChangeNotifier {
     final QuerySnapshot result = await _db
         .collection('activities')
         .where('user_email', isEqualTo: email)
+        .get();
+
+    final List<DocumentSnapshot> documents = result.docs;
+
+    return documents.map((doc) => Activity.fromDocument(doc)).toList();
+  }
+
+// fetch all user current month activities
+  Future<List<Activity>> fetchAllUserCurrentMonthActivities(fullName) async {
+    final startOfMonth = formatDateTimeToIso8601(getStartOfMonth());
+    final endOfMonth = formatDateTimeToIso8601(getEndOfMonth());
+
+    final QuerySnapshot result = await _db
+        .collection('activities')
+        .where('start_date_local', isGreaterThanOrEqualTo: startOfMonth)
+        .where('start_date_local', isLessThanOrEqualTo: endOfMonth)
+        .where('fullname', isEqualTo: fullName)
+        .orderBy('start_date_local', descending: true)
         .get();
 
     final List<DocumentSnapshot> documents = result.docs;
@@ -80,6 +106,14 @@ class FirestoreService extends ChangeNotifier {
         distance: doc['distance'],
         movingTime: doc['moving_time'],
         fullname: doc['fullname'],
+        name: doc['name'],
+        type: doc['type'],
+        power: doc['average_watts'] != null
+            ? (doc['average_watts'] is int
+                ? (doc['average_watts'] as int).toDouble()
+                : doc['average_watts'] as double)
+            : 0.0,
+        averageSpeed: doc['average_speed'],
       );
     }).toList();
   }
