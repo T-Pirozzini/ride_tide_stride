@@ -39,7 +39,9 @@ class MyApp extends StatelessWidget {
           '/awardsPage': (context) => AwardsPage(),
           '/challengeResultsPage': (context) => ChallengeResultsPage(),
           '/usersPage': (context) => UsersListPage(),
-          '/activitiesPage': (context) => ActivitiesListPage(),
+          '/activitiesPage': (context) => ActivitiesListPage(
+              userEmail:
+                  ModalRoute.of(context)?.settings.arguments as String? ?? ''),
         },
       ),
     );

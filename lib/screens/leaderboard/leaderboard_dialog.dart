@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:ride_tide_stride/helpers/helper_functions.dart';
 import 'package:url_launcher/url_launcher.dart';
 

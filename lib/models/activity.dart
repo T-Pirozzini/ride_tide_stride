@@ -12,6 +12,7 @@ class Activity {
     required this.type,
     required this.power,
     required this.averageSpeed,
+    required this.email,
   });
 
   final int id;
@@ -24,6 +25,7 @@ class Activity {
   final String type;
   final double power;
   final double averageSpeed;
+  final String email;
 
   factory Activity.fromDocument(DocumentSnapshot doc) {
     return Activity(
@@ -45,7 +47,7 @@ class Activity {
               : doc['average_watts'] as double)
           : 0.0,
       averageSpeed: doc['average_speed'],
+      email: doc['user_email'],
     );
-
   }
 }

@@ -12,9 +12,14 @@ final monthlyActivitiesProvider = FutureProvider<List<Activity>>((ref) {
   return firestoreService.fetchCurrentMonthActivities();
 });
 
-final userActivitiesProvider = FutureProvider<List<Activity>>((ref) {
+// Define a Provider for fullName
+final emailProvider = StateProvider<String>((ref) {
+  return ''; // Default value, you should provide the actual email value
+});
+
+final userActivitiesProvider = FutureProvider.family<List<Activity>, String>((ref, email) {
   final firestoreService = FirestoreService();
-  return firestoreService.fetchAllUserActivities();
+  return firestoreService.fetchAllUserActivities(email);
 });
 
 // Define a Provider for fullName
@@ -22,7 +27,8 @@ final fullNameProvider = StateProvider<String>((ref) {
   return ''; // Default value, you should provide the actual fullName value
 });
 
-final userCurrentMonthActivitiesProvider = FutureProvider.family<List<Activity>, String>((ref, fullName) {
+final userCurrentMonthActivitiesProvider =
+    FutureProvider.family<List<Activity>, String>((ref, fullName) {
   final firestoreService = FirestoreService();
   return firestoreService.fetchAllUserCurrentMonthActivities(fullName);
 });

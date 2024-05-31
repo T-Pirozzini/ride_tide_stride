@@ -47,15 +47,15 @@ class FirestoreService extends ChangeNotifier {
                 : doc['average_watts'] as double)
             : 0.0,
         averageSpeed: doc['average_speed'],
+        email: doc['user_email'],
       );
     }).toList();
   }
 
 // fetch all activities for the current user
-  Future<List<Activity>> fetchAllUserActivities() async {
-    final String? email = _auth.currentUser?.email;
-    if (email == null) {
-      throw Exception('User not logged in');
+  Future<List<Activity>> fetchAllUserActivities(String email) async {    
+    if (email.isEmpty) {
+      throw Exception('Email is required to fetch activities.');
     }
 
     final QuerySnapshot result = await _db
@@ -114,6 +114,7 @@ class FirestoreService extends ChangeNotifier {
                 : doc['average_watts'] as double)
             : 0.0,
         averageSpeed: doc['average_speed'],
+        email: doc['user_email'],
       );
     }).toList();
   }
