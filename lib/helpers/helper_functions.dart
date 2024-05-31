@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import 'package:ride_tide_stride/models/activity.dart';
 
 Future<String> getUserNameString(String email) async {
@@ -100,6 +101,13 @@ DateTime getEndOfMonth() {
   final now = DateTime.now();
   return DateTime(now.year, now.month + 1, 1).subtract(Duration(seconds: 1));
 }
+
+ String formatDate(String startDate) {
+                final DateTime date = DateTime.parse(startDate);
+                return DateFormat.yMMMd().format(date); // e.g., Sep 26, 2023
+              }
+
+
 
 String formatDateTimeToIso8601(DateTime dateTime) {
   return dateTime.toUtc().toIso8601String();

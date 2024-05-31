@@ -8,6 +8,10 @@ import 'package:ride_tide_stride/screens/activities/activity_chart.dart';
 import 'package:ride_tide_stride/theme.dart';
 
 class ActivitiesListPage extends ConsumerStatefulWidget {
+  final String userEmail;
+
+  const ActivitiesListPage({Key? key, required this.userEmail}) : super(key: key);
+
   @override
   _ActivitiesListPageState createState() => _ActivitiesListPageState();
 }
@@ -30,7 +34,7 @@ class _ActivitiesListPageState extends ConsumerState<ActivitiesListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final activitiesAsyncValue = ref.watch(userActivitiesProvider);
+     final activitiesAsyncValue = ref.watch(userActivitiesProvider(widget.userEmail));
 
     return Container(
       decoration: BoxDecoration(
@@ -46,7 +50,7 @@ class _ActivitiesListPageState extends ConsumerState<ActivitiesListPage> {
       child: Scaffold(
         key: _scaffoldKey,
         backgroundColor: Colors.transparent,
-        appBar: AppBar(title: Text('Activities List')),
+        appBar: AppBar(title: Text('Activities for ${widget.userEmail}')),
         body: activitiesAsyncValue.when(
           data: (activities) {
             final activitiesByMonth =

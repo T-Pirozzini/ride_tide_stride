@@ -180,7 +180,8 @@ class _LeaderboardState extends State<Leaderboard> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.of(context).pushNamed('/activitiesPage');
+                    Navigator.of(context).pushNamed('/activitiesPage',
+                        arguments: currentUser?.email);
                   },
                   child: const Text('View Monthly Activities'),
                 ),
