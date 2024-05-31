@@ -8,6 +8,7 @@ import 'package:ride_tide_stride/screens/challenges/passwordDialog.dart';
 import 'package:ride_tide_stride/screens/challenges/mtn_scramble/mtn_scramble_page.dart';
 import 'package:ride_tide_stride/screens/challenges/snow2surf/snow_2_surf_page.dart';
 import 'package:ride_tide_stride/screens/challenges/team_traverse/team_traverse_page.dart';
+import 'package:ride_tide_stride/theme.dart';
 
 class CompetitionLobbyPage extends StatefulWidget {
   const CompetitionLobbyPage({super.key});
@@ -405,7 +406,7 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                             child: Text(
                                               challengeUserDescription,
                                               style: TextStyle(
-                                                  fontSize: 12,
+                                                  fontSize: 10,
                                                   fontStyle: FontStyle.italic),
                                             ),
                                           ),
@@ -440,7 +441,7 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                           : 'Tap to learn more',
                                       style: TextStyle(
                                           color: hasJoined
-                                              ? Theme.of(context).primaryColor
+                                              ? AppColors.primaryColor
                                               : Colors.grey,
                                           fontSize: hasJoined ? 14 : 12,
                                           fontStyle: hasJoined
@@ -465,8 +466,7 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                           (Set<MaterialState> states) {
                                             if (states.contains(
                                                 MaterialState.disabled))
-                                              return Theme.of(context)
-                                                  .secondaryHeaderColor; // Use the default button color
+                                              return AppColors.secondaryAccent;
                                             return Theme.of(context)
                                                 .primaryColor; // Use the default button color
                                           },
