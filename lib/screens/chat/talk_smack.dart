@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class TalkSmack extends StatefulWidget {
@@ -58,13 +59,13 @@ class _TalkSmackState extends State<TalkSmack> {
     return Scaffold(
       backgroundColor: const Color(0xFFDFD3C3),
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Chat Room: Talk Smack',
-          style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w300,
-              letterSpacing: 1.2,
-              color: Colors.white),
+          style: GoogleFonts.tektur(
+              textStyle: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w300,
+                  letterSpacing: 1.2)),
         ),
       ),
       body: Column(

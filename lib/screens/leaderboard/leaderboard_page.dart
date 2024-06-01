@@ -166,24 +166,24 @@ class _LeaderboardState extends State<Leaderboard> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: <Widget>[
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pushNamed('/awardsPage');
-                  },
-                  child: const Text('View Awards'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pushNamed('/usersPage');
-                  },
-                  child: const Text('View Users'),
-                ),
+                // ElevatedButton(
+                //   onPressed: () {
+                //     Navigator.of(context).pushNamed('/awardsPage');
+                //   },
+                //   child: const Text('View Awards'),
+                // ),
+                // ElevatedButton(
+                //   onPressed: () {
+                //     Navigator.of(context).pushNamed('/usersPage');
+                //   },
+                //   child: const Text('View Users'),
+                // ),
                 ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).pushNamed('/activitiesPage',
                         arguments: currentUser?.email);
                   },
-                  child: const Text('View Monthly Activities'),
+                  child: const Text('View Your Monthly Progress'),
                 ),
               ],
             ),
