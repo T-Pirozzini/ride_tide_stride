@@ -5,7 +5,7 @@ class AppColors {
   static Color primaryColor = Color(0xFF283D3B);
   static Color primaryAccent = Color(0xFF56CCF2);
   static Color secondaryColor = const Color(0xFFD0B8A8);
-  static Color secondaryAccent = Color.fromARGB(255, 10, 10, 10);
+  static Color secondaryAccent = Color(0xFFA09A6A);
   static Color backgroundColor = const Color(0xFFDFD3C3);
   static Color gradientStart = const Color(0xFFF1EDE6); // Lighter shade
   static Color gradientEnd = const Color(0xFF283D3B); // Primary color
@@ -40,9 +40,7 @@ ThemeData primaryTheme = ThemeData(
     backgroundColor: Colors.white,
   ),
   fontFamily: GoogleFonts.openSans().fontFamily,
-  buttonTheme: const ButtonThemeData(
-    buttonColor: Color(0xFFD0B8A8),
-  ),
+  buttonTheme: ButtonThemeData(),
 
   textTheme: const TextTheme().copyWith(
     bodySmall: TextStyle(

@@ -10,7 +10,8 @@ import 'package:ride_tide_stride/theme.dart';
 class ActivitiesListPage extends ConsumerStatefulWidget {
   final String userEmail;
 
-  const ActivitiesListPage({Key? key, required this.userEmail}) : super(key: key);
+  const ActivitiesListPage({Key? key, required this.userEmail})
+      : super(key: key);
 
   @override
   _ActivitiesListPageState createState() => _ActivitiesListPageState();
@@ -34,7 +35,8 @@ class _ActivitiesListPageState extends ConsumerState<ActivitiesListPage> {
 
   @override
   Widget build(BuildContext context) {
-     final activitiesAsyncValue = ref.watch(userActivitiesProvider(widget.userEmail));
+    final activitiesAsyncValue =
+        ref.watch(userActivitiesProvider(widget.userEmail));
 
     return Container(
       decoration: BoxDecoration(
@@ -65,12 +67,12 @@ class _ActivitiesListPageState extends ConsumerState<ActivitiesListPage> {
               children: [
                 Expanded(
                   child: GestureDetector(
-                    // onTap: () => openBottomSheet(activitiesByMonth, 'Elevation'),
+                    // onTap: () => openBottomSheet(activitiesByMonth, 'Time'),
                     child: ActivityChart(
-                      activityData: elevationData,
+                      activityData: timeData,
                       months: months,
-                      title: 'Elevation',
-                      activityType: ActivityDataType.elevation,
+                      title: 'Time',
+                      activityType: ActivityDataType.movingTime,
                     ),
                   ),
                 ),
@@ -87,12 +89,12 @@ class _ActivitiesListPageState extends ConsumerState<ActivitiesListPage> {
                 ),
                 Expanded(
                   child: GestureDetector(
-                    // onTap: () => openBottomSheet(activitiesByMonth, 'Time'),
+                    // onTap: () => openBottomSheet(activitiesByMonth, 'Elevation'),
                     child: ActivityChart(
-                      activityData: timeData,
+                      activityData: elevationData,
                       months: months,
-                      title: 'Time',
-                      activityType: ActivityDataType.movingTime,
+                      title: 'Elevation',
+                      activityType: ActivityDataType.elevation,
                     ),
                   ),
                 ),

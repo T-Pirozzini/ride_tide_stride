@@ -27,7 +27,6 @@ class OverallLeaderboardTab extends ConsumerWidget {
 
         // Aggregate data by participant
         for (var activity in activities) {
-          print('Processing ${activity.fullname} with email ${activity.email}');
           final fullName = activity.fullname;
           if (uniqueParticipants.add(fullName)) {
             elevationGains[fullName] = activity.elevationGain;
@@ -403,59 +402,69 @@ class OverallLeaderboardTab extends ConsumerWidget {
                         },
                       );
                     },
-                    child: ListTile(
-                      tileColor: Colors.white,
-                      title: Text(fullName,
-                          style: Theme.of(context).textTheme.bodyLarge),
-                      leading: CustomPlaceWidget(place: place),
-                      subtitle: Text("Click to view this month's activities",
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall!
-                              .copyWith(fontStyle: FontStyle.italic)),
-                      trailing: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
+                    child: Column(
+                      children: [
+                        ListTile(
+                          tileColor: Colors.white,
+                          title: Text(fullName,
+                              style: Theme.of(context).textTheme.bodyLarge),
+                          leading: CustomPlaceWidget(place: place),
+                          subtitle: Text(
+                              "Click to view this month's activities",
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall!
+                                  .copyWith(fontStyle: FontStyle.italic)),
+                          trailing: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(
-                                '#${movingTimeRanks[fullName]}: ${formatMovingTimeInt(totalMovingTime)}',
-                                style: TextStyle(fontSize: 10),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    '#${movingTimeRanks[fullName]}: ${formatMovingTimeInt(totalMovingTime)}',
+                                    style: TextStyle(fontSize: 10),
+                                  ),
+                                  Icon(Icons.timelapse,
+                                      color: Colors.purple[600], size: 14.0),
+                                ],
                               ),
-                              Icon(Icons.timelapse,
-                                  color: Colors.purple[600], size: 14.0),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    '#${elevationRanks[fullName]}: ',
+                                    style: TextStyle(fontSize: 10),
+                                  ),
+                                  Text(
+                                    '${totalElevation.toStringAsFixed(0)} m',
+                                    style: TextStyle(fontSize: 10),
+                                  ),
+                                  Icon(Icons.landscape,
+                                      color: Colors.green[600], size: 14.0),
+                                ],
+                              ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    '#${distanceRanks[fullName]}: ${(totalDistance / 1000).toStringAsFixed(0)} km',
+                                    style: TextStyle(fontSize: 10),
+                                  ),
+                                  Icon(Icons.straighten,
+                                      color: Colors.blue[600], size: 14.0),
+                                ],
+                              ),
                             ],
                           ),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                '#${elevationRanks[fullName]}: ',
-                                style: TextStyle(fontSize: 10),
-                              ),
-                              Text(
-                                '${totalElevation.toStringAsFixed(0)} m',
-                                style: TextStyle(fontSize: 10),
-                              ),
-                              Icon(Icons.landscape,
-                                  color: Colors.green[600], size: 14.0),
-                            ],
-                          ),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                '#${distanceRanks[fullName]}: ${(totalDistance / 1000).toStringAsFixed(0)} km',
-                                style: TextStyle(fontSize: 10),
-                              ),
-                              Icon(Icons.straighten,
-                                  color: Colors.blue[600], size: 14.0),
-                            ],
-                          ),
-                        ],
-                      ),
+                        ),
+                        const Divider(
+                          color: Colors.grey,
+                          thickness: 1.0,
+                          height: 0.0,
+                        ),
+                      ],
                     ),
                   );
                 },

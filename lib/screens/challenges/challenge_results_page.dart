@@ -13,30 +13,75 @@ class ChallengeResultsPage extends StatefulWidget {
 
 class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
   late Future<List<QueryDocumentSnapshot>> challengeResults;
-  bool showTopFinishes = false;
+  bool showTopFinishes = true;
 
   @override
   void initState() {
     super.initState();
+    updateChallengePoints();
     challengeResults = getChallengeResults();
   }
 
-  Future<List<QueryDocumentSnapshot>> getChallengeResults() async {
-    // get the challenge results
+  Future<void> updateChallengePoints() async {
     QuerySnapshot querySnapshot =
         await FirebaseFirestore.instance.collection('Challenges').get();
 
-    // convert to a list for sorting
+    for (var doc in querySnapshot.docs) {
+      var data = doc.data() as Map<String, dynamic>;
+      Timestamp? endDate = data['endDate'];
+      Timestamp startDate = data['timestamp'];
+      String difficulty = data['difficulty'];
+      List participants = data['participants'];
+      bool success = data['success'] ?? false;
+
+      double points = 0;
+      if (endDate != null && success) {
+        int daysTaken = endDate.toDate().difference(startDate.toDate()).inDays;
+        double timeMultiplier = getTimeMultiplier(daysTaken);
+        double participantDeduction =
+            getParticipantDeduction(participants.length);
+        points =
+            getBasePoints(difficulty) * timeMultiplier * participantDeduction;
+      }
+
+      // Update the document with calculated points
+      await FirebaseFirestore.instance
+          .collection('Challenges')
+          .doc(doc.id)
+          .update({'calculatedPoints': points});
+    }
+  }
+
+  Future<List<QueryDocumentSnapshot>> getChallengeResults() async {
+    QuerySnapshot querySnapshot =
+        await FirebaseFirestore.instance.collection('Challenges').get();
     List<QueryDocumentSnapshot> challengeDocs = querySnapshot.docs;
 
-    // sort the documents by the timestamp field
-    challengeDocs.sort((b, a) {
-      Timestamp aTimestamp = a['timestamp'];
-      Timestamp bTimestamp = b['timestamp'];
-      return aTimestamp.compareTo(bTimestamp);
-    });
+    if (showTopFinishes) {
+      challengeDocs.sort((a, b) {
+        double aPoints =
+            (a.data() as Map<String, dynamic>)['calculatedPoints'] as double? ??
+                0.0;
+        double bPoints =
+            (b.data() as Map<String, dynamic>)['calculatedPoints'] as double? ??
+                0.0;
+        return bPoints.compareTo(aPoints);
+      });
+      // Print to confirm the order after sorting
+      challengeDocs.forEach((doc) {
+        print((doc.data() as Map<String, dynamic>)['calculatedPoints']);
+      });
+    } else {
+      // Sort by timestamp in ascending order for the most recently started
+      challengeDocs.sort((a, b) {
+        Timestamp aTimestamp =
+            (a.data() as Map<String, dynamic>)['timestamp'] as Timestamp;
+        Timestamp bTimestamp =
+            (b.data() as Map<String, dynamic>)['timestamp'] as Timestamp;
+        return aTimestamp.compareTo(bTimestamp);
+      });
+    }
 
-    // return challenge documents
     return challengeDocs;
   }
 
@@ -206,6 +251,8 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
               onChanged: (bool value) {
                 setState(() {
                   showTopFinishes = value;
+                  challengeResults =
+                      getChallengeResults(); // Re-fetch with new sort order
                 });
               },
             ),
@@ -235,9 +282,9 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
                     challenges.sort((a, b) {
                       var dataA = a.data() as Map<String, dynamic>;
                       var dataB = b.data() as Map<String, dynamic>;
-                      var aPoints = dataA['points'] as int? ?? 0;
-                      var bPoints = dataB['points'] as int? ?? 0;
-                      return bPoints.compareTo(aPoints);
+                      var aPoints = dataA['calculatedPoints'] as double? ?? 0;
+                      var bPoints = dataB['calculatedPoints'] as double? ?? 0;
+                      return aPoints.compareTo(bPoints);
                     });
                   }
                   challenges = challenges.reversed.toList();
@@ -529,42 +576,53 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
                                 fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                         ),
-                      ...participantData
-                          .map((data) => Card(
-                                color: Colors.black54,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        data[
-                                            'username'], // Display the username
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                      challenge['type'] == 'Team Traverse'
-                                          ? Text(
-                                              '${(data['participantResult'] / 1000).toStringAsFixed(2)} km',
+                      Container(
+                        color: Colors.black54,
+                        child: Column(
+                          children: [
+                            ...participantData
+                                .map((data) => Card(
+                                      color: Colors.transparent,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              data[
+                                                  'username'], // Display the username
                                               style: TextStyle(
                                                   color: Colors.white),
-                                            )
-                                          : challenge['type'] == 'Mtn Scramble'
-                                              ? Text(
-                                                  '${data['participantResult'].toStringAsFixed(0)} m',
-                                                  style: TextStyle(
-                                                      color: Colors.white),
-                                                )
-                                              : Text(
-                                                  '${data['participantResult'].toStringAsFixed(2)}',
-                                                  style: TextStyle(
-                                                      color: Colors.white),
-                                                )
-                                    ],
-                                  ),
-                                ),
-                              ))
-                          .toList(),
+                                            ),
+                                            challenge['type'] == 'Team Traverse'
+                                                ? Text(
+                                                    '${(data['participantResult'] / 1000).toStringAsFixed(2)} km',
+                                                    style: TextStyle(
+                                                        color: Colors.white),
+                                                  )
+                                                : challenge['type'] ==
+                                                        'Mtn Scramble'
+                                                    ? Text(
+                                                        '${data['participantResult'].toStringAsFixed(0)} m',
+                                                        style: TextStyle(
+                                                            color:
+                                                                Colors.white),
+                                                      )
+                                                    : Text(
+                                                        '${data['participantResult'].toStringAsFixed(2)}',
+                                                        style: TextStyle(
+                                                            color:
+                                                                Colors.white),
+                                                      )
+                                          ],
+                                        ),
+                                      ),
+                                    ))
+                                .toList(),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ],
