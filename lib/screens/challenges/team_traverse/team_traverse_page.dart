@@ -186,7 +186,7 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
       // .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endDate));
 
       // Adjust query for Competitive challenges
-      if (widget.challengeCategory == "Competitive" &&
+      if (widget.challengeCategory == "Specific" &&
           activityTypeMappings.containsKey(widget.challengeActivity)) {
         List<String> relevantActivityTypes =
             activityTypeMappings[widget.challengeActivity]!;
@@ -471,7 +471,7 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
                       letterSpacing: 1.2)),
             ),
             const SizedBox(width: 10),
-            widget.challengeCategory == "Competitive"
+            widget.challengeCategory == "Specific"
                 ? Icon(
                     widget.challengeActivity == "Running"
                         ? Icons.directions_run

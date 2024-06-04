@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
+import 'package:ride_tide_stride/screens/challenges/mtn_scramble/comp_graph.dart';
+import 'package:ride_tide_stride/screens/challenges/mtn_scramble/coop_graph.dart';
 import 'package:ride_tide_stride/screens/challenges/mtn_scramble/team_selection_dialog.dart';
 import 'package:ride_tide_stride/shared/activity_icons.dart';
 import 'package:ride_tide_stride/models/chat_message.dart';
@@ -175,7 +177,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
     DateTime startDate = widget.startDate.toDate();
     DateTime adjustedStartDate =
         DateTime(startDate.year, startDate.month, startDate.day);
-    // DateTime endDate = adjustedStartDate.add(Duration(days: 30));
+    String adjustedStartDateString = adjustedStartDate.toIso8601String();
     Map<String, double> participantProgress = {};
 
     for (String email in widget.participantsEmails) {
@@ -184,12 +186,11 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
       Query query = FirebaseFirestore.instance
           .collection('activities')
           .where('user_email', isEqualTo: email)
-          .where('timestamp',
-              isGreaterThanOrEqualTo: Timestamp.fromDate(adjustedStartDate));
-      // .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endDate));
+          .where('start_date_local',
+              isGreaterThanOrEqualTo: adjustedStartDateString);
 
-      // Adjust query for Competitive challenges
-      if (widget.challengeCategory == "Competitive" &&
+      // Adjust query for Specific challenges
+      if (widget.challengeCategory == "Specific" &&
           activityTypeMappings.containsKey(widget.challengeActivity)) {
         List<String> relevantActivityTypes =
             activityTypeMappings[widget.challengeActivity]!;
@@ -283,6 +284,44 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
     double totalElevation =
         participantElevations.values.fold(0.0, (a, b) => a + b);
 
+    // Fetch team progress for competitive challenges
+    double team1Progress = 0.0;
+    double team2Progress = 0.0;
+
+    // Fetch team participant emails
+    DocumentSnapshot challengeDoc = await FirebaseFirestore.instance
+        .collection('Challenges')
+        .doc(widget.challengeId)
+        .get();
+    // Ensure team1 and team2 fields are present, else default to empty list
+    List<String> team1Emails = [];
+    List<String> team2Emails = [];
+
+    if (challengeDoc.exists) {
+      var data = challengeDoc.data() as Map<String, dynamic>?;
+
+      if (data != null && data.containsKey('team1')) {
+        team1Emails = List<String>.from(data['team1']);
+      }
+      if (data != null && data.containsKey('team2')) {
+        team2Emails = List<String>.from(data['team2']);
+      }
+    }
+
+    // Calculate total elevation for Team 1
+    for (String email in team1Emails) {
+      if (participantElevations.containsKey(email)) {
+        team1Progress += participantElevations[email]!;
+      }
+    }
+
+    // Calculate total elevation for Team 2
+    for (String email in team2Emails) {
+      if (participantElevations.containsKey(email)) {
+        team2Progress += participantElevations[email]!;
+      }
+    }
+
     // Then fetch challenge map details
     var mapDetails = await fetchChallengeMapDetails();
 
@@ -297,6 +336,8 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
       'totalElevation': totalElevation, // Total distance from participants
       'mapElevation': mapElevation, // Numeric map distance
       'mapAssetUrl': mapDetails['mapAssetUrl'], // URL or asset path for the map
+      'team1Elevation': team1Progress,
+      'team2Elevation': team2Progress,
     };
   }
 
@@ -474,7 +515,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                       letterSpacing: 1.2)),
             ),
             const SizedBox(width: 10),
-            widget.challengeCategory == "Competitive"
+            widget.challengeCategory == "Specific"
                 ? Icon(
                     widget.challengeActivity == "Running"
                         ? Icons.directions_run
@@ -565,52 +606,55 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                     String mapAssetUrl = snapshot.data!['mapAssetUrl'];
                     double progress =
                         (totalElevationM / mapElevation).clamp(0.0, 1.0);
+                    double team1Progress = snapshot.data!['team1Elevation'];
+                    double team2Progress = snapshot.data!['team2Elevation'];
 
                     return Column(
                       children: [
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(15, 30, 15, 0),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child:
-                                  Image.asset(mapAssetUrl, fit: BoxFit.cover),
-                            ),
-                          ), // Adjusted map to be within an Expanded widget
-                        ),
-                        Card(
-                          elevation: 2,
-                          margin:
-                              EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                          child: Column(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: LinearProgressIndicator(
-                                  value: progress,
-                                  backgroundColor: Colors.grey[200],
-                                  minHeight: 10,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.lightGreenAccent[200]!),
+                        widget.coopOrComp == "Competitive"
+                            ? Expanded(
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(15, 30, 15, 0),
+                                  child: Stack(
+                                    children: [
+                                      Center(
+                                        child: ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          child: Image.asset(mapAssetUrl,
+                                              fit: BoxFit.cover),
+                                        ),
+                                      ),
+                                      CompGraph(
+                                        team1Progress:
+                                            team1Progress / mapElevation,
+                                        team2Progress:
+                                            team2Progress / mapElevation,
+                                      ),
+                                    ],
+                                  ),
+                                ), // Adjusted map to be within an Expanded widget
+                              )
+                            : Expanded(
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(15, 30, 15, 0),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: Image.asset(mapAssetUrl,
+                                        fit: BoxFit.cover),
+                                  ),
                                 ),
-                              ),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  Text(
-                                    "${totalElevationM.toStringAsFixed(2)} m / $mapElevation m",
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  Text(
-                                    "${(progress * 100).toStringAsFixed(2)}% Completed",
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
+                              ), // Adjusted map to be within an Expanded widget
+
+                        widget.coopOrComp == "Cooperative"
+                            ? CoopGraph(
+                                progress: progress,
+                                totalElevationM: totalElevationM,
+                                mapElevation: mapElevation,
+                              )
+                            : SizedBox(),
                       ],
                     );
                   },
