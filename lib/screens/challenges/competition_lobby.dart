@@ -27,7 +27,7 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
 
 // Method to join a challenge
   Future<void> joinChallenge(
-      String challengeId, String challengePassword) async {
+      String challengeId, String challengePassword, String coopOrComp) async {
     String? currentUserEmail = _auth.currentUser?.email;
     if (currentUserEmail == null) return;
 
@@ -152,6 +152,8 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                           var challengeData =
                               challenges[index].data() as Map<String, dynamic>;
                           String challengeId = challenges[index].id;
+                          String challengeCoopOrComp =
+                              challengeData['coopOrComp'];
                           List participants =
                               challengeData['participants'] ?? [];
                           String? currentUserEmail = _auth.currentUser?.email;
@@ -211,6 +213,9 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                         challengeCreator:
                                             challengeData['userEmail'] ??
                                                 'No creator',
+                                        coopOrComp:
+                                            challengeData['coopOrComp'] ??
+                                                'No coopOrComp',
                                       );
                                     case 'Team Traverse':
                                       return TeamTraversePage(
@@ -293,6 +298,9 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                             challengeCreator:
                                                 challengeData['userEmail'] ??
                                                     'No creator',
+                                            coopOrComp:
+                                                challengeData['coopOrComp'] ??
+                                                    'No coopOrComp',
                                           );
                                         case 'Team Traverse':
                                           return TeamTraversePage(
@@ -371,13 +379,35 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                         Padding(
                                           padding: const EdgeInsets.symmetric(
                                               horizontal: 4.0, vertical: 2.0),
-                                          child: Text(
-                                            challengeType == 'Snow2Surf'
-                                                ? challengeDifficulty
-                                                : challengeCategory,
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                challengeDifficulty,
+                                                style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                              Container(
+                                                padding: EdgeInsets.symmetric(
+                                                    horizontal: 4.0),
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.primaryColor,
+                                                  borderRadius:
+                                                      BorderRadius.circular(2),
+                                                ),
+                                                child: Text(
+                                                  challengeCoopOrComp,
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 10,
+                                                    letterSpacing: 1.2,
+                                                  ),
+                                                ),
+                                              )
+                                            ],
                                           ),
                                         ),
                                       ],
@@ -455,7 +485,9 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                       onPressed: hasJoined
                                           ? null
                                           : () => joinChallenge(
-                                              challengeId, challengePassword),
+                                              challengeId,
+                                              challengePassword,
+                                              challengeCoopOrComp),
                                       child: Text(
                                         hasJoined ? 'Tap to View' : 'Join',
                                         style: TextStyle(color: Colors.white),
@@ -466,9 +498,9 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                           (Set<MaterialState> states) {
                                             if (states.contains(
                                                 MaterialState.disabled))
-                                              return AppColors.secondaryAccent;
-                                            return Theme.of(context)
-                                                .primaryColor; // Use the default button color
+                                              return AppColors.primaryAccent;
+                                            return AppColors
+                                                .secondaryAccent; // Use the default button color
                                           },
                                         ),
                                       ),

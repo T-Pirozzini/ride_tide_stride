@@ -172,10 +172,11 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
       'previewPaths': selectedChallenge.previewPaths,
       'timestamp': FieldValue.serverTimestamp(),
       'createdBy': currentUser!.uid,
-      'userEmail': currentUser!.email,
+      'userEmail': currentUser!.email,      
       'participants': [currentUser!.email],
       'active': true,
       'success': false,
+      'coopOrComp': _selectedLevelButton,
       // Add more fields as needed
     };
 
