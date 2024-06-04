@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
+import 'package:ride_tide_stride/screens/challenges/mtn_scramble/team_selection_dialog.dart';
 import 'package:ride_tide_stride/shared/activity_icons.dart';
 import 'package:ride_tide_stride/models/chat_message.dart';
 import 'package:ride_tide_stride/screens/chat/chat_widget.dart';
@@ -22,6 +23,7 @@ class MtnScramblePage extends StatefulWidget {
   final String challengeCategory;
   final String challengeActivity;
   final String challengeCreator;
+  final String coopOrComp;
 
   const MtnScramblePage(
       {super.key,
@@ -33,7 +35,8 @@ class MtnScramblePage extends StatefulWidget {
       required this.mapElevation,
       required this.challengeCategory,
       required this.challengeActivity,
-      required this.challengeCreator});
+      required this.challengeCreator,
+      required this.coopOrComp});
 
   @override
   State<MtnScramblePage> createState() => _MtnScramblePageState();
@@ -682,7 +685,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                     return Text("No participant data available");
                   }
 
-                  // Ensure we display up to 10 slots, showing "Empty Slot" as needed
+                  // Ensure we display up to 8 slots, showing "Empty Slot" as needed
                   int itemCount = max(8, widget.participantsEmails.length);
                   return GridView.builder(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -758,6 +761,14 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
               ),
             ),
           ),
+          widget.coopOrComp == "Competitive"
+              ? TextButton(
+                  onPressed: () {
+                    joinTeam(widget.challengeId, widget.coopOrComp);
+                  },
+                  child: Text('Join a Team'),
+                )
+              : SizedBox(),
           Container(
             color: Colors.white,
             padding: const EdgeInsets.all(10),
@@ -852,5 +863,72 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
         return Text(data['username'] ?? email);
       },
     );
+  }
+
+  Future<void> joinTeam(String challengeId, String coopOrComp) async {
+    String? currentUserEmail = currentUser?.email;
+    if (currentUserEmail == null) return;
+
+    // Reference to the challenge document
+    DocumentReference challengeRef =
+        FirebaseFirestore.instance.collection('Challenges').doc(challengeId);
+
+    await FirebaseFirestore.instance.runTransaction((transaction) async {
+      DocumentSnapshot snapshot = await transaction.get(challengeRef);
+      if (!snapshot.exists) {
+        throw Exception("Challenge does not exist!");
+      }
+
+      // Initialize team1 and team2 if they don't exist
+      List<dynamic> team1 =
+          (snapshot.data() as Map<String, dynamic>)['team1'] ?? [];
+      List<dynamic> team2 =
+          (snapshot.data() as Map<String, dynamic>)['team2'] ?? [];
+
+      // Check if the user is already on a team
+      if (team1.contains(currentUserEmail) ||
+          team2.contains(currentUserEmail)) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('You are already on a team.'),
+        ));
+        return;
+      }
+
+      // Check if the challenge is already full
+      if (team1.length + team2.length >= 8) {
+        print("Challenge is full");
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Sorry, the challenge is currently full.'),
+        ));
+        return;
+      }
+
+      String selectedTeam = await showDialog<String>(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) {
+              return TeamSelectionDialog(
+                onTeamSelected: (team) {
+                  Navigator.of(context).pop(team);
+                },
+              );
+            },
+          ) ??
+          'Team 1'; // Default to 'Team 1' if no selection
+
+      if (selectedTeam == 'Team 1') {
+        if (!team1.contains(currentUserEmail)) {
+          team1.add(currentUserEmail);
+          transaction.update(challengeRef, {'team1': team1});
+        }
+      } else {
+        if (!team2.contains(currentUserEmail)) {
+          team2.add(currentUserEmail);
+          transaction.update(challengeRef, {'team2': team2});
+        }
+      }
+    }).catchError((error) {
+      print("Failed to join challenge: $error");
+    });
   }
 }

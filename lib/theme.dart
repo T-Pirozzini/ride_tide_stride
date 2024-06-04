@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
   static Color primaryColor = Color(0xFF283D3B);
-  static Color primaryAccent = Color(0xFF56CCF2);
+  static Color primaryAccent = Color(0xFF283D3B).withOpacity(0.8);
   static Color secondaryColor = const Color(0xFFD0B8A8);
   static Color secondaryAccent = Color(0xFFA09A6A);
   static Color backgroundColor = const Color(0xFFDFD3C3);
