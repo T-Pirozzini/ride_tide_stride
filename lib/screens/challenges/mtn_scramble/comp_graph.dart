@@ -90,7 +90,7 @@ class _CompGraphState extends State<CompGraph>
                 style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blueAccent[200]),
+                    color: Colors.lightBlueAccent[200]),
               ),
               SizedBox(height: 10),
               Container(
@@ -101,7 +101,7 @@ class _CompGraphState extends State<CompGraph>
                 ),
                 child: LineChart(
                   _getLineChartData(widget.team2Progress * _animation.value,
-                      Colors.blueAccent[200]!.withOpacity(.6)),
+                      Colors.lightBlueAccent[200]!.withOpacity(.6)),
                 ),
               ),
             ],

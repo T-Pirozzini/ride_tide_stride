@@ -368,21 +368,44 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
     final challengeDetails = await fetchChallengeDetailsAndTotalElevation();
     final double totalElevation = challengeDetails['totalElevation'];
     final double goalElevation = challengeDetails['mapElevation'];
+    final double team1Progress = challengeDetails['team1Elevation'];
+    final double team2Progress = challengeDetails['team2Elevation'];
+
     final now = DateTime.now();
 
-    if (totalElevation >= goalElevation) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _showSuccessDialog();
-      });
-      await FirebaseFirestore.instance
-          .collection('Challenges')
-          .doc(widget.challengeId)
-          .update({
-        'active': false,
-        'success': true,
-        'teamElevation': totalElevation,
-        'endDate': Timestamp.fromDate(now),
-      });
+    if (widget.coopOrComp == "Cooperative") {
+      if (totalElevation >= goalElevation) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showSuccessDialog();
+        });
+        await FirebaseFirestore.instance
+            .collection('Challenges')
+            .doc(widget.challengeId)
+            .update({
+          'active': false,
+          'success': true,
+          'teamElevation': totalElevation,
+          'endDate': Timestamp.fromDate(now),
+        });
+      }
+    } 
+    else if (widget.coopOrComp == "Competitive") {
+      if (team1Progress >= goalElevation || team2Progress >= goalElevation) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showSuccessDialog();
+        });
+        await FirebaseFirestore.instance
+            .collection('Challenges')
+            .doc(widget.challengeId)
+            .update({
+          'active': false,
+          'success': true,
+          'team1Elevation': team1Progress,
+          'team2Elevation': team2Progress,
+          'teamElevation': totalElevation,
+          'endDate': Timestamp.fromDate(now),
+        });
+      }
     }
   }
 
@@ -837,107 +860,156 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                             );
                           },
                         )
-                      : GridView.builder(
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2, // Number of columns
-                            childAspectRatio:
-                                7 / 2, // Adjust the size ratio of items
-                            crossAxisSpacing:
-                                2, // Spacing between items horizontally
-                            mainAxisSpacing:
-                                2, // Spacing between items vertically
-                          ),
-                          physics: NeverScrollableScrollPhysics(),
-                          itemCount: compItemCount,
-                          itemBuilder: (context, index) {
-                            String email =
-                                index < widget.participantsEmails.length
-                                    ? widget.participantsEmails[index]
-                                    : "Empty Position";
-                            double elevation =
-                                index < widget.participantsEmails.length
-                                    ? snapshot.data![email] ?? 0.0
-                                    : 0.0;
+                      : Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                Text(
+                                  'Team 1',
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                VerticalDivider(
+                                    thickness: 1,
+                                    color: Colors.black), // Center Divider
+                                Text(
+                                  'Team 2',
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                            Expanded(
+                              child: GridView.builder(
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2, // Number of columns
+                                  childAspectRatio:
+                                      7 / 2, // Adjust the size ratio of items
+                                  crossAxisSpacing:
+                                      2, // Spacing between items horizontally
+                                  mainAxisSpacing:
+                                      2, // Spacing between items vertically
+                                ),
+                                physics: NeverScrollableScrollPhysics(),
+                                itemCount: compItemCount,
+                                itemBuilder: (context, index) {
+                                  String email =
+                                      index < widget.participantsEmails.length
+                                          ? widget.participantsEmails[index]
+                                          : "Empty Position";
+                                  double elevation =
+                                      index < widget.participantsEmails.length
+                                          ? snapshot.data![email] ?? 0.0
+                                          : 0.0;
 
-                            Color avatarColor =
-                                participantColors[email] ?? Colors.grey;
+                                  Color avatarColor =
+                                      participantColors[email] ?? Colors.grey;
 
-                            if (index % 2 == 0) {
-                              // Left side (team1)
-                              int team1Index = index ~/ 2;
-                              if (team1Index < team1Emails.length) {
-                                email = team1Emails[team1Index];
-                                elevation = snapshot.data![email] ?? 0.0;
-                                avatarColor =
-                                    participantColors[email] ?? Colors.grey;
-                              } else {
-                                email = "Empty Position";
-                                elevation = 0.0;
-                                avatarColor = Colors.grey;
-                              }
-                            } else {
-                              // Right side (team2)
-                              int team2Index = index ~/ 2;
-                              if (team2Index < team2Emails.length) {
-                                email = team2Emails[team2Index];
-                                elevation = snapshot.data![email] ?? 0.0;
-                                avatarColor =
-                                    participantColors[email] ?? Colors.grey;
-                              } else {
-                                email = "Empty Position";
-                                elevation = 0.0;
-                                avatarColor = Colors.grey;
-                              }
-                            }
+                                  Color cardColor;
 
-                            return GestureDetector(
-                              onTap: () {
-                                if (email != "Empty Position") {
-                                  showUserActivitiesDialog(email);
-                                }
-                              },
-                              child: Card(
-                                elevation: 1,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(left: 8.0),
-                                  child: Row(
-                                    children: [
-                                      email != "Empty Position"
-                                          ? CircleAvatar(
-                                              backgroundColor: avatarColor,
-                                              radius:
-                                                  10, // Adjust the size of the avatar as needed
-                                            )
-                                          : SizedBox.shrink(),
-                                      SizedBox(
-                                          width:
-                                              8), // Provides some spacing between the avatar and the text
-                                      Expanded(
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                  if (index % 2 == 0) {
+                                    // Left side (team1)
+                                    int team1Index = index ~/ 2;
+                                    cardColor = Colors.lightGreenAccent;
+                                    if (team1Index < team1Emails.length) {
+                                      email = team1Emails[team1Index];
+                                      elevation = snapshot.data![email] ?? 0.0;
+                                      avatarColor = participantColors[email] ??
+                                          Colors.grey;
+                                    } else {
+                                      email = "Empty Position";
+                                      elevation = 0.0;
+                                      avatarColor = Colors.grey;
+                                    }
+                                  } else {
+                                    // Right side (team2)
+                                    int team2Index = index ~/ 2;
+                                    cardColor = Colors.lightBlueAccent;
+                                    if (team2Index < team2Emails.length) {
+                                      email = team2Emails[team2Index];
+                                      elevation = snapshot.data![email] ?? 0.0;
+                                      avatarColor = participantColors[email] ??
+                                          Colors.grey;
+                                    } else {
+                                      email = "Empty Position";
+                                      elevation = 0.0;
+                                      avatarColor = Colors.grey;
+                                    }
+                                  }
+
+                                  return GestureDetector(
+                                    onTap: () {
+                                      if (email != "Empty Position") {
+                                        showUserActivitiesDialog(email);
+                                      }
+                                    },
+                                    child: Card(
+                                      shape: ShapeBorder.lerp(
+                                        RoundedRectangleBorder(
+                                          side: BorderSide(
+                                              color: cardColor, width: 1),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        RoundedRectangleBorder(
+                                          side: BorderSide(
+                                            color: cardColor,
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        0.5,
+                                      ),
+                                      elevation: 1,
+                                      child: Padding(
+                                        padding:
+                                            const EdgeInsets.only(left: 8.0),
+                                        child: Row(
                                           children: [
-                                            getUserName(
-                                                email), // Username or "Empty Slot"
-                                            Text(
-                                              '${elevation.toStringAsFixed(2)} m',
-                                              style: TextStyle(fontSize: 12),
+                                            email != "Empty Position"
+                                                ? CircleAvatar(
+                                                    backgroundColor:
+                                                        avatarColor,
+                                                    radius:
+                                                        10, // Adjust the size of the avatar as needed
+                                                  )
+                                                : SizedBox.shrink(),
+                                            SizedBox(
+                                                width:
+                                                    8), // Provides some spacing between the avatar and the text
+                                            Expanded(
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  getUserName(
+                                                      email), // Username or "Empty Slot"
+                                                  Text(
+                                                    '${elevation.toStringAsFixed(2)} m',
+                                                    style:
+                                                        TextStyle(fontSize: 12),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
+                                            email == widget.challengeCreator
+                                                ? Icon(Icons.verified_outlined)
+                                                : SizedBox.shrink(),
                                           ],
                                         ),
                                       ),
-                                      email == widget.challengeCreator
-                                          ? Icon(Icons.verified_outlined)
-                                          : SizedBox.shrink(),
-                                    ],
-                                  ),
-                                ),
+                                    ),
+                                  );
+                                },
                               ),
-                            );
-                          },
+                            ),
+                          ],
                         );
                 },
               ),
@@ -1103,16 +1175,32 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
           'Team 1'; // Default to 'Team 1' if no selection
 
       if (selectedTeam == 'Team 1') {
+        if (team1.length >= 4) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Team 1 is full. How about Team 2?'),
+          ));
+          return;
+        }
         if (!team1.contains(currentUserEmail)) {
           team1.add(currentUserEmail);
           transaction.update(challengeRef, {'team1': team1});
         }
       } else {
+        if (team2.length >= 4) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Team 2 is full. How about Team 1?'),
+          ));
+          return;
+        }
         if (!team2.contains(currentUserEmail)) {
           team2.add(currentUserEmail);
           transaction.update(challengeRef, {'team2': team2});
         }
       }
+      setState(() {
+        team1Emails = team1.cast<String>();
+        team2Emails = team2.cast<String>();
+      });
     }).catchError((error) {
       print("Failed to join challenge: $error");
     });
