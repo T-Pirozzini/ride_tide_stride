@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -19,11 +20,11 @@ class _HomeState extends State<Home> {
   final currentUser = FirebaseAuth.instance.currentUser;
   String username = '';
 
- @override
+  @override
   void initState() {
-    super.initState();
+    super.initState();    
     fetchUsername();
-  }
+  }  
 
   void fetchUsername() {
     final currentUser = FirebaseAuth.instance.currentUser;
@@ -34,13 +35,15 @@ class _HomeState extends State<Home> {
         });
       }).catchError((error) {
         setState(() {
-          username = 'Error fetching username'; // Set an error message or handle differently
+          username =
+              'Error fetching username'; // Set an error message or handle differently
           print("Failed to fetch username: $error");
         });
       });
     } else {
       setState(() {
-        username = 'No user logged in'; // Handle case where no user is logged in
+        username =
+            'No user logged in'; // Handle case where no user is logged in
       });
     }
   }
@@ -52,7 +55,7 @@ class _HomeState extends State<Home> {
   }
 
   @override
-  Widget build(BuildContext context) {   
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: FittedBox(

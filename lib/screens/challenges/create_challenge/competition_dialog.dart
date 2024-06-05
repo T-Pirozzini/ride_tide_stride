@@ -172,7 +172,7 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
       'previewPaths': selectedChallenge.previewPaths,
       'timestamp': FieldValue.serverTimestamp(),
       'createdBy': currentUser!.uid,
-      'userEmail': currentUser!.email,      
+      'userEmail': currentUser!.email,
       'participants': [currentUser!.email],
       'active': true,
       'success': false,
@@ -566,11 +566,23 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
                                           children: [
-                                            Icon(
-                                                Icons
-                                                    .keyboard_double_arrow_left,
-                                                size: 30,
-                                                color: AppColors.primaryColor),
+                                            Column(
+                                              children: [
+                                                Text(
+                                                  'swipe',
+                                                  style: TextStyle(
+                                                      fontSize: 8,
+                                                      fontStyle:
+                                                          FontStyle.italic),
+                                                ),
+                                                Icon(
+                                                    Icons
+                                                        .keyboard_double_arrow_left,
+                                                    size: 30,
+                                                    color:
+                                                        AppColors.primaryColor),
+                                              ],
+                                            ),
                                             Container(
                                               height: 100,
                                               child: Image.asset(
@@ -579,11 +591,23 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                                                 height: 150,
                                               ),
                                             ),
-                                            Icon(
-                                                Icons
-                                                    .keyboard_double_arrow_right,
-                                                size: 30,
-                                                color: AppColors.primaryColor),
+                                            Column(
+                                              children: [
+                                                Text(
+                                                  'swipe',
+                                                  style: TextStyle(
+                                                      fontSize: 8,
+                                                      fontStyle:
+                                                          FontStyle.italic),
+                                                ),
+                                                Icon(
+                                                    Icons
+                                                        .keyboard_double_arrow_right,
+                                                    size: 30,
+                                                    color:
+                                                        AppColors.primaryColor),
+                                              ],
+                                            ),
                                           ],
                                         ),
                                       ],

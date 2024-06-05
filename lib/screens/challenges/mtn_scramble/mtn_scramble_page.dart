@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:convert';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -7,10 +10,14 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
+import 'package:ride_tide_stride/screens/challenges/mtn_scramble/comp_graph.dart';
+import 'package:ride_tide_stride/screens/challenges/mtn_scramble/coop_graph.dart';
 import 'package:ride_tide_stride/screens/challenges/mtn_scramble/team_selection_dialog.dart';
+import 'package:ride_tide_stride/services/firebase_api.dart';
 import 'package:ride_tide_stride/shared/activity_icons.dart';
 import 'package:ride_tide_stride/models/chat_message.dart';
 import 'package:ride_tide_stride/screens/chat/chat_widget.dart';
+import 'package:ride_tide_stride/secret.dart';
 import 'package:badges/badges.dart' as badges;
 
 class MtnScramblePage extends StatefulWidget {
@@ -50,6 +57,8 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
   DateTime? endDate;
   bool unread = false;
   int unreadMessageCount = 0;
+  List<String> team1Emails = [];
+  List<String> team2Emails = [];
 
   void _sendMessage(String messageText) async {
     if (messageText.isEmpty) {
@@ -130,6 +139,24 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
     }
   }
 
+  Future<void> fetchTeamEmails() async {
+    DocumentSnapshot challengeDoc = await FirebaseFirestore.instance
+        .collection('Challenges')
+        .doc(widget.challengeId)
+        .get();
+
+    if (challengeDoc.exists) {
+      var data = challengeDoc.data() as Map<String, dynamic>?;
+
+      if (data != null && data.containsKey('team1')) {
+        team1Emails = List<String>.from(data['team1']).take(4).toList();
+      }
+      if (data != null && data.containsKey('team2')) {
+        team2Emails = List<String>.from(data['team2']).take(4).toList();
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -147,6 +174,9 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
         .snapshots();
 
     fetchInitialReadByData();
+    fetchTeamEmails().then((_) {
+      setState(() {}); // Refresh the UI after fetching team emails
+    });
   }
 
   Stream<QuerySnapshot>? _messagesStream;
@@ -175,7 +205,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
     DateTime startDate = widget.startDate.toDate();
     DateTime adjustedStartDate =
         DateTime(startDate.year, startDate.month, startDate.day);
-    // DateTime endDate = adjustedStartDate.add(Duration(days: 30));
+    String adjustedStartDateString = adjustedStartDate.toIso8601String();
     Map<String, double> participantProgress = {};
 
     for (String email in widget.participantsEmails) {
@@ -184,12 +214,11 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
       Query query = FirebaseFirestore.instance
           .collection('activities')
           .where('user_email', isEqualTo: email)
-          .where('timestamp',
-              isGreaterThanOrEqualTo: Timestamp.fromDate(adjustedStartDate));
-      // .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endDate));
+          .where('start_date_local',
+              isGreaterThanOrEqualTo: adjustedStartDateString);
 
-      // Adjust query for Competitive challenges
-      if (widget.challengeCategory == "Competitive" &&
+      // Adjust query for Specific challenges
+      if (widget.challengeCategory == "Specific" &&
           activityTypeMappings.containsKey(widget.challengeActivity)) {
         List<String> relevantActivityTypes =
             activityTypeMappings[widget.challengeActivity]!;
@@ -283,6 +312,44 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
     double totalElevation =
         participantElevations.values.fold(0.0, (a, b) => a + b);
 
+    // Fetch team progress for competitive challenges
+    double team1Progress = 0.0;
+    double team2Progress = 0.0;
+
+    // Fetch team participant emails
+    DocumentSnapshot challengeDoc = await FirebaseFirestore.instance
+        .collection('Challenges')
+        .doc(widget.challengeId)
+        .get();
+    // Ensure team1 and team2 fields are present, else default to empty list
+    List<String> team1Emails = [];
+    List<String> team2Emails = [];
+
+    if (challengeDoc.exists) {
+      var data = challengeDoc.data() as Map<String, dynamic>?;
+
+      if (data != null && data.containsKey('team1')) {
+        team1Emails = List<String>.from(data['team1']);
+      }
+      if (data != null && data.containsKey('team2')) {
+        team2Emails = List<String>.from(data['team2']);
+      }
+    }
+
+    // Calculate total elevation for Team 1
+    for (String email in team1Emails) {
+      if (participantElevations.containsKey(email)) {
+        team1Progress += participantElevations[email]!;
+      }
+    }
+
+    // Calculate total elevation for Team 2
+    for (String email in team2Emails) {
+      if (participantElevations.containsKey(email)) {
+        team2Progress += participantElevations[email]!;
+      }
+    }
+
     // Then fetch challenge map details
     var mapDetails = await fetchChallengeMapDetails();
 
@@ -297,6 +364,8 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
       'totalElevation': totalElevation, // Total distance from participants
       'mapElevation': mapElevation, // Numeric map distance
       'mapAssetUrl': mapDetails['mapAssetUrl'], // URL or asset path for the map
+      'team1Elevation': team1Progress,
+      'team2Elevation': team2Progress,
     };
   }
 
@@ -304,21 +373,43 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
     final challengeDetails = await fetchChallengeDetailsAndTotalElevation();
     final double totalElevation = challengeDetails['totalElevation'];
     final double goalElevation = challengeDetails['mapElevation'];
+    final double team1Progress = challengeDetails['team1Elevation'];
+    final double team2Progress = challengeDetails['team2Elevation'];
+
     final now = DateTime.now();
 
-    if (totalElevation >= goalElevation) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _showSuccessDialog();
-      });
-      await FirebaseFirestore.instance
-          .collection('Challenges')
-          .doc(widget.challengeId)
-          .update({
-        'active': false,
-        'success': true,
-        'teamElevation': totalElevation,
-        'endDate': Timestamp.fromDate(now),
-      });
+    if (widget.coopOrComp == "Cooperative") {
+      if (totalElevation >= goalElevation) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showSuccessDialog();
+        });
+        await FirebaseFirestore.instance
+            .collection('Challenges')
+            .doc(widget.challengeId)
+            .update({
+          'active': false,
+          'success': true,
+          'teamElevation': totalElevation,
+          'endDate': Timestamp.fromDate(now),
+        });
+      }
+    } else if (widget.coopOrComp == "Competitive") {
+      if (team1Progress >= goalElevation || team2Progress >= goalElevation) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showSuccessDialog();
+        });
+        await FirebaseFirestore.instance
+            .collection('Challenges')
+            .doc(widget.challengeId)
+            .update({
+          'active': false,
+          'success': true,
+          'team1Elevation': team1Progress,
+          'team2Elevation': team2Progress,
+          'teamElevation': totalElevation,
+          'endDate': Timestamp.fromDate(now),
+        });
+      }
     }
   }
 
@@ -457,6 +548,9 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
 
   @override
   Widget build(BuildContext context) {
+    final challengeMessage =
+        ModalRoute.of(context)!.settings.arguments as RemoteMessage;
+
     return Scaffold(
       key: _mtnScrambleScaffoldKey,
       backgroundColor: const Color(0xFFDFD3C3),
@@ -474,7 +568,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                       letterSpacing: 1.2)),
             ),
             const SizedBox(width: 10),
-            widget.challengeCategory == "Competitive"
+            widget.challengeCategory == "Specific"
                 ? Icon(
                     widget.challengeActivity == "Running"
                         ? Icons.directions_run
@@ -565,81 +659,86 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                     String mapAssetUrl = snapshot.data!['mapAssetUrl'];
                     double progress =
                         (totalElevationM / mapElevation).clamp(0.0, 1.0);
+                    double team1Progress = snapshot.data!['team1Elevation'];
+                    double team2Progress = snapshot.data!['team2Elevation'];
 
                     return Column(
                       children: [
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(15, 30, 15, 0),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child:
-                                  Image.asset(mapAssetUrl, fit: BoxFit.cover),
-                            ),
-                          ), // Adjusted map to be within an Expanded widget
-                        ),
-                        Card(
-                          elevation: 2,
-                          margin:
-                              EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                          child: Column(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: LinearProgressIndicator(
-                                  value: progress,
-                                  backgroundColor: Colors.grey[200],
-                                  minHeight: 10,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.lightGreenAccent[200]!),
+                        widget.coopOrComp == "Competitive"
+                            ? Expanded(
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(15, 30, 15, 0),
+                                  child: Stack(
+                                    children: [
+                                      Center(
+                                        child: ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          child: Image.asset(mapAssetUrl,
+                                              fit: BoxFit.cover),
+                                        ),
+                                      ),
+                                      CompGraph(
+                                        team1Progress:
+                                            team1Progress / mapElevation,
+                                        team2Progress:
+                                            team2Progress / mapElevation,
+                                      ),
+                                    ],
+                                  ),
+                                ), // Adjusted map to be within an Expanded widget
+                              )
+                            : Expanded(
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(15, 30, 15, 0),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: Image.asset(mapAssetUrl,
+                                        fit: BoxFit.cover),
+                                  ),
                                 ),
-                              ),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  Text(
-                                    "${totalElevationM.toStringAsFixed(2)} m / $mapElevation m",
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  Text(
-                                    "${(progress * 100).toStringAsFixed(2)}% Completed",
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
+                              ), // Adjusted map to be within an Expanded widget
+
+                        widget.coopOrComp == "Cooperative"
+                            ? CoopGraph(
+                                progress: progress,
+                                totalElevationM: totalElevationM,
+                                mapElevation: mapElevation,
+                              )
+                            : SizedBox(),
                       ],
                     );
                   },
                 ),
-                Positioned(
-                  top: 75,
-                  right: 75,
-                  child: Opacity(
-                    opacity: 0.6,
-                    child: FutureBuilder<Map<String, double>>(
-                      future: fetchParticipantElevations(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return CircularProgressIndicator();
-                        }
-                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                          return Text("No data available for chart");
-                        }
-                        return Container(
-                          width: 20, // Specify the width of the chart
-                          height: 20, // Specify the height of the chart
-                          child: buildPieChart(
-                              snapshot.data!), // Your method to build the chart
-                        );
-                      },
-                    ),
-                  ),
-                ),
+                widget.coopOrComp == "Cooperative"
+                    ? Positioned(
+                        top: 75,
+                        right: 75,
+                        child: Opacity(
+                          opacity: 0.6,
+                          child: FutureBuilder<Map<String, double>>(
+                            future: fetchParticipantElevations(),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return CircularProgressIndicator();
+                              }
+                              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                return Text("No data available for chart");
+                              }
+                              return Container(
+                                width: 20, // Specify the width of the chart
+                                height: 20, // Specify the height of the chart
+                                child: buildPieChart(snapshot
+                                    .data!), // Your method to build the chart
+                              );
+                            },
+                          ),
+                        ),
+                      )
+                    : SizedBox(),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -686,87 +785,270 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                   }
 
                   // Ensure we display up to 8 slots, showing "Empty Slot" as needed
-                  int itemCount = max(8, widget.participantsEmails.length);
-                  return GridView.builder(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2, // Number of columns
-                      childAspectRatio: 7 / 2, // Adjust the size ratio of items
-                      crossAxisSpacing: 2, // Spacing between items horizontally
-                      mainAxisSpacing: 2, // Spacing between items vertically
-                    ),
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: itemCount,
-                    itemBuilder: (context, index) {
-                      String email = index < widget.participantsEmails.length
-                          ? widget.participantsEmails[index]
-                          : "Empty Position";
-                      double elevation =
-                          index < widget.participantsEmails.length
-                              ? snapshot.data![email] ?? 0.0
-                              : 0.0;
+                  int coopItemCount = max(8, widget.participantsEmails.length);
+                  int compMaxParticipants = 4;
+                  int compItemCount = compMaxParticipants * 2;
+                  return widget.coopOrComp == "Cooperative"
+                      ? GridView.builder(
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2, // Number of columns
+                            childAspectRatio:
+                                7 / 2, // Adjust the size ratio of items
+                            crossAxisSpacing:
+                                2, // Spacing between items horizontally
+                            mainAxisSpacing:
+                                2, // Spacing between items vertically
+                          ),
+                          physics: NeverScrollableScrollPhysics(),
+                          itemCount: coopItemCount,
+                          itemBuilder: (context, index) {
+                            String email =
+                                index < widget.participantsEmails.length
+                                    ? widget.participantsEmails[index]
+                                    : "Empty Position";
+                            double elevation =
+                                index < widget.participantsEmails.length
+                                    ? snapshot.data![email] ?? 0.0
+                                    : 0.0;
 
-                      Color avatarColor =
-                          participantColors[email] ?? Colors.grey;
+                            Color avatarColor =
+                                participantColors[email] ?? Colors.grey;
 
-                      return GestureDetector(
-                        onTap: () {
-                          if (email != "Empty Position") {
-                            showUserActivitiesDialog(email);
-                          }
-                        },
-                        child: Card(
-                          elevation: 1,
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: Row(
-                              children: [
-                                email != "Empty Position"
-                                    ? CircleAvatar(
-                                        backgroundColor: avatarColor,
-                                        radius:
-                                            10, // Adjust the size of the avatar as needed
-                                      )
-                                    : SizedBox.shrink(),
-                                SizedBox(
-                                    width:
-                                        8), // Provides some spacing between the avatar and the text
-                                Expanded(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                            return GestureDetector(
+                              onTap: () {
+                                if (email != "Empty Position") {
+                                  showUserActivitiesDialog(email);
+                                }
+                              },
+                              child: Card(
+                                elevation: 1,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(left: 8.0),
+                                  child: Row(
                                     children: [
-                                      getUserName(
-                                          email), // Username or "Empty Slot"
-                                      Text(
-                                        index < widget.participantsEmails.length
-                                            ? '${elevation.toStringAsFixed(2)} m'
-                                            : '',
-                                        style: TextStyle(fontSize: 12),
+                                      email != "Empty Position"
+                                          ? CircleAvatar(
+                                              backgroundColor: avatarColor,
+                                              radius:
+                                                  10, // Adjust the size of the avatar as needed
+                                            )
+                                          : SizedBox.shrink(),
+                                      SizedBox(
+                                          width:
+                                              8), // Provides some spacing between the avatar and the text
+                                      Expanded(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            getUserName(
+                                                email), // Username or "Empty Slot"
+                                            Text(
+                                              index <
+                                                      widget.participantsEmails
+                                                          .length
+                                                  ? '${elevation.toStringAsFixed(2)} m'
+                                                  : '',
+                                              style: TextStyle(fontSize: 12),
+                                            ),
+                                          ],
+                                        ),
                                       ),
+                                      email == widget.challengeCreator
+                                          ? Icon(Icons.verified_outlined)
+                                          : SizedBox.shrink(),
                                     ],
                                   ),
                                 ),
-                                email == widget.challengeCreator
-                                    ? Icon(Icons.verified_outlined)
-                                    : SizedBox.shrink(),
+                              ),
+                            );
+                          },
+                        )
+                      : Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                Text(
+                                  'Team 1',
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                VerticalDivider(
+                                    thickness: 1,
+                                    color: Colors.black), // Center Divider
+                                Text(
+                                  'Team 2',
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold),
+                                ),
                               ],
                             ),
-                          ),
-                        ),
-                      );
-                    },
-                  );
+                            Expanded(
+                              child: GridView.builder(
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2, // Number of columns
+                                  childAspectRatio:
+                                      7 / 2, // Adjust the size ratio of items
+                                  crossAxisSpacing:
+                                      2, // Spacing between items horizontally
+                                  mainAxisSpacing:
+                                      2, // Spacing between items vertically
+                                ),
+                                physics: NeverScrollableScrollPhysics(),
+                                itemCount: compItemCount,
+                                itemBuilder: (context, index) {
+                                  String email =
+                                      index < widget.participantsEmails.length
+                                          ? widget.participantsEmails[index]
+                                          : "Empty Position";
+                                  double elevation =
+                                      index < widget.participantsEmails.length
+                                          ? snapshot.data![email] ?? 0.0
+                                          : 0.0;
+
+                                  Color avatarColor =
+                                      participantColors[email] ?? Colors.grey;
+
+                                  Color cardColor;
+
+                                  if (index % 2 == 0) {
+                                    // Left side (team1)
+                                    int team1Index = index ~/ 2;
+                                    cardColor = Colors.lightGreenAccent;
+                                    if (team1Index < team1Emails.length) {
+                                      email = team1Emails[team1Index];
+                                      elevation = snapshot.data![email] ?? 0.0;
+                                      avatarColor = participantColors[email] ??
+                                          Colors.grey;
+                                    } else {
+                                      email = "Empty Position";
+                                      elevation = 0.0;
+                                      avatarColor = Colors.grey;
+                                    }
+                                  } else {
+                                    // Right side (team2)
+                                    int team2Index = index ~/ 2;
+                                    cardColor = Colors.lightBlueAccent;
+                                    if (team2Index < team2Emails.length) {
+                                      email = team2Emails[team2Index];
+                                      elevation = snapshot.data![email] ?? 0.0;
+                                      avatarColor = participantColors[email] ??
+                                          Colors.grey;
+                                    } else {
+                                      email = "Empty Position";
+                                      elevation = 0.0;
+                                      avatarColor = Colors.grey;
+                                    }
+                                  }
+
+                                  return GestureDetector(
+                                    onTap: () {
+                                      if (email != "Empty Position") {
+                                        showUserActivitiesDialog(email);
+                                      }
+                                    },
+                                    child: Card(
+                                      shape: ShapeBorder.lerp(
+                                        RoundedRectangleBorder(
+                                          side: BorderSide(
+                                              color: cardColor, width: 1),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        RoundedRectangleBorder(
+                                          side: BorderSide(
+                                            color: cardColor,
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        0.5,
+                                      ),
+                                      elevation: 1,
+                                      child: Padding(
+                                        padding:
+                                            const EdgeInsets.only(left: 8.0),
+                                        child: Row(
+                                          children: [
+                                            email != "Empty Position"
+                                                ? CircleAvatar(
+                                                    backgroundColor:
+                                                        avatarColor,
+                                                    radius:
+                                                        10, // Adjust the size of the avatar as needed
+                                                  )
+                                                : SizedBox.shrink(),
+                                            SizedBox(
+                                                width:
+                                                    8), // Provides some spacing between the avatar and the text
+                                            Expanded(
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  getUserName(
+                                                      email), // Username or "Empty Slot"
+                                                  Text(
+                                                    '${elevation.toStringAsFixed(2)} m',
+                                                    style:
+                                                        TextStyle(fontSize: 12),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            email == widget.challengeCreator
+                                                ? Icon(Icons.verified_outlined)
+                                                : SizedBox.shrink(),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        );
                 },
               ),
             ),
           ),
           widget.coopOrComp == "Competitive"
-              ? TextButton(
-                  onPressed: () {
-                    joinTeam(widget.challengeId, widget.coopOrComp);
-                  },
-                  child: Text('Join a Team'),
+              ? Row(
+                  children: [
+                    TextButton(
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all(Colors.teal),
+                        foregroundColor:
+                            MaterialStateProperty.all(Colors.white),
+                      ),
+                      onPressed: () {
+                        joinTeam(widget.challengeId, widget.coopOrComp);
+                      },
+                      child: Text('Join a Team'),
+                    ),
+                    TextButton(
+                      style: ButtonStyle(
+                        backgroundColor:
+                            MaterialStateProperty.all(Colors.orange),
+                        foregroundColor:
+                            MaterialStateProperty.all(Colors.white),
+                      ),
+                      onPressed: () {
+                        _challengeUserDialog(challengeMessage);
+                      },
+                      child: Text('Challenge a User'),
+                    ),
+                  ],
                 )
               : SizedBox(),
           Container(
@@ -840,6 +1122,62 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
           },
         ),
       ),
+    );
+  }
+
+  void _challengeUserDialog(challengeMessage) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Challenge a User"),
+          content: FutureBuilder<QuerySnapshot>(
+            future: FirebaseFirestore.instance.collection('Users').get(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              }
+              if (!snapshot.hasData) {
+                return Text("No users available");
+              }
+              var users = snapshot.data!.docs.map((doc) {
+                var data = doc.data() as Map<String, dynamic>;
+                return ListTile(
+                  title: Text(data['username'] ?? 'No Name'),
+                  subtitle: Text(data['email']),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    // _sendChallengeNotification(data['email']);   
+                    //
+                    // send notification to the user  
+                                
+                    print(challengeMessage.notification!.title.toString());
+                    print(challengeMessage.notification!.body.toString());
+                    print(challengeMessage.data);
+                  },
+                );
+              }).toList();
+
+              return Container(
+                height: 400,
+                width: double.maxFinite,
+                child: ListView(
+                  shrinkWrap: true,
+                  children: users,
+                ),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -917,16 +1255,32 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
           'Team 1'; // Default to 'Team 1' if no selection
 
       if (selectedTeam == 'Team 1') {
+        if (team1.length >= 4) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Team 1 is full. How about Team 2?'),
+          ));
+          return;
+        }
         if (!team1.contains(currentUserEmail)) {
           team1.add(currentUserEmail);
           transaction.update(challengeRef, {'team1': team1});
         }
       } else {
+        if (team2.length >= 4) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Team 2 is full. How about Team 1?'),
+          ));
+          return;
+        }
         if (!team2.contains(currentUserEmail)) {
           team2.add(currentUserEmail);
           transaction.update(challengeRef, {'team2': team2});
         }
       }
+      setState(() {
+        team1Emails = team1.cast<String>();
+        team2Emails = team2.cast<String>();
+      });
     }).catchError((error) {
       print("Failed to join challenge: $error");
     });
