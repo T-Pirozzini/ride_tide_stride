@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'dart:convert';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -12,9 +13,11 @@ import 'package:lottie/lottie.dart';
 import 'package:ride_tide_stride/screens/challenges/mtn_scramble/comp_graph.dart';
 import 'package:ride_tide_stride/screens/challenges/mtn_scramble/coop_graph.dart';
 import 'package:ride_tide_stride/screens/challenges/mtn_scramble/team_selection_dialog.dart';
+import 'package:ride_tide_stride/services/firebase_api.dart';
 import 'package:ride_tide_stride/shared/activity_icons.dart';
 import 'package:ride_tide_stride/models/chat_message.dart';
 import 'package:ride_tide_stride/screens/chat/chat_widget.dart';
+import 'package:ride_tide_stride/secret.dart';
 import 'package:badges/badges.dart' as badges;
 
 class MtnScramblePage extends StatefulWidget {
@@ -545,6 +548,9 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
 
   @override
   Widget build(BuildContext context) {
+    final challengeMessage =
+        ModalRoute.of(context)!.settings.arguments as RemoteMessage;
+
     return Scaffold(
       key: _mtnScrambleScaffoldKey,
       backgroundColor: const Color(0xFFDFD3C3),
@@ -1038,7 +1044,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                             MaterialStateProperty.all(Colors.white),
                       ),
                       onPressed: () {
-                        _challengeUserDialog();
+                        _challengeUserDialog(challengeMessage);
                       },
                       child: Text('Challenge a User'),
                     ),
@@ -1119,7 +1125,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
     );
   }
 
-  void _challengeUserDialog() {
+  void _challengeUserDialog(challengeMessage) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -1141,7 +1147,13 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                   subtitle: Text(data['email']),
                   onTap: () {
                     Navigator.of(context).pop();
-                    _sendChallengeNotification(data['email']);
+                    // _sendChallengeNotification(data['email']);   
+                    //
+                    // send notification to the user  
+                                
+                    print(challengeMessage.notification!.title.toString());
+                    print(challengeMessage.notification!.body.toString());
+                    print(challengeMessage.data);
                   },
                 );
               }).toList();
@@ -1167,55 +1179,6 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
         );
       },
     );
-  }
-
-  Future<void> _sendChallengeNotification(String userEmail) async {
-    try {
-      // Fetch the FCM token for the user
-      var userDoc = await FirebaseFirestore.instance
-          .collection('Users')
-          .doc(userEmail)
-          .get();
-      var fcmToken = userDoc.data()?['fcmToken'];
-      if (fcmToken == null) {
-        print('User does not have a registered FCM token.');
-        return;
-      }
-
-      // Construct the notification payload
-      var notification = {
-        'to': fcmToken,
-        'notification': {
-          'title': 'Challenge Request',
-          'body': 'You have been challenged!',
-        },
-        'data': {
-          'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-          'id': '1',
-          'status': 'done',
-        }
-      };
-
-      // Send the notification using FCM
-      var headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'key=YOUR_SERVER_KEY', // Replace with your server key
-      };
-      var response = await http.post(
-        Uri.parse('https://fcm.googleapis.com/fcm/send'),
-        headers: headers,
-        body: json.encode(notification),
-      );
-
-      if (response.statusCode == 200) {
-        print('Challenge notification sent successfully.');
-      } else {
-        print(
-            'Failed to send challenge notification. Status code: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error sending challenge notification: $e');
-    }
   }
 
   Widget getUserName(String email) {

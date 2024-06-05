@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ride_tide_stride/helpers/helper_functions.dart';
@@ -23,48 +22,9 @@ class _HomeState extends State<Home> {
 
   @override
   void initState() {
-    super.initState();
-    FirebaseMessaging.instance.requestPermission(
-      alert: true,
-      announcement: false,
-      badge: true,
-      carPlay: false,
-      criticalAlert: false,
-      provisional: false,
-      sound: true,
-    );
-    _setupFCM();
+    super.initState();    
     fetchUsername();
-  }
-
-  void _setupFCM() async {
-    FirebaseMessaging messaging = FirebaseMessaging.instance;
-    String? token = await messaging.getToken();
-    print("FCM Token: $token");
-    if (token != null) {
-      // Save the token to Firestore (example)
-      _saveTokenToFirestore(token);
-    }
-
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print('Got a message whilst in the foreground!');
-      print('Message data: ${message.data}');
-
-      if (message.notification != null) {
-        print('Message also contained a notification: ${message.notification}');
-      }
-    });
-  }
-
-  void _saveTokenToFirestore(String token) async {
-    // Get the current user's email or ID (example)
-    String userEmail =
-        currentUser!.email.toString(); // Replace with actual user email or ID
-
-    await FirebaseFirestore.instance.collection('Users').doc(userEmail).update({
-      'fcmToken': token,
-    });
-  }
+  }  
 
   void fetchUsername() {
     final currentUser = FirebaseAuth.instance.currentUser;

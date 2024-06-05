@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:ride_tide_stride/auth/auth_page.dart';
 import 'package:ride_tide_stride/firebase_options.dart';
 import 'package:flutter/material.dart';
@@ -10,18 +8,15 @@ import 'package:ride_tide_stride/screens/activities/activities_page.dart';
 import 'package:ride_tide_stride/screens/leaderboard/users_page.dart';
 import 'package:ride_tide_stride/screens/awards/awards_page.dart';
 import 'package:ride_tide_stride/screens/challenges/challenge_results_page.dart';
-
+import 'package:ride_tide_stride/services/firebase_api.dart';
 import 'package:ride_tide_stride/theme.dart';
 
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  print("Handling a background message: ${message.messageId}");
-}
 
+final navigatorKey = GlobalKey<NavigatorState>();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  await FirebaseApi().initNotifications();
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -41,6 +36,7 @@ class MyApp extends StatelessWidget {
         theme: primaryTheme,
         title: 'Ride.Tide.Stride',
         home: const AuthPage(),
+        navigatorKey: navigatorKey,
         routes: {
           '/awardsPage': (context) => AwardsPage(),
           '/challengeResultsPage': (context) => ChallengeResultsPage(),
