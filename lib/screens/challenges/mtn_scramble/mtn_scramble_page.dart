@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -388,8 +390,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
           'endDate': Timestamp.fromDate(now),
         });
       }
-    } 
-    else if (widget.coopOrComp == "Competitive") {
+    } else if (widget.coopOrComp == "Competitive") {
       if (team1Progress >= goalElevation || team2Progress >= goalElevation) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _showSuccessDialog();
@@ -1016,15 +1017,32 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
             ),
           ),
           widget.coopOrComp == "Competitive"
-              ? TextButton(
-                  style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all(Colors.teal),
-                    foregroundColor: MaterialStateProperty.all(Colors.white),
-                  ),
-                  onPressed: () {
-                    joinTeam(widget.challengeId, widget.coopOrComp);
-                  },
-                  child: Text('Join a Team'),
+              ? Row(
+                  children: [
+                    TextButton(
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all(Colors.teal),
+                        foregroundColor:
+                            MaterialStateProperty.all(Colors.white),
+                      ),
+                      onPressed: () {
+                        joinTeam(widget.challengeId, widget.coopOrComp);
+                      },
+                      child: Text('Join a Team'),
+                    ),
+                    TextButton(
+                      style: ButtonStyle(
+                        backgroundColor:
+                            MaterialStateProperty.all(Colors.orange),
+                        foregroundColor:
+                            MaterialStateProperty.all(Colors.white),
+                      ),
+                      onPressed: () {
+                        _challengeUserDialog();
+                      },
+                      child: Text('Challenge a User'),
+                    ),
+                  ],
                 )
               : SizedBox(),
           Container(
@@ -1099,6 +1117,105 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
         ),
       ),
     );
+  }
+
+  void _challengeUserDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Challenge a User"),
+          content: FutureBuilder<QuerySnapshot>(
+            future: FirebaseFirestore.instance.collection('Users').get(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              }
+              if (!snapshot.hasData) {
+                return Text("No users available");
+              }
+              var users = snapshot.data!.docs.map((doc) {
+                var data = doc.data() as Map<String, dynamic>;
+                return ListTile(
+                  title: Text(data['username'] ?? 'No Name'),
+                  subtitle: Text(data['email']),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _sendChallengeNotification(data['email']);
+                  },
+                );
+              }).toList();
+
+              return Container(
+                height: 400,
+                width: double.maxFinite,
+                child: ListView(
+                  shrinkWrap: true,
+                  children: users,
+                ),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _sendChallengeNotification(String userEmail) async {
+    try {
+      // Fetch the FCM token for the user
+      var userDoc = await FirebaseFirestore.instance
+          .collection('Users')
+          .doc(userEmail)
+          .get();
+      var fcmToken = userDoc.data()?['fcmToken'];
+      if (fcmToken == null) {
+        print('User does not have a registered FCM token.');
+        return;
+      }
+
+      // Construct the notification payload
+      var notification = {
+        'to': fcmToken,
+        'notification': {
+          'title': 'Challenge Request',
+          'body': 'You have been challenged!',
+        },
+        'data': {
+          'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+          'id': '1',
+          'status': 'done',
+        }
+      };
+
+      // Send the notification using FCM
+      var headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'key=YOUR_SERVER_KEY', // Replace with your server key
+      };
+      var response = await http.post(
+        Uri.parse('https://fcm.googleapis.com/fcm/send'),
+        headers: headers,
+        body: json.encode(notification),
+      );
+
+      if (response.statusCode == 200) {
+        print('Challenge notification sent successfully.');
+      } else {
+        print(
+            'Failed to send challenge notification. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error sending challenge notification: $e');
+    }
   }
 
   Widget getUserName(String email) {
