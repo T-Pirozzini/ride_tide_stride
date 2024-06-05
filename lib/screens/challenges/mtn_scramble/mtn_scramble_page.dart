@@ -52,6 +52,8 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
   DateTime? endDate;
   bool unread = false;
   int unreadMessageCount = 0;
+  List<String> team1Emails = [];
+  List<String> team2Emails = [];
 
   void _sendMessage(String messageText) async {
     if (messageText.isEmpty) {
@@ -132,6 +134,24 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
     }
   }
 
+  Future<void> fetchTeamEmails() async {
+    DocumentSnapshot challengeDoc = await FirebaseFirestore.instance
+        .collection('Challenges')
+        .doc(widget.challengeId)
+        .get();
+
+    if (challengeDoc.exists) {
+      var data = challengeDoc.data() as Map<String, dynamic>?;
+
+      if (data != null && data.containsKey('team1')) {
+        team1Emails = List<String>.from(data['team1']).take(4).toList();
+      }
+      if (data != null && data.containsKey('team2')) {
+        team2Emails = List<String>.from(data['team2']).take(4).toList();
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -149,6 +169,9 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
         .snapshots();
 
     fetchInitialReadByData();
+    fetchTeamEmails().then((_) {
+      setState(() {}); // Refresh the UI after fetching team emails
+    });
   }
 
   Stream<QuerySnapshot>? _messagesStream;
@@ -659,31 +682,33 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                     );
                   },
                 ),
-                Positioned(
-                  top: 75,
-                  right: 75,
-                  child: Opacity(
-                    opacity: 0.6,
-                    child: FutureBuilder<Map<String, double>>(
-                      future: fetchParticipantElevations(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return CircularProgressIndicator();
-                        }
-                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                          return Text("No data available for chart");
-                        }
-                        return Container(
-                          width: 20, // Specify the width of the chart
-                          height: 20, // Specify the height of the chart
-                          child: buildPieChart(
-                              snapshot.data!), // Your method to build the chart
-                        );
-                      },
-                    ),
-                  ),
-                ),
+                widget.coopOrComp == "Cooperative"
+                    ? Positioned(
+                        top: 75,
+                        right: 75,
+                        child: Opacity(
+                          opacity: 0.6,
+                          child: FutureBuilder<Map<String, double>>(
+                            future: fetchParticipantElevations(),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return CircularProgressIndicator();
+                              }
+                              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                return Text("No data available for chart");
+                              }
+                              return Container(
+                                width: 20, // Specify the width of the chart
+                                height: 20, // Specify the height of the chart
+                                child: buildPieChart(snapshot
+                                    .data!), // Your method to build the chart
+                              );
+                            },
+                          ),
+                        ),
+                      )
+                    : SizedBox(),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -730,83 +755,200 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                   }
 
                   // Ensure we display up to 8 slots, showing "Empty Slot" as needed
-                  int itemCount = max(8, widget.participantsEmails.length);
-                  return GridView.builder(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2, // Number of columns
-                      childAspectRatio: 7 / 2, // Adjust the size ratio of items
-                      crossAxisSpacing: 2, // Spacing between items horizontally
-                      mainAxisSpacing: 2, // Spacing between items vertically
-                    ),
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: itemCount,
-                    itemBuilder: (context, index) {
-                      String email = index < widget.participantsEmails.length
-                          ? widget.participantsEmails[index]
-                          : "Empty Position";
-                      double elevation =
-                          index < widget.participantsEmails.length
-                              ? snapshot.data![email] ?? 0.0
-                              : 0.0;
+                  int coopItemCount = max(8, widget.participantsEmails.length);
+                  int compMaxParticipants = 4;
+                  int compItemCount = compMaxParticipants * 2;
+                  return widget.coopOrComp == "Cooperative"
+                      ? GridView.builder(
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2, // Number of columns
+                            childAspectRatio:
+                                7 / 2, // Adjust the size ratio of items
+                            crossAxisSpacing:
+                                2, // Spacing between items horizontally
+                            mainAxisSpacing:
+                                2, // Spacing between items vertically
+                          ),
+                          physics: NeverScrollableScrollPhysics(),
+                          itemCount: coopItemCount,
+                          itemBuilder: (context, index) {
+                            String email =
+                                index < widget.participantsEmails.length
+                                    ? widget.participantsEmails[index]
+                                    : "Empty Position";
+                            double elevation =
+                                index < widget.participantsEmails.length
+                                    ? snapshot.data![email] ?? 0.0
+                                    : 0.0;
 
-                      Color avatarColor =
-                          participantColors[email] ?? Colors.grey;
+                            Color avatarColor =
+                                participantColors[email] ?? Colors.grey;
 
-                      return GestureDetector(
-                        onTap: () {
-                          if (email != "Empty Position") {
-                            showUserActivitiesDialog(email);
-                          }
-                        },
-                        child: Card(
-                          elevation: 1,
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: Row(
-                              children: [
-                                email != "Empty Position"
-                                    ? CircleAvatar(
-                                        backgroundColor: avatarColor,
-                                        radius:
-                                            10, // Adjust the size of the avatar as needed
-                                      )
-                                    : SizedBox.shrink(),
-                                SizedBox(
-                                    width:
-                                        8), // Provides some spacing between the avatar and the text
-                                Expanded(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                            return GestureDetector(
+                              onTap: () {
+                                if (email != "Empty Position") {
+                                  showUserActivitiesDialog(email);
+                                }
+                              },
+                              child: Card(
+                                elevation: 1,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(left: 8.0),
+                                  child: Row(
                                     children: [
-                                      getUserName(
-                                          email), // Username or "Empty Slot"
-                                      Text(
-                                        index < widget.participantsEmails.length
-                                            ? '${elevation.toStringAsFixed(2)} m'
-                                            : '',
-                                        style: TextStyle(fontSize: 12),
+                                      email != "Empty Position"
+                                          ? CircleAvatar(
+                                              backgroundColor: avatarColor,
+                                              radius:
+                                                  10, // Adjust the size of the avatar as needed
+                                            )
+                                          : SizedBox.shrink(),
+                                      SizedBox(
+                                          width:
+                                              8), // Provides some spacing between the avatar and the text
+                                      Expanded(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            getUserName(
+                                                email), // Username or "Empty Slot"
+                                            Text(
+                                              index <
+                                                      widget.participantsEmails
+                                                          .length
+                                                  ? '${elevation.toStringAsFixed(2)} m'
+                                                  : '',
+                                              style: TextStyle(fontSize: 12),
+                                            ),
+                                          ],
+                                        ),
                                       ),
+                                      email == widget.challengeCreator
+                                          ? Icon(Icons.verified_outlined)
+                                          : SizedBox.shrink(),
                                     ],
                                   ),
                                 ),
-                                email == widget.challengeCreator
-                                    ? Icon(Icons.verified_outlined)
-                                    : SizedBox.shrink(),
-                              ],
-                            ),
+                              ),
+                            );
+                          },
+                        )
+                      : GridView.builder(
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2, // Number of columns
+                            childAspectRatio:
+                                7 / 2, // Adjust the size ratio of items
+                            crossAxisSpacing:
+                                2, // Spacing between items horizontally
+                            mainAxisSpacing:
+                                2, // Spacing between items vertically
                           ),
-                        ),
-                      );
-                    },
-                  );
+                          physics: NeverScrollableScrollPhysics(),
+                          itemCount: compItemCount,
+                          itemBuilder: (context, index) {
+                            String email =
+                                index < widget.participantsEmails.length
+                                    ? widget.participantsEmails[index]
+                                    : "Empty Position";
+                            double elevation =
+                                index < widget.participantsEmails.length
+                                    ? snapshot.data![email] ?? 0.0
+                                    : 0.0;
+
+                            Color avatarColor =
+                                participantColors[email] ?? Colors.grey;
+
+                            if (index % 2 == 0) {
+                              // Left side (team1)
+                              int team1Index = index ~/ 2;
+                              if (team1Index < team1Emails.length) {
+                                email = team1Emails[team1Index];
+                                elevation = snapshot.data![email] ?? 0.0;
+                                avatarColor =
+                                    participantColors[email] ?? Colors.grey;
+                              } else {
+                                email = "Empty Position";
+                                elevation = 0.0;
+                                avatarColor = Colors.grey;
+                              }
+                            } else {
+                              // Right side (team2)
+                              int team2Index = index ~/ 2;
+                              if (team2Index < team2Emails.length) {
+                                email = team2Emails[team2Index];
+                                elevation = snapshot.data![email] ?? 0.0;
+                                avatarColor =
+                                    participantColors[email] ?? Colors.grey;
+                              } else {
+                                email = "Empty Position";
+                                elevation = 0.0;
+                                avatarColor = Colors.grey;
+                              }
+                            }
+
+                            return GestureDetector(
+                              onTap: () {
+                                if (email != "Empty Position") {
+                                  showUserActivitiesDialog(email);
+                                }
+                              },
+                              child: Card(
+                                elevation: 1,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(left: 8.0),
+                                  child: Row(
+                                    children: [
+                                      email != "Empty Position"
+                                          ? CircleAvatar(
+                                              backgroundColor: avatarColor,
+                                              radius:
+                                                  10, // Adjust the size of the avatar as needed
+                                            )
+                                          : SizedBox.shrink(),
+                                      SizedBox(
+                                          width:
+                                              8), // Provides some spacing between the avatar and the text
+                                      Expanded(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            getUserName(
+                                                email), // Username or "Empty Slot"
+                                            Text(
+                                              '${elevation.toStringAsFixed(2)} m',
+                                              style: TextStyle(fontSize: 12),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      email == widget.challengeCreator
+                                          ? Icon(Icons.verified_outlined)
+                                          : SizedBox.shrink(),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        );
                 },
               ),
             ),
           ),
           widget.coopOrComp == "Competitive"
               ? TextButton(
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all(Colors.teal),
+                    foregroundColor: MaterialStateProperty.all(Colors.white),
+                  ),
                   onPressed: () {
                     joinTeam(widget.challengeId, widget.coopOrComp);
                   },

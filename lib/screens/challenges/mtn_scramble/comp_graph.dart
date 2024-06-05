@@ -1,59 +1,108 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
-class CompGraph extends StatelessWidget {
+class CompGraph extends StatefulWidget {
   final double team1Progress;
   final double team2Progress;
-  
 
-  const CompGraph(
-      {super.key,
-      required this.team1Progress,
-      required this.team2Progress,
+  const CompGraph({
+    Key? key,
+    required this.team1Progress,
+    required this.team2Progress,
+  }) : super(key: key);
+
+  @override
+  _CompGraphState createState() => _CompGraphState();
+}
+
+class _CompGraphState extends State<CompGraph>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 1500),
+    );
+    _animation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeInOut,
+      ),
+    )..addListener(() {
+        setState(() {});
       });
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      child: Stack(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          
-          PieChart(
-            PieChartData(
-              startDegreeOffset: -360,
-              sections: _getSections(),
-              borderData: FlBorderData(show: false),
-              sectionsSpace: 0,
-              centerSpaceRadius: 100,
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Column(
             children: [
-              Column(
-                children: [
-                  Text(
-                    "Team 1",
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    "${(team1Progress * 100).toStringAsFixed(1)}%",
-                    style: TextStyle(fontSize: 10),
-                  ),
-                ],
+              Text(
+                "Team 1",
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                "${(widget.team1Progress * 100 * _animation.value).toStringAsFixed(1)}%",
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.lightGreenAccent[200]),
               ),
               SizedBox(height: 10),
-              Column(
-                children: [
-                  Text(
-                    "Team 2",
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    "${(team2Progress * 100).toStringAsFixed(1)}%",
-                    style: TextStyle(fontSize: 10),
-                  ),
-                ],
+              Container(
+                height: 150, // Fixed height for the chart
+                width: 25, // Fixed width for the chart
+                decoration: BoxDecoration(
+                  color: Colors.grey[200]!.withOpacity(.6),
+                ),
+                child: LineChart(
+                  _getLineChartData(widget.team1Progress * _animation.value,
+                      Colors.lightGreenAccent[200]!.withOpacity(.6)),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(width: 20), // Spacing between the two charts
+          Column(
+            children: [
+              Text(
+                "Team 2",
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                "${(widget.team2Progress * 100 * _animation.value).toStringAsFixed(1)}%",
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueAccent[200]),
+              ),
+              SizedBox(height: 10),
+              Container(
+                height: 150, // Fixed height for the chart
+                width: 25, // Fixed width for the chart
+                decoration: BoxDecoration(
+                  color: Colors.grey[200]!.withOpacity(.6),
+                ),
+                child: LineChart(
+                  _getLineChartData(widget.team2Progress * _animation.value,
+                      Colors.blueAccent[200]!.withOpacity(.6)),
+                ),
               ),
             ],
           ),
@@ -62,36 +111,35 @@ class CompGraph extends StatelessWidget {
     );
   }
 
-  List<PieChartSectionData> _getSections() {
-    return [
-      PieChartSectionData(
-        color: Colors.lightGreenAccent[200],
-        value: team1Progress * 100,
-        radius: 20,
-        title: '',
-        showTitle: false,
+  LineChartData _getLineChartData(double progress, Color color) {
+    return LineChartData(
+      lineBarsData: [
+        LineChartBarData(
+          color: color,
+          spots: [
+            FlSpot(0, 0),
+            FlSpot(0, progress * 10), // Adjust the scaling factor as needed
+          ],
+          isCurved: true,
+          barWidth: 15,
+          belowBarData: BarAreaData(show: false),
+          dotData: FlDotData(show: false),
+          isStrokeCapRound: true,
+        ),
+      ],
+      titlesData: FlTitlesData(
+        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
       ),
-      PieChartSectionData(
-        color: Colors.blueAccent[200],
-        value: team2Progress * 100,
-        radius: 20,
-        title: '',
-        showTitle: false,
-      ),
-      PieChartSectionData(
-        color: Colors.transparent,
-        value: 100 - team1Progress * 100,
-        radius: 100,
-        title: '',
-        showTitle: false,
-      ),
-      PieChartSectionData(
-        color: Colors.transparent,
-        value: 100 - team2Progress * 100,
-        radius: 100,
-        title: '',
-        showTitle: false,
-      ),
-    ];
+      borderData: FlBorderData(show: false),
+      gridData: FlGridData(show: false),
+      lineTouchData: LineTouchData(enabled: false),
+      minX: -1,
+      maxX: 1,
+      minY: 0,
+      maxY: 10, // Adjust the scaling factor as needed
+    );
   }
 }
