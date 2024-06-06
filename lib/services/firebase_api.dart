@@ -1,9 +1,94 @@
+import 'dart:convert';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:ride_tide_stride/main.dart';
 
 class FirebaseApi {
   // create an instance of FirebaseMessaging
   final _firebaseMessaging = FirebaseMessaging.instance;
+
+  final _androidChannel = const AndroidNotificationChannel(
+    'high_importance_channel', // id
+    'High Importance Notifications', // title
+    description:
+        'This channel is used for important notifications.', // description
+    importance: Importance.defaultImportance,
+  );
+
+  final _localNotifications = FlutterLocalNotificationsPlugin();
+
+  Future<void> handleBackgroundMessage(RemoteMessage message) async {
+    if (message.notification != null) {
+      print('Title: ${message.notification!.title}');
+      print('Body: ${message.notification!.body}');
+      print('Payload: ${message.data}');
+    }
+  }
+
+  // function to handle received messages
+  void handleMessage(RemoteMessage? message) {
+    // if the message is null, do nothing
+    if (message == null) return;
+
+    // navigate to new screen when message is received and user taps notification
+    navigatorKey.currentState!.pushNamed('/usersPage', arguments: message);
+  }
+
+  Future initLocalNotifications() async {
+    final android = AndroidInitializationSettings('@drawable/ic_launcher');
+    final iOS = DarwinInitializationSettings();
+    final settings = InitializationSettings(android: android, iOS: iOS);
+    await _localNotifications.initialize(settings,
+        onDidReceiveNotificationResponse: (NotificationResponse response) {
+      final payload = response.payload;
+      if (payload != null) {
+        final message = RemoteMessage.fromMap(jsonDecode(payload));
+        handleMessage(message);
+      }
+    });
+    final platform = _localNotifications.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>()!;
+    await platform?.createNotificationChannel(_androidChannel);
+  }
+
+  // function to initialize foreground and background settings
+  Future initPushNotifications() async {
+    await FirebaseMessaging.instance
+        .setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+    // handle notifications if the app was terminated and now opened
+    FirebaseMessaging.instance.getInitialMessage().then(handleMessage);
+
+    // attach event listeners for when a notificiation opens the app
+    FirebaseMessaging.onMessageOpenedApp.listen(handleMessage);
+
+    // FirebaseMessaging.onBackgroundMessage(handleBackgroundMessage);
+
+    FirebaseMessaging.onMessage.listen((message) {
+      final notification = message.notification;
+      if (notification == null) return;
+
+      _localNotifications.show(
+        notification.hashCode,
+        notification.title,
+        notification.body,
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            _androidChannel.id,
+            _androidChannel.name,
+            channelDescription: _androidChannel.description,
+            icon: '@drawable/ic launcher',
+            importance: _androidChannel.importance,
+          ),
+        ),
+        payload: jsonEncode(message.toMap()),
+      );
+    });
+  }
 
   //function to initialize notifications
   Future<void> initNotifications() async {
@@ -18,25 +103,8 @@ class FirebaseApi {
 
     // initialize further settings for push notifications
     initPushNotifications();
+    initLocalNotifications();
   }
-
-  // function to handle received messages
-  void handleMessage(RemoteMessage? message) {
-    // if the message is null, do nothing
-    if (message == null) return;
-
-    // navigate to new screen when message is received and user taps notification
-    navigatorKey.currentState!.pushNamed('/usersPage', arguments: message);
-  }
-
-  // function to initialize foreground and background settings
-  Future initPushNotifications() async {
-    // handle notifications if the app was terminated and now opened
-    FirebaseMessaging.instance.getInitialMessage().then(handleMessage);
-
-    // attach event listeners for when a notificiation opent the app
-    FirebaseMessaging.onMessageOpenedApp.listen(handleMessage);
-  } 
 }
 
 // void _setupFCM() async {

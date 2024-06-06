@@ -13,11 +13,11 @@ import 'package:lottie/lottie.dart';
 import 'package:ride_tide_stride/screens/challenges/mtn_scramble/comp_graph.dart';
 import 'package:ride_tide_stride/screens/challenges/mtn_scramble/coop_graph.dart';
 import 'package:ride_tide_stride/screens/challenges/mtn_scramble/team_selection_dialog.dart';
-import 'package:ride_tide_stride/services/firebase_api.dart';
+
 import 'package:ride_tide_stride/shared/activity_icons.dart';
 import 'package:ride_tide_stride/models/chat_message.dart';
 import 'package:ride_tide_stride/screens/chat/chat_widget.dart';
-import 'package:ride_tide_stride/secret.dart';
+
 import 'package:badges/badges.dart' as badges;
 
 class MtnScramblePage extends StatefulWidget {
@@ -1153,7 +1153,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                                 
                     print(challengeMessage.notification!.title.toString());
                     print(challengeMessage.notification!.body.toString());
-                    print(challengeMessage.data);
+                    print('${challengeMessage.data}');
                   },
                 );
               }).toList();
