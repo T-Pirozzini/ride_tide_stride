@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:math';
-import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -10,7 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
-import 'package:ride_tide_stride/screens/challenges/mtn_scramble/comp_graph.dart';
+import 'package:ride_tide_stride/screens/challenges/challenge_helpers.dart';
+import 'package:ride_tide_stride/screens/challenges/comp_graph.dart';
 import 'package:ride_tide_stride/screens/challenges/mtn_scramble/coop_graph.dart';
 import 'package:ride_tide_stride/screens/challenges/mtn_scramble/team_selection_dialog.dart';
 
@@ -59,6 +58,29 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
   int unreadMessageCount = 0;
   List<String> team1Emails = [];
   List<String> team2Emails = [];
+
+  Stream<QuerySnapshot>? _messagesStream;
+
+  @override
+  void initState() {
+    super.initState();
+    DateTime startDate = widget.startDate.toDate();
+    DateTime adjustedStartDate =
+        DateTime(startDate.year, startDate.month, startDate.day);
+    endDate = adjustedStartDate.add(Duration(days: 30));
+    checkAndFinalizeChallenge();
+    _messagesStream = FirebaseFirestore.instance
+        .collection('Challenges')
+        .doc(widget.challengeId)
+        .collection('messages')
+        .orderBy('time', descending: true)
+        .snapshots();
+
+    fetchInitialReadByData();
+    fetchTeamEmails().then((_) {
+      setState(() {}); // Refresh the UI after fetching team emails
+    });
+  }
 
   void _sendMessage(String messageText) async {
     if (messageText.isEmpty) {
@@ -156,30 +178,6 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
       }
     }
   }
-
-  @override
-  void initState() {
-    super.initState();
-    DateTime startDate = widget.startDate.toDate();
-    DateTime adjustedStartDate =
-        DateTime(startDate.year, startDate.month, startDate.day);
-    endDate = adjustedStartDate.add(Duration(days: 30));
-    checkAndFinalizeChallenge();
-    _messagesStream = FirebaseFirestore.instance
-        .collection('Challenges')
-        .doc(widget.challengeId)
-        .collection('messages')
-        .orderBy('time',
-            descending: true) // Assuming 'time' is your timestamp field
-        .snapshots();
-
-    fetchInitialReadByData();
-    fetchTeamEmails().then((_) {
-      setState(() {}); // Refresh the UI after fetching team emails
-    });
-  }
-
-  Stream<QuerySnapshot>? _messagesStream;
 
   Future<Map<String, double>> fetchParticipantElevations() async {
     Map<String, double> participantElevations = {};
@@ -381,7 +379,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
     if (widget.coopOrComp == "Cooperative") {
       if (totalElevation >= goalElevation) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _showSuccessDialog();
+          showSuccessDialog(context);
         });
         await FirebaseFirestore.instance
             .collection('Challenges')
@@ -396,7 +394,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
     } else if (widget.coopOrComp == "Competitive") {
       if (team1Progress >= goalElevation || team2Progress >= goalElevation) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _showSuccessDialog();
+          showSuccessDialog(context);
         });
         await FirebaseFirestore.instance
             .collection('Challenges')
@@ -411,62 +409,20 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
         });
       }
     }
-  }
-
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Challenge Completed!"),
-          content: Stack(
-            children: <Widget>[
-              Lottie.asset(
-                'assets/lottie/win_animation.json',
-                frameRate: FrameRate.max,
-                repeat: true,
-                reverse: false,
-                animate: true,
-              ),
-              Lottie.asset(
-                'assets/lottie/firework_animation.json',
-                frameRate: FrameRate.max,
-                repeat: true,
-                reverse: false,
-                animate: true,
-              ),
-              const Text(
-                "Congratulations! You have successfully completed the challenge.",
-                style: TextStyle(fontSize: 14),
-              ),
-            ],
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text("OK"),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+  }  
 
   Future<void> showUserActivitiesDialog(String userEmail) async {
     DateTime startDate = widget.startDate.toDate();
     DateTime adjustedStartDate =
-        DateTime(startDate.year, startDate.month, startDate.day);
-    // DateTime endDate = adjustedStartDate.add(Duration(days: 30));
+        DateTime(startDate.year, startDate.month, startDate.day); 
+    String adjustedStartDateString = adjustedStartDate.toIso8601String();   
     // Fetch activities for the given user email
     QuerySnapshot activitiesSnapshot = await FirebaseFirestore.instance
         .collection('activities')
         .where('user_email', isEqualTo: userEmail)
-        .where('timestamp',
-            isGreaterThanOrEqualTo: Timestamp.fromDate(adjustedStartDate))
-        // .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
-        .orderBy('timestamp', descending: true)
+        .where('start_date_local',
+            isGreaterThanOrEqualTo: adjustedStartDateString)
+        .orderBy('start_date_local', descending: true)
         .get();
 
     // Parse activities data
@@ -547,10 +503,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final challengeMessage =
-        ModalRoute.of(context)!.settings.arguments as RemoteMessage;
-
+  Widget build(BuildContext context) {   
     return Scaffold(
       key: _mtnScrambleScaffoldKey,
       backgroundColor: const Color(0xFFDFD3C3),
@@ -706,6 +659,9 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                                 progress: progress,
                                 totalElevationM: totalElevationM,
                                 mapElevation: mapElevation,
+                                totalDistanceKM: 0.0,
+                                mapDistance: 0.0,
+                                elevationOrDistance: "Elevation",
                               )
                             : SizedBox(),
                       ],
@@ -1024,6 +980,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
           ),
           widget.coopOrComp == "Competitive"
               ? Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     TextButton(
                       style: ButtonStyle(
@@ -1035,18 +992,6 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                         joinTeam(widget.challengeId, widget.coopOrComp);
                       },
                       child: Text('Join a Team'),
-                    ),
-                    TextButton(
-                      style: ButtonStyle(
-                        backgroundColor:
-                            MaterialStateProperty.all(Colors.orange),
-                        foregroundColor:
-                            MaterialStateProperty.all(Colors.white),
-                      ),
-                      onPressed: () {
-                        _challengeUserDialog(challengeMessage);
-                      },
-                      child: Text('Challenge a User'),
                     ),
                   ],
                 )
@@ -1122,62 +1067,6 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
           },
         ),
       ),
-    );
-  }
-
-  void _challengeUserDialog(challengeMessage) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("Challenge a User"),
-          content: FutureBuilder<QuerySnapshot>(
-            future: FirebaseFirestore.instance.collection('Users').get(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
-              }
-              if (!snapshot.hasData) {
-                return Text("No users available");
-              }
-              var users = snapshot.data!.docs.map((doc) {
-                var data = doc.data() as Map<String, dynamic>;
-                return ListTile(
-                  title: Text(data['username'] ?? 'No Name'),
-                  subtitle: Text(data['email']),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    // _sendChallengeNotification(data['email']);   
-                    //
-                    // send notification to the user  
-                                
-                    print(challengeMessage.notification!.title.toString());
-                    print(challengeMessage.notification!.body.toString());
-                    print('${challengeMessage.data}');
-                  },
-                );
-              }).toList();
-
-              return Container(
-                height: 400,
-                width: double.maxFinite,
-                child: ListView(
-                  shrinkWrap: true,
-                  children: users,
-                ),
-              );
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Cancel'),
-            ),
-          ],
-        );
-      },
     );
   }
 

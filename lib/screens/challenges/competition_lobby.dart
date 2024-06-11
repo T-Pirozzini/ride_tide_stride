@@ -234,6 +234,7 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                         challengeCreator:
                                             challengeData['userEmail'] ??
                                                 'No creator',
+                                                coopOrComp: challengeData['coopOrComp'] ?? 'No coopOrComp',
                                       );
                                     default:
                                       // Handle unknown challenge type if necessary
@@ -247,7 +248,7 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                               challengeData['difficulty'] ??
                                                   'No difficulty',
                                           challengeLegs:
-                                              challengeData['legsSelected']);
+                                              challengeData['legsSelected'],);
                                   }
                                 },
                               ),
@@ -321,6 +322,7 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                             challengeCreator:
                                                 challengeData['userEmail'] ??
                                                     'No creator',
+                                            coopOrComp: challengeData['coopOrComp'] ?? 'No coopOrComp',
                                           );
                                         default:
                                           // Handle unknown challenge type if necessary
