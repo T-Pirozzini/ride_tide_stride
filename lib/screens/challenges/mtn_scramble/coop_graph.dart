@@ -4,12 +4,18 @@ class CoopGraph extends StatelessWidget {
   final double progress;
   final double totalElevationM;
   final double mapElevation;
+  final double totalDistanceKM;
+  final double mapDistance;
+  final String elevationOrDistance;
 
   const CoopGraph(
       {super.key,
       required this.progress,
       required this.totalElevationM,
-      required this.mapElevation});
+      required this.mapElevation,
+      required this.totalDistanceKM,
+      required this.mapDistance,
+      required this.elevationOrDistance});
 
   @override
   Widget build(BuildContext context) {
