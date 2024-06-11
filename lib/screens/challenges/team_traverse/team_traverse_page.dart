@@ -11,7 +11,6 @@ import 'package:ride_tide_stride/screens/challenges/challenge_helpers.dart';
 import 'package:ride_tide_stride/screens/challenges/comp_graph.dart';
 import 'package:ride_tide_stride/screens/challenges/mtn_scramble/coop_graph.dart';
 import 'package:ride_tide_stride/screens/challenges/mtn_scramble/team_selection_dialog.dart';
-import 'package:ride_tide_stride/shared/activity_icons.dart';
 import 'package:ride_tide_stride/models/chat_message.dart';
 import 'package:ride_tide_stride/screens/chat/chat_widget.dart';
 import 'package:badges/badges.dart' as badges;
