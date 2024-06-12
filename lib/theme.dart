@@ -43,6 +43,7 @@ ThemeData primaryTheme = ThemeData(
   buttonTheme: ButtonThemeData(),
 
   textTheme: const TextTheme().copyWith(
+    
     bodySmall: TextStyle(
       color: AppColors.textColor,
       fontSize: 10,

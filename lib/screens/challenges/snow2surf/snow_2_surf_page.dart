@@ -1226,11 +1226,10 @@ class _Snow2SurfState extends State<Snow2Surf> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
-                              Icons.error_outline,
-                              color: Theme.of(context)
-                                  .errorColor, // Or any color that fits your design
-                            ),
+                            Icon(Icons.error_outline,
+                                color: Colors
+                                    .redAccent // Or any color that fits your design
+                                ),
                             SizedBox(
                                 width:
                                     8), // Provides spacing between the icon and the text

@@ -1,7 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:syncfusion_flutter_charts/charts.dart';
 
 // final team1Provider = StateProvider<List<double>>((ref) => []);
 // final team2Provider = StateProvider<List<double>>((ref) => []);
@@ -9,7 +8,7 @@ import 'package:syncfusion_flutter_charts/charts.dart';
 final team1Provider =
     StateProvider<List<double>>((ref) => [2.5, 3.0, 1.5, 2.0]);
 final team2Provider =
-    StateProvider<List<double>>((ref) => [3.0, 2.0, 1.0, 4.0]);
+    StateProvider<List<double>>((ref) => [3.0, 2.0, 1.0, 4.0, 5.0, 10.0, 20.0]);
 
 class TrackPage extends ConsumerWidget {
   @override
@@ -66,25 +65,64 @@ class TrackComponent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SfCartesianChart(
-      primaryXAxis: NumericAxis(minimum: 0, maximum: 10, interval: 1),
-      primaryYAxis: NumericAxis(minimum: 0, maximum: 1, isVisible: false),
-      series: <CartesianSeries>[
-        LineSeries<double, double>(
-          dataSource: team1Distances,
-          xValueMapper: (double distance, int index) => distance % 10,
-          yValueMapper: (double distance, int index) => 0.5,
-          markerSettings: MarkerSettings(isVisible: true),
-          color: Colors.blue,
+    // Generate cumulative distances
+    List<double> cumulativeTeam1Distances =
+        _getCumulativeDistances(team1Distances);
+    List<double> cumulativeTeam2Distances =
+        _getCumulativeDistances(team2Distances);
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: LineChart(
+        LineChartData(
+          gridData: FlGridData(show: true),
+          titlesData: FlTitlesData(
+              // leftTitles: SideTitles(showTitles: true),
+              // bottomTitles: SideTitles(showTitles: true),
+              ),
+          borderData: FlBorderData(show: true),
+          lineBarsData: [
+            LineChartBarData(
+              spots: _getSpots(cumulativeTeam1Distances),
+              isCurved: true,
+              color: Colors.blue,
+              barWidth: 4,
+              isStrokeCapRound: true,
+              dotData: FlDotData(show: true),
+              belowBarData: BarAreaData(show: false),
+            ),
+            LineChartBarData(
+              spots: _getSpots(cumulativeTeam2Distances),
+              isCurved: true,
+              color: Colors.red,
+              barWidth: 4,
+              isStrokeCapRound: true,
+              dotData: FlDotData(show: true),
+              belowBarData: BarAreaData(show: false),
+            ),
+          ],
         ),
-        LineSeries<double, double>(
-          dataSource: team2Distances,
-          xValueMapper: (double distance, int index) => distance % 10,
-          yValueMapper: (double distance, int index) => 0.5,
-          markerSettings: MarkerSettings(isVisible: true),
-          color: Colors.red,
-        ),
-      ],
+      ),
     );
+  }
+
+  // Helper method to get cumulative distances
+  List<double> _getCumulativeDistances(List<double> distances) {
+    List<double> cumulativeDistances = [];
+    double total = 0;
+    for (var distance in distances) {
+      total += distance;
+      cumulativeDistances.add(total);
+    }
+    return cumulativeDistances;
+  }
+
+  // Helper method to convert distances to FlSpots
+  List<FlSpot> _getSpots(List<double> distances) {
+    List<FlSpot> spots = [];
+    for (int i = 0; i < distances.length; i++) {
+      spots.add(FlSpot(i.toDouble(), distances[i]));
+    }
+    return spots;
   }
 }

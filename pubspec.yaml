@@ -62,7 +62,13 @@ dependencies:
   flutter_riverpod: ^2.5.1
   font_awesome_flutter: ^10.7.0
   firebase_messaging: ^14.9.4  
-  syncfusion_flutter_charts: ^26.1.35
+
+dependency_overrides:
+  flutter_colorpicker:
+    git:
+      url: https://github.com/mchome/flutter_colorpicker
+      ref: master  # or 786d04363f587b818ce585d25b9c2bb62de95aba
+  
 
 dev_dependencies:
   flutter_test:
