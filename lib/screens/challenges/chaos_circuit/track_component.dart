@@ -64,7 +64,7 @@ class TrackComponent extends StatelessWidget {
 
   TrackComponent({required this.team1Distances, required this.team2Distances});
 
- @override
+  @override
   Widget build(BuildContext context) {
     return SfCartesianChart(
       primaryXAxis: NumericAxis(minimum: 0, maximum: 10, interval: 1),
