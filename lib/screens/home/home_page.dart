@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -82,16 +81,10 @@ class _HomeState extends State<Home> {
           ),
           // Builder(builder: (BuildContext context) => TalkSmack()),
           Builder(
-              builder: (BuildContext context) => ChaosCircuit(
-                  challengeId: '12345',
-                  participantsEmails: [
-                    'tpirozzini@gmail.com',
-                  ],
-                  startDate: Timestamp.now(),
-                  challengeType: 'Chaos Circuit',
-                  challengeName: 'Test Name',
-                  challengeDifficulty: 'Expert',
-                  challengeCreator: 'tpirozzini')),
+            builder: (BuildContext context) => ChaosCircuit(
+              challengeId: 'cUs1tOoYHJPLUbI82u4q',
+            ),
+          )
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
