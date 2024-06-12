@@ -149,9 +149,12 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
                         children: [
                           Text(
                             'Base Points:',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            style: Theme.of(context).textTheme.headlineSmall,
                           ),
-                          Text('Intro (100), Advanced (200), Expert (300)'),
+                          Text(
+                            'Intro (100), Advanced (200), Expert (300)',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
                         ],
                       )),
                     ],
@@ -166,9 +169,11 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Time Multiplyer:',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
+                              style: Theme.of(context).textTheme.headlineSmall),
                           Text(
-                              'Points are reduced based on how many days it took to complete the challenge.'),
+                            'Points are reduced based on how many days it took to complete the challenge.',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
                         ],
                       )),
                     ],
@@ -184,10 +189,12 @@ class _ChallengeResultsPageState extends State<ChallengeResultsPage> {
                         children: [
                           Text(
                             'Participant Deduction:',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            style: Theme.of(context).textTheme.headlineSmall,
                           ),
                           Text(
-                              'Total points are reduced by 5% per additional participant.'),
+                            'Total points are reduced by 5% per additional participant.',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
                         ],
                       )),
                     ],

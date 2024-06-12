@@ -1,8 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ride_tide_stride/helpers/helper_functions.dart';
+import 'package:ride_tide_stride/screens/challenges/chaos_circuit/chaos_circuit.dart';
 import 'package:ride_tide_stride/screens/challenges/competition_lobby.dart';
 import 'package:ride_tide_stride/screens/leaderboard/leaderboard_page.dart';
 import 'package:ride_tide_stride/screens/strava_connect/strava_page.dart';
@@ -22,9 +22,9 @@ class _HomeState extends State<Home> {
 
   @override
   void initState() {
-    super.initState();    
+    super.initState();
     fetchUsername();
-  }  
+  }
 
   void fetchUsername() {
     final currentUser = FirebaseAuth.instance.currentUser;
@@ -79,7 +79,12 @@ class _HomeState extends State<Home> {
           Builder(
             builder: (BuildContext context) => const CompetitionLobbyPage(),
           ),
-          Builder(builder: (BuildContext context) => TalkSmack()),
+          // Builder(builder: (BuildContext context) => TalkSmack()),
+          Builder(
+            builder: (BuildContext context) => ChaosCircuit(
+              challengeId: 'cUs1tOoYHJPLUbI82u4q',
+            ),
+          )
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(

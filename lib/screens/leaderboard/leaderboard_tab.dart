@@ -108,7 +108,7 @@ class LeaderboardTab extends StatelessWidget {
                                   _showProfileDialog(
                                       context, entry['full_name']);
                                 },
-                                child: Text('View Profile'),
+                                child: Text('Check Power Level?!'),
                               ),
                               TextButton(
                                 onPressed: () {

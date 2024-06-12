@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:ride_tide_stride/helpers/helper_functions.dart';
 import 'package:ride_tide_stride/models/activity.dart';
+import 'package:ride_tide_stride/models/challengeDb.dart';
 import 'package:ride_tide_stride/models/user_details.dart';
 
 class FirestoreService extends ChangeNotifier {
@@ -53,7 +54,7 @@ class FirestoreService extends ChangeNotifier {
   }
 
 // fetch all activities for the current user
-  Future<List<Activity>> fetchAllUserActivities(String email) async {    
+  Future<List<Activity>> fetchAllUserActivities(String email) async {
     if (email.isEmpty) {
       throw Exception('Email is required to fetch activities.');
     }
@@ -117,5 +118,22 @@ class FirestoreService extends ChangeNotifier {
         email: doc['user_email'],
       );
     }).toList();
+  }
+
+  // fetch current challenge details
+  Future<Map<String, dynamic>> fetchCurrentChallengeDetails(challengeId) async {
+    final DocumentSnapshot result =
+        await _db.collection('Challenges').doc(challengeId).get();
+    ChallengeDb challenge = ChallengeDb(
+      participantsEmails: List<dynamic>.from(result['participants'] ?? []),
+      timestamp: result['timestamp'] ?? Timestamp.now(),
+      name: result['name'] ?? '',
+      description: result['description'] ?? '',
+      difficulty: result['difficulty'] ?? '',
+      createdBy: result['createdBy'] ?? '',
+    );
+    print("Challenge object: ${challenge.toMap()}");
+
+    return challenge.toMap();
   }
 }
