@@ -71,18 +71,19 @@ class FirestoreService extends ChangeNotifier {
 
   // Fetch all activities for the current user within a specific date range
   Future<List<Activity>> fetchAllUserActivitiesWithinSpecificDateRange(
-      String email, Timestamp startDate) async {
+      String email, DateTime startDate) async {
     if (email.isEmpty) {
       throw Exception('Email is required to fetch activities.');
     }
-    final Timestamp endDateRange = Timestamp.fromMillisecondsSinceEpoch(
-        startDate.millisecondsSinceEpoch + Duration(days: 30).inMilliseconds);
+    final DateTime endDate = DateTime.now();
+    final String startDateString = startDate.toIso8601String();
+    final String endDateString = endDate.toIso8601String();
 
     final QuerySnapshot result = await _db
         .collection('activities')
         .where('user_email', isEqualTo: email)
-        .where('timestamp', isGreaterThanOrEqualTo: startDate)
-        .where('timestamp', isLessThanOrEqualTo: endDateRange)
+        .where('start_date_local', isGreaterThanOrEqualTo: startDateString)
+        .where('start_date_local', isLessThanOrEqualTo: endDateString)
         .get();
 
     final List<DocumentSnapshot> documents = result.docs;

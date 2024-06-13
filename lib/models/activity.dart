@@ -28,9 +28,7 @@ class Activity {
   final String email;
 
   factory Activity.fromDocument(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-
-    // print('Parsing document: $data');
+    final data = doc.data() as Map<String, dynamic>;    
 
     return Activity(
       id: data['activity_id'] ?? 0,

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,8 +16,9 @@ class TrackPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final startDate = DateTime.now().subtract(Duration(days: 12));
     final activitiesByEmail = participantEmails
-        .map((email) => ref.watch(userActivitiesProvider(email)))
+        .map((email) => ref.watch(userSpecificRangeActivitiesProvider(email)))
         .toList();
 
     // Check if all activities are loaded
@@ -47,7 +49,7 @@ class TrackPage extends ConsumerWidget {
   }
 
   void _processActivities(WidgetRef ref, List<List<Activity>> allActivities) {
-    // Aggregate distances by date for the past 60 days
+    // Aggregate distances by date for the past 12 days
     Map<String, double> aggregatedDistances = {};
 
     for (var activities in allActivities) {
@@ -62,14 +64,14 @@ class TrackPage extends ConsumerWidget {
       }
     }
 
-    // Initialize the team distances with 0.0 for each of the past 60 days
-    List<double> team1Distances = List.filled(60, 0.0);
-    List<double> team2Distances = List.filled(60, 0.0);
+    // Initialize the team distances with 0.0 for each of the past 12 days
+    List<double> team1Distances = List.filled(12, 0.0);
+    List<double> team2Distances = List.filled(12, 0.0);
 
     // Fill the team distances with aggregated data
-    for (int i = 0; i < 60; i++) {
+    for (int i = 0; i < 12; i++) {
       String date = DateFormat('yyyy-MM-dd')
-          .format(DateTime.now().subtract(Duration(days: 59 - i)));
+          .format(DateTime.now().subtract(Duration(days: 11 - i)));
       if (aggregatedDistances.containsKey(date)) {
         team1Distances[i] = aggregatedDistances[date]!;
         team2Distances[i] = aggregatedDistances[
@@ -82,8 +84,8 @@ class TrackPage extends ConsumerWidget {
     ref.read(team2Provider.notifier).state = team2Distances;
 
     // Print out the result
-    print('Team 1 Distances: $team1Distances');
-    print('Team 2 Distances: $team2Distances');
+    // print('Team 1 Distances: $team1Distances');
+    // print('Team 2 Distances: $team2Distances');
   }
 
   Widget _buildContent(BuildContext context, WidgetRef ref) {
@@ -120,17 +122,25 @@ class TrackPage extends ConsumerWidget {
             itemCount: participantEmails.length,
             itemBuilder: (context, index) {
               final email = participantEmails[index];
+              // print('Building ListTile for $email');
               final activitiesAsyncValue =
-                  ref.watch(userActivitiesProvider(email));
+                  ref.watch(userSpecificRangeActivitiesProvider(email));
 
               return activitiesAsyncValue.when(
                 data: (activities) {
-                  // Ensure activities are from the past 60 days
+                  // print('Email: $email');
+                  // print('Activities in the past 12 days: ${activities.length}');
+                  // for (var activity in activities) {
+                  //   print(
+                  //       'Activity: ${activity.startDateLocal}, Distance: ${activity.distance}');
+                  // }
+
+                  // Ensure activities are from the past 12 days
                   activities = activities.where((activity) {
                     final activityDate =
                         DateTime.parse(activity.startDateLocal);
                     return activityDate
-                        .isAfter(DateTime.now().subtract(Duration(days: 60)));
+                        .isAfter(DateTime.now().subtract(Duration(days: 12)));
                   }).toList();
 
                   double totalDistance = activities.fold(
@@ -224,7 +234,7 @@ class TrackComponent extends StatelessWidget {
                 showTitles: true,
                 reservedSize: 30,
                 getTitlesWidget: (value, meta) {
-                  return Text('Day ${value.toInt() + 1}',
+                  return Text('${value.toInt() + 1}',
                       style: TextStyle(fontSize: 12));
                 },
               ),
