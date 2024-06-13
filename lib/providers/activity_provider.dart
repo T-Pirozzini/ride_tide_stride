@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ride_tide_stride/models/activity.dart';
 import 'package:ride_tide_stride/services/firestore_service.dart';
@@ -31,4 +32,23 @@ final userCurrentMonthActivitiesProvider =
     FutureProvider.family<List<Activity>, String>((ref, fullName) {
   final firestoreService = FirestoreService();
   return firestoreService.fetchAllUserCurrentMonthActivities(fullName);
+});
+
+final userSpecificRangeActivitiesProvider =
+    FutureProvider.family<List<Activity>, ActivityParams>((ref, params) {
+  final firestoreService = FirestoreService();
+  return firestoreService.fetchAllUserActivitiesWithinSpecificDateRange(params.email, params.startDate);
+});
+
+class ActivityParams {
+  final String email;
+  final Timestamp startDate;
+
+  ActivityParams({required this.email, required this.startDate});
+}
+
+// TEMPORARY PROVIDED
+final userSixMonthsActivitiesProvider = FutureProvider.family<List<Activity>, String>((ref, email) {
+  final firestoreService = FirestoreService();
+  return firestoreService.fetchAllUserActivitiesWithinSixMonths(email);
 });

@@ -28,26 +28,32 @@ class Activity {
   final String email;
 
   factory Activity.fromDocument(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+
+    // print('Parsing document: $data');
+
     return Activity(
-      id: doc['activity_id'],
-      startDateLocal: doc['start_date_local'],
-      elevationGain: (doc['elevation_gain'] is int)
-          ? (doc['elevation_gain'] as int).toDouble()
-          : doc['elevation_gain'] as double,
-      distance: (doc['distance'] is int)
-          ? (doc['distance'] as int).toDouble()
-          : doc['distance'] as double,
-      movingTime: doc['moving_time'],
-      fullname: doc['fullname'],
-      name: doc['name'],
-      type: doc['type'],
-      power: (doc['average_watts'] != null)
-          ? (doc['average_watts'] is int
-              ? (doc['average_watts'] as int).toDouble()
-              : doc['average_watts'] as double)
+      id: data['activity_id'] ?? 0,
+      startDateLocal: data['start_date_local'] ?? '',
+      elevationGain: (data['elevation_gain'] is int)
+          ? (data['elevation_gain'] as int).toDouble()
+          : data['elevation_gain'] as double,
+      distance: (data['distance'] is int)
+          ? (data['distance'] as int).toDouble()
+          : data['distance'] as double,
+      movingTime: data['moving_time'] ?? 0,
+      fullname: data['fullname'] ?? '',
+      name: data['name'] ?? '',
+      type: data['type'] ?? '',
+      power: (data['average_watts'] != null)
+          ? (data['average_watts'] is int
+              ? (data['average_watts'] as int).toDouble()
+              : data['average_watts'] as double)
           : 0.0,
-      averageSpeed: doc['average_speed'],
-      email: doc['user_email'],
+      averageSpeed: (data['average_speed'] is int)
+          ? (data['average_speed'] as int).toDouble()
+          : data['average_speed'] as double,
+      email: data['user_email'] ?? '',
     );
   }
 }
