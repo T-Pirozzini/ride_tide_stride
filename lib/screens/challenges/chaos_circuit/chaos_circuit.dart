@@ -50,19 +50,21 @@ class _ChaosCircuitState extends ConsumerState<ChaosCircuit> {
       body: challengeDetails.when(
         data: (challenge) {
           final participantEmails = challenge.participantsEmails;
-          return Column(
-            children: [
-              // Container(
-              //   color: Colors.grey[200],
-              //   height: 300,
-              //   child: MatchupDisplay(challengeId: widget.challengeId),
-              // ),
-              Container(
-                color: Colors.grey[200],
-                height: 600,
-                child: TrackPage(participantEmails: participantEmails),
-              ),
-            ],
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                Container(
+                  color: Colors.grey[200],
+                  height: 300,
+                  child: MatchupDisplay(challengeId: widget.challengeId),
+                ),
+                Container(
+                  color: Colors.grey[200],
+                  height: 600,
+                  child: TrackPage(participantEmails: participantEmails),
+                ),
+              ],
+            ),
           );
         },
         loading: () => Center(child: CircularProgressIndicator()),

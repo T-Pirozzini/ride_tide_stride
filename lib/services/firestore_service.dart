@@ -27,6 +27,21 @@ class FirestoreService extends ChangeNotifier {
     }).toList();
   }
 
+// Fetch all user information as a stream
+  Stream<List<UserDetails>> usersStream() {
+    return _db.collection('Users').snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        return UserDetails(
+          username: doc['username'],
+          email: doc['email'],
+          role: doc['role'],
+          dateCreated: (doc['dateCreated'] as Timestamp).toDate(),
+          color: doc['color'],
+        );
+      }).toList();
+    });
+  }
+
 // fetch all activities
   Future<List<Activity>> fetchAllActivities() async {
     final QuerySnapshot result = await _db.collection('activities').get();

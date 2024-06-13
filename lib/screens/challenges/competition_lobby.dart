@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:ride_tide_stride/screens/challenges/chaos_circuit/chaos_circuit.dart';
 import 'package:ride_tide_stride/screens/challenges/create_challenge/competition_dialog.dart';
 import 'package:ride_tide_stride/screens/challenges/competition_learn_more.dart';
 import 'package:ride_tide_stride/screens/challenges/passwordDialog.dart';
@@ -234,21 +235,24 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                         challengeCreator:
                                             challengeData['userEmail'] ??
                                                 'No creator',
-                                                coopOrComp: challengeData['coopOrComp'] ?? 'No coopOrComp',
+                                        coopOrComp:
+                                            challengeData['coopOrComp'] ??
+                                                'No coopOrComp',
                                       );
                                     default:
                                       // Handle unknown challenge type if necessary
                                       return Snow2Surf(
-                                          challengeId: challengeId,
-                                          participantsEmails: participants,
-                                          startDate: challengeData['timestamp'],
-                                          challengeName: challengeName,
-                                          challengeType: challengeData['type'],
-                                          challengeDifficulty:
-                                              challengeData['difficulty'] ??
-                                                  'No difficulty',
-                                          challengeLegs:
-                                              challengeData['legsSelected'],);
+                                        challengeId: challengeId,
+                                        participantsEmails: participants,
+                                        startDate: challengeData['timestamp'],
+                                        challengeName: challengeName,
+                                        challengeType: challengeData['type'],
+                                        challengeDifficulty:
+                                            challengeData['difficulty'] ??
+                                                'No difficulty',
+                                        challengeLegs:
+                                            challengeData['legsSelected'],
+                                      );
                                   }
                                 },
                               ),
@@ -322,10 +326,11 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                             challengeCreator:
                                                 challengeData['userEmail'] ??
                                                     'No creator',
-                                            coopOrComp: challengeData['coopOrComp'] ?? 'No coopOrComp',
+                                            coopOrComp:
+                                                challengeData['coopOrComp'] ??
+                                                    'No coopOrComp',
                                           );
-                                        default:
-                                          // Handle unknown challenge type if necessary
+                                        case 'Snow2Surf':
                                           return Snow2Surf(
                                             challengeId: challengeId,
                                             participantsEmails: participants,
@@ -339,6 +344,11 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                                     'No difficulty',
                                             challengeLegs:
                                                 challengeData['legsSelected'],
+                                          );
+                                        default:
+                                          // Handle unknown challenge type if necessary
+                                          return ChaosCircuit(
+                                            challengeId: challengeId,
                                           );
                                       }
                                     }),
