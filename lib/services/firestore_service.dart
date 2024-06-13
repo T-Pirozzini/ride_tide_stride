@@ -69,6 +69,50 @@ class FirestoreService extends ChangeNotifier {
     return documents.map((doc) => Activity.fromDocument(doc)).toList();
   }
 
+  // Fetch all activities for the current user within a specific date range
+  Future<List<Activity>> fetchAllUserActivitiesWithinSpecificDateRange(
+      String email, DateTime startDate) async {
+    if (email.isEmpty) {
+      throw Exception('Email is required to fetch activities.');
+    }
+    final DateTime endDate = DateTime.now();
+    final String startDateString = startDate.toIso8601String();
+    final String endDateString = endDate.toIso8601String();
+
+    final QuerySnapshot result = await _db
+        .collection('activities')
+        .where('user_email', isEqualTo: email)
+        .where('start_date_local', isGreaterThanOrEqualTo: startDateString)
+        .where('start_date_local', isLessThanOrEqualTo: endDateString)
+        .get();
+
+    final List<DocumentSnapshot> documents = result.docs;
+
+    return documents.map((doc) => Activity.fromDocument(doc)).toList();
+  }
+
+  // TEMPORARY FUNCTION
+  // Fetch all activities for the current user within the past 2 months
+  Future<List<Activity>> fetchAllUserActivitiesWithinSixMonths(
+      String email) async {
+    if (email.isEmpty) {
+      throw Exception('Email is required to fetch activities.');
+    }
+
+    final Timestamp startDate =
+        Timestamp.fromDate(DateTime.now().subtract(Duration(days: 60)));
+
+    final QuerySnapshot result = await _db
+        .collection('activities')
+        .where('user_email', isEqualTo: email)
+        .where('timestamp', isGreaterThanOrEqualTo: startDate)
+        .get();
+
+    final List<DocumentSnapshot> documents = result.docs;
+
+    return documents.map((doc) => Activity.fromDocument(doc)).toList();
+  }
+
 // fetch all user current month activities
   Future<List<Activity>> fetchAllUserCurrentMonthActivities(fullName) async {
     final startOfMonth = formatDateTimeToIso8601(getStartOfMonth());
