@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:ride_tide_stride/helpers/helper_functions.dart';
 import 'package:ride_tide_stride/providers/challenge_provider.dart';
 import 'package:ride_tide_stride/providers/opponent_provider.dart';
 import 'package:ride_tide_stride/providers/users_provider.dart';
@@ -14,13 +16,6 @@ class MatchupDisplay extends ConsumerStatefulWidget {
 }
 
 class _MatchupDisplayState extends ConsumerState<MatchupDisplay> {
-  // @override
-  // void didChangeDependencies() {
-  //   super.didChangeDependencies();
-  //   // Refresh the usersProvider when this widget is inserted into the tree.
-  //   ref.refresh(usersProvider);
-  // }
-
   @override
   Widget build(BuildContext context) {
     final opponents = ref.watch(opponentsProvider);
@@ -47,24 +42,41 @@ class _MatchupDisplayState extends ConsumerState<MatchupDisplay> {
                     itemBuilder: (context, index) {
                       if (index < teamUsers.length) {
                         final user = teamUsers[index];
+                        String avatarUrl = user.avatarUrl;
+                        if (avatarUrl.isEmpty) {
+                          avatarUrl = 'No Avatar';
+                        }
                         return Container(
-                          margin: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[400],
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: ListTile(
-                            dense: true,
-                            title: Text(user.username,
-                                style:
-                                    Theme.of(context).textTheme.headlineSmall),
-                            subtitle: Text('Team Member',
-                                style: Theme.of(context).textTheme.bodySmall),
-                            leading: CircleAvatar(
-                              backgroundColor: _hexToColor(user.color),
+                            margin: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[400],
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                          ),
-                        );
+                            child: ListTile(
+                              dense: true,
+                              title: Text(user.username,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineSmall),
+                              subtitle: Text('Team Member',
+                                  style: Theme.of(context).textTheme.bodySmall),
+                              // leading: CircleAvatar(
+                              //   backgroundColor: hexToColor(user.color),
+                              leading: CircleAvatar(
+                                backgroundColor: hexToColor(user.color),
+                                radius: 25,
+                                child: avatarUrl != "No Avatar"
+                                    ? ClipOval(
+                                        child: SvgPicture.network(
+                                          user.avatarUrl,
+                                          width: 40,
+                                          height: 40,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      )
+                                    : Icon(Icons.person, size: 40),
+                              ),
+                            ));
                       } else {
                         return Container(
                           margin: const EdgeInsets.all(6),
@@ -131,13 +143,5 @@ class _MatchupDisplayState extends ConsumerState<MatchupDisplay> {
       loading: () => Center(child: CircularProgressIndicator()),
       error: (error, stack) => Center(child: Text('Error: $error')),
     );
-  }
-
-  Color _hexToColor(String hex) {
-    hex = hex.replaceAll("#", "");
-    if (hex.length == 6) {
-      hex = "ff$hex";
-    }
-    return Color(int.parse(hex, radix: 16));
   }
 }

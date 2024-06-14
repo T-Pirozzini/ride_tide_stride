@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:ride_tide_stride/models/activity.dart';
@@ -125,4 +127,11 @@ String formatMovingTimeInt(int seconds) {
   return '${hours.toString().padLeft(2)}h ${minutes.toString().padLeft(2, '0')}m';
 }
 
+Color hexToColor(String hex) {
+  hex = hex.replaceAll("#", "");
+  if (hex.length == 6) {
+    hex = "ff$hex";
+  }
+  return Color(int.parse(hex, radix: 16));
+}
 

@@ -23,6 +23,7 @@ class FirestoreService extends ChangeNotifier {
         role: doc['role'],
         dateCreated: (doc['dateCreated'] as Timestamp).toDate(),
         color: doc['color'],
+        avatarUrl: doc['avatarUrl'] ?? "",
       );
     }).toList();
   }
@@ -37,6 +38,7 @@ class FirestoreService extends ChangeNotifier {
           role: doc['role'],
           dateCreated: (doc['dateCreated'] as Timestamp).toDate(),
           color: doc['color'],
+          avatarUrl: doc.data().containsKey('avatarUrl') ? doc['avatarUrl'] : "",
         );
       }).toList();
     });
