@@ -7,6 +7,7 @@ class UserDetails {
     required this.role,
     required this.dateCreated,
     required this.color,
+    this.avatarUrl = "",
   });
 
   final String username;
@@ -14,4 +15,5 @@ class UserDetails {
   final String role;
   final DateTime dateCreated;
   final String color;
+  final String avatarUrl;
 }

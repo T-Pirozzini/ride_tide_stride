@@ -34,12 +34,19 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
           'assets/images/Kilimanjaro.png',
           'assets/images/Everest.png'
         ]),
+    // UNDER CONSTRUCTION
+    // Challenge(
+    //     name: "Snow2Surf",
+    //     assetPath: 'assets/images/snow2surf.png',
+    //     description:
+    //         "Compete across multiple legs/activities from the mountain to the sea!",
+    //     previewPaths: ['assets/images/snow2surf_preview.jpg']),
     Challenge(
-        name: "Snow2Surf",
-        assetPath: 'assets/images/snow2surf.png',
+        name: "Chaos Circuit",
+        assetPath: 'assets/images/chaos_circuit.png',
         description:
-            "Compete across multiple legs/activities from the mountain to the sea!",
-        previewPaths: ['assets/images/snow2surf_preview.jpg']),
+            "Compete against AI Opponents as a team from the mountain to the sea!",
+        previewPaths: ['assets/images/chaos_circuit.png']),
     Challenge(
         name: "Team Traverse",
         assetPath: 'assets/images/teamTraverse.png',
@@ -208,17 +215,31 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
       challengeData['difficulty'] = _selectedDifficultyButton;
     }
 
-    // If the selected challenge is "Snow2Surf", add specific details
-    if (selectedChallenge.name == "Snow2Surf") {
+    // If the selected challenge is "Chaos Circuit", add specific details
+    if (selectedChallenge.name == "Chaos Circuit") {
       challengeData['currentMap'] =
           selectedChallenge.previewPaths[_currentPage];
+      challengeData['category'] = _selectedCategoryButton;
+      challengeData['categoryActivity'] = _selectedActivityButton;
       challengeData['difficulty'] = _selectedDifficultyButton;
-      challengeData['legsSelected'] = _selectedActivities.entries
-          .where((element) => element.value == true)
-          .map((e) => e.key)
-          .toList();
-      challengeData['legParticipants'] = {};
+      // challengeData['legsSelected'] = _selectedActivities.entries
+      //     .where((element) => element.value == true)
+      //     .map((e) => e.key)
+      //     .toList();
+      // challengeData['legParticipants'] = {};
     }
+
+    // // If the selected challenge is "Snow2Surf", add specific details
+    // if (selectedChallenge.name == "Snow2Surf") {
+    //   challengeData['currentMap'] =
+    //       selectedChallenge.previewPaths[_currentPage];
+    //   challengeData['difficulty'] = _selectedDifficultyButton;
+    //   challengeData['legsSelected'] = _selectedActivities.entries
+    //       .where((element) => element.value == true)
+    //       .map((e) => e.key)
+    //       .toList();
+    //   challengeData['legParticipants'] = {};
+    // }
 
     // Get a reference to the Firestore service
     FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -337,185 +358,9 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedLevelButton = 'Cooperative';
-                        });
-                      },
-                      child: Text('Cooperative'),
-                      style: _selectedLevelButton == 'Cooperative'
-                          ? TextButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              backgroundColor: AppColors.secondaryAccent,
-                            )
-                          : null,
-                    ),
-                    Icon(Icons.swap_horiz_rounded,
-                        color: AppColors.secondaryColor),
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedLevelButton = 'Competitive';
-                        });
-                      },
-                      child: Text('Competitive'),
-                      style: _selectedLevelButton == 'Competitive'
-                          ? TextButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              backgroundColor: AppColors.secondaryAccent,
-                            )
-                          : null,
-                    ),
-                  ],
-                ),
-                _selectedLevelButton == "Cooperative"
-                    ? Text(
-                        'Work together to complete a challenge!',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      )
-                    : Text(
-                        'Compete against others!',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
+                Text('Create a Challenge',
+                    style: Theme.of(context).textTheme.headlineLarge),
                 SizedBox(height: 5),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedCategoryButton = 'Open';
-                        });
-                      },
-                      child: Text('Open'),
-                      style: _selectedCategoryButton == 'Open'
-                          ? TextButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              backgroundColor: AppColors.primaryColor,
-                            )
-                          : null,
-                    ),
-                    Icon(Icons.swap_horiz_rounded,
-                        color: AppColors.primaryColor),
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedCategoryButton = 'Specific';
-                        });
-                      },
-                      child: Text('Specific'),
-                      style: _selectedCategoryButton == 'Specific'
-                          ? TextButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              backgroundColor: AppColors.primaryColor,
-                            )
-                          : null,
-                    ),
-                  ],
-                ),
-                _selectedCategoryButton == "Open"
-                    ? Text('All activity types are welcome!',
-                        style: Theme.of(context).textTheme.bodyMedium)
-                    : Text('Specify an activity type!',
-                        style: Theme.of(context).textTheme.bodyMedium),
-                Container(
-                  height: 60,
-                  child: _selectedCategoryButton == "Specific"
-                      ? Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _selectedActivityButton = 'Running';
-                                });
-                              },
-                              child: Container(
-                                padding: EdgeInsets.all(
-                                    8), // Padding around the icon
-                                decoration: BoxDecoration(
-                                  color: _selectedActivityButton == 'Running'
-                                      ? AppColors
-                                          .secondaryColor // Selected Color
-                                      : Colors.transparent, // Default Color
-                                  shape: BoxShape.circle, // Circular shape
-                                ),
-                                child: Icon(
-                                  Icons.directions_run,
-                                  color: _selectedActivityButton == 'Running'
-                                      ? Colors.white
-                                      : Colors.black,
-                                ),
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _selectedActivityButton = 'Cycling';
-                                });
-                              },
-                              child: Container(
-                                padding: EdgeInsets.all(
-                                    8), // Padding around the icon
-                                decoration: BoxDecoration(
-                                  color: _selectedActivityButton == 'Cycling'
-                                      ? AppColors
-                                          .secondaryColor // Selected Color
-                                      : Colors.transparent, // Default Color
-                                  shape: BoxShape.circle, // Circular shape
-                                ),
-                                child: Icon(
-                                  Icons.directions_bike,
-                                  color: _selectedActivityButton == 'Cycling'
-                                      ? Colors.white
-                                      : Colors.black,
-                                ),
-                              ),
-                            ),
-                            if (currentChallenge.name != "Mtn Scramble")
-                              GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _selectedActivityButton = 'Paddling';
-                                  });
-                                },
-                                child: Container(
-                                  padding: EdgeInsets.all(
-                                      8), // Padding around the icon
-                                  decoration: BoxDecoration(
-                                    color: _selectedActivityButton == 'Paddling'
-                                        ? AppColors
-                                            .secondaryColor // Selected Color
-                                        : Colors.transparent, // Default Color
-                                    shape: BoxShape.circle, // Circular shape
-                                  ),
-                                  child: Icon(
-                                    Icons.kayaking_outlined,
-                                    color: _selectedActivityButton == 'Paddling'
-                                        ? Colors.white
-                                        : Colors.black,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        )
-                      : Container(
-                          child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                              Icon(Icons.directions_run),
-                              Icon(Icons.directions_bike),
-                              Icon(Icons.kayaking_outlined),
-                              Icon(Icons.pool_outlined),
-                              Icon(Icons.snowboarding_outlined),
-                              Icon(Icons.ice_skating_outlined),
-                              Icon(Icons.snowshoeing_outlined),
-                            ])),
-                ),
                 ChallengeAvatarSelector(
                     challenges: _challenges,
                     selectedChallenge: _selectedChallenge,
@@ -684,23 +529,210 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                                   ),
                                 ],
                               ),
-                              TextButton(
-                                onPressed: () async {
-                                  await selectActivityLegs();
-                                  setState(() {});
-                                },
-                                style: TextButton.styleFrom(
-                                  foregroundColor: Colors.white,
-                                  backgroundColor: AppColors.secondaryAccent,
-                                ),
-                                child: Text(
-                                    'Select Activity Legs (${_selectedActivities.values.where((v) => v).length} of 4)'),
-                              ),
+                              currentChallenge.name == "Snow2Surf"
+                                  ? TextButton(
+                                      onPressed: () async {
+                                        await selectActivityLegs();
+                                        setState(() {});
+                                      },
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: Colors.white,
+                                        backgroundColor:
+                                            AppColors.secondaryAccent,
+                                      ),
+                                      child: Text(
+                                          'Select Activity Legs (${_selectedActivities.values.where((v) => v).length} of 4)'),
+                                    )
+                                  : SizedBox.shrink(),
                             ],
                           ),
                   ),
                 ),
                 SizedBox(height: 5),
+                currentChallenge.name != "Chaos Circuit"
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _selectedLevelButton = 'Cooperative';
+                              });
+                            },
+                            child: Text('Cooperative'),
+                            style: _selectedLevelButton == 'Cooperative'
+                                ? TextButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    backgroundColor: AppColors.secondaryAccent,
+                                  )
+                                : null,
+                          ),
+                          Icon(Icons.swap_horiz_rounded,
+                              color: AppColors.secondaryColor),
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _selectedLevelButton = 'Competitive';
+                              });
+                            },
+                            child: Text('Competitive'),
+                            style: _selectedLevelButton == 'Competitive'
+                                ? TextButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    backgroundColor: AppColors.secondaryAccent,
+                                  )
+                                : null,
+                          ),
+                        ],
+                      )
+                    : SizedBox.shrink(),
+                currentChallenge.name != "Chaos Circuit"
+                    ? Row(
+                        children: [
+                          Text(
+                            _selectedLevelButton == "Cooperative"
+                                ? 'Work together to complete a challenge!'
+                                : 'Compete against others!',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
+                      )
+                    : SizedBox.shrink(),
+                SizedBox(height: 5),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _selectedCategoryButton = 'Open';
+                        });
+                      },
+                      child: Text('Open'),
+                      style: _selectedCategoryButton == 'Open'
+                          ? TextButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: AppColors.primaryColor,
+                            )
+                          : null,
+                    ),
+                    Icon(Icons.swap_horiz_rounded,
+                        color: AppColors.primaryColor),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _selectedCategoryButton = 'Specific';
+                        });
+                      },
+                      child: Text('Specific'),
+                      style: _selectedCategoryButton == 'Specific'
+                          ? TextButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: AppColors.primaryColor,
+                            )
+                          : null,
+                    ),
+                  ],
+                ),
+                _selectedCategoryButton == "Open"
+                    ? Text('All activity types are welcome!',
+                        style: Theme.of(context).textTheme.bodyMedium)
+                    : Text('Specify an activity type!',
+                        style: Theme.of(context).textTheme.bodyMedium),
+                Container(
+                  height: 60,
+                  child: _selectedCategoryButton == "Specific"
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedActivityButton = 'Running';
+                                });
+                              },
+                              child: Container(
+                                padding: EdgeInsets.all(
+                                    8), // Padding around the icon
+                                decoration: BoxDecoration(
+                                  color: _selectedActivityButton == 'Running'
+                                      ? AppColors
+                                          .secondaryColor // Selected Color
+                                      : Colors.transparent, // Default Color
+                                  shape: BoxShape.circle, // Circular shape
+                                ),
+                                child: Icon(
+                                  Icons.directions_run,
+                                  color: _selectedActivityButton == 'Running'
+                                      ? Colors.white
+                                      : Colors.black,
+                                ),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedActivityButton = 'Cycling';
+                                });
+                              },
+                              child: Container(
+                                padding: EdgeInsets.all(
+                                    8), // Padding around the icon
+                                decoration: BoxDecoration(
+                                  color: _selectedActivityButton == 'Cycling'
+                                      ? AppColors
+                                          .secondaryColor // Selected Color
+                                      : Colors.transparent, // Default Color
+                                  shape: BoxShape.circle, // Circular shape
+                                ),
+                                child: Icon(
+                                  Icons.directions_bike,
+                                  color: _selectedActivityButton == 'Cycling'
+                                      ? Colors.white
+                                      : Colors.black,
+                                ),
+                              ),
+                            ),
+                            if (currentChallenge.name != "Mtn Scramble")
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _selectedActivityButton = 'Paddling';
+                                  });
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.all(
+                                      8), // Padding around the icon
+                                  decoration: BoxDecoration(
+                                    color: _selectedActivityButton == 'Paddling'
+                                        ? AppColors
+                                            .secondaryColor // Selected Color
+                                        : Colors.transparent, // Default Color
+                                    shape: BoxShape.circle, // Circular shape
+                                  ),
+                                  child: Icon(
+                                    Icons.kayaking_outlined,
+                                    color: _selectedActivityButton == 'Paddling'
+                                        ? Colors.white
+                                        : Colors.black,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        )
+                      : Container(
+                          child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                              Icon(Icons.directions_run),
+                              Icon(Icons.directions_bike),
+                              Icon(Icons.kayaking_outlined),
+                              Icon(Icons.pool_outlined),
+                              Icon(Icons.snowboarding_outlined),
+                              Icon(Icons.ice_skating_outlined),
+                              Icon(Icons.snowshoeing_outlined),
+                            ])),
+                ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

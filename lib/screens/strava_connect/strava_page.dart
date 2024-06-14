@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -10,14 +9,15 @@ import 'package:flutter/material.dart';
 import 'package:ride_tide_stride/auth/auth_page.dart';
 import 'package:ride_tide_stride/helpers/helper_functions.dart';
 import 'package:ride_tide_stride/screens/strava_connect/activity_card.dart';
-
 import 'package:ride_tide_stride/screens/strava_connect/strava_auth.dart';
 import 'package:ride_tide_stride/screens/strava_connect/feedback.dart';
 import 'package:ride_tide_stride/screens/strava_connect/strava_redirect.dart';
+import 'package:ride_tide_stride/screens/strava_connect/user_profile.dart';
 import 'package:ride_tide_stride/secret.dart';
 import 'package:ride_tide_stride/theme.dart';
 import 'package:strava_client/strava_client.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class StravaFlutterPage extends StatefulWidget {
   const StravaFlutterPage({super.key});
@@ -198,24 +198,6 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
     }
   }
 
-  Future<Map<String, String>> getUserInfo() async {
-    final DocumentSnapshot docSnapshot = await FirebaseFirestore.instance
-        .collection('Users')
-        .doc(currentUser!.email)
-        .get();
-
-    Map<String, dynamic>? data = docSnapshot.data() as Map<String, dynamic>?;
-
-    String username = data?['username'] as String? ?? '';
-    String email = data?['email'] as String? ?? '';
-
-    return {
-      'username': username,
-      'email': email,
-      'color': data?['color'] as String? ?? '#FFD700'
-    };
-  }
-
   Future<bool> _showDeleteConfirmationDialog(BuildContext context) async {
     bool? result = await showDialog<bool>(
       context: context,
@@ -310,76 +292,6 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
     setState(() {
       globalVisible = !globalVisible;
     });
-  }
-
-  void updateProfile() async {
-    // Initialize color from user's current color preference or default to tealAccent
-    Color pickedColor = Colors.tealAccent;
-    Map<String, String> userInfo = await getUserInfo();
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        // Create a TextEditingController for each field to control the text input
-        TextEditingController usernameController =
-            TextEditingController(text: userInfo['username']);
-        return AlertDialog(
-          title: Text('Edit Profile'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                TextField(
-                  controller: usernameController,
-                  decoration: InputDecoration(
-                    hintText: "Enter new username",
-                    labelText: "New Username",
-                    border: OutlineInputBorder(),
-                    filled: true,
-                    fillColor: Colors.grey[200],
-                    prefixIcon: Icon(Icons.person),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                SlidePicker(
-                  colorModel: ColorModel.rgb,
-                  enableAlpha: false,
-                  pickerColor: pickedColor,
-                  onColorChanged: (Color color) {
-                    pickedColor = color;
-                  },
-                ),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-            ),
-            TextButton(
-              child: Text('Save'),
-              onPressed: () async {
-                // Update Firestore with the new color
-                String colorString =
-                    '#${pickedColor.value.toRadixString(16).padLeft(8, '0')}'; // Convert Color to hex string
-                await FirebaseFirestore.instance
-                    .collection('Users')
-                    .doc(currentUser!.email)
-                    .update({
-                  'color': colorString,
-                  'username': usernameController.text,
-                });
-                setState(() {});
-                Navigator.of(context).pop(); // Close the dialog
-              },
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -649,9 +561,6 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.person,
-                                    color: Colors.tealAccent, size: 28),
-                                SizedBox(width: 8),
                                 FutureBuilder<Map<String, String>>(
                                   future: getUserInfo(),
                                   builder: (context, snapshot) {
@@ -660,13 +569,35 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                       return CircularProgressIndicator(); // Show loading indicator while data is being fetched
                                     }
                                     if (snapshot.hasData) {
-                                      return Text(
-                                        snapshot.data![
-                                            'username']!, // Use retrieved username here
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .headlineLarge!
-                                            .copyWith(color: Colors.white),
+                                      String avatarUrl =
+                                          snapshot.data!['avatarUrl']!;
+
+                                      return Row(
+                                        children: [
+                                          CircleAvatar(
+                                            backgroundColor: hexToColor(
+                                                snapshot.data!['color']!),
+                                            radius: 25,
+                                            child: avatarUrl != "No Avatar"
+                                                ? ClipOval(
+                                                    child: SvgPicture.network(
+                                                      avatarUrl,
+                                                      width: 40,
+                                                      height: 40,
+                                                      fit: BoxFit.cover,
+                                                    ),
+                                                  )
+                                                : Icon(Icons.person, size: 40),
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            snapshot.data!['username']!,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .headlineLarge!
+                                                .copyWith(color: Colors.white),
+                                          ),
+                                        ],
                                       );
                                     }
                                     // Handle error or no data case
@@ -690,7 +621,9 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                   ),
                                   child: IconButton(
                                     visualDensity: VisualDensity.compact,
-                                    onPressed: updateProfile,
+                                    onPressed: () => updateProfile(context, () {
+                                      setState(() {});
+                                    }),
                                     icon: Icon(Icons.edit, size: 20),
                                     color: AppColors.highlightColor,
                                   ),

@@ -23,8 +23,25 @@ class FirestoreService extends ChangeNotifier {
         role: doc['role'],
         dateCreated: (doc['dateCreated'] as Timestamp).toDate(),
         color: doc['color'],
+        avatarUrl: doc['avatarUrl'] ?? "",
       );
     }).toList();
+  }
+
+// Fetch all user information as a stream
+  Stream<List<UserDetails>> usersStream() {
+    return _db.collection('Users').snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        return UserDetails(
+          username: doc['username'],
+          email: doc['email'],
+          role: doc['role'],
+          dateCreated: (doc['dateCreated'] as Timestamp).toDate(),
+          color: doc['color'],
+          avatarUrl: doc.data().containsKey('avatarUrl') ? doc['avatarUrl'] : "",
+        );
+      }).toList();
+    });
   }
 
 // fetch all activities

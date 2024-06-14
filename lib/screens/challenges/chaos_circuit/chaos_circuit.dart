@@ -5,6 +5,7 @@ import 'package:ride_tide_stride/providers/challenge_provider.dart';
 import 'package:ride_tide_stride/providers/opponent_provider.dart';
 import 'package:ride_tide_stride/screens/challenges/chaos_circuit/matchup_display.dart';
 import 'package:ride_tide_stride/screens/challenges/chaos_circuit/track_component.dart';
+import 'package:ride_tide_stride/theme.dart';
 
 class ChaosCircuit extends ConsumerStatefulWidget {
   final String challengeId;
@@ -50,19 +51,20 @@ class _ChaosCircuitState extends ConsumerState<ChaosCircuit> {
       body: challengeDetails.when(
         data: (challenge) {
           final participantEmails = challenge.participantsEmails;
-          return Column(
-            children: [
-              // Container(
-              //   color: Colors.grey[200],
-              //   height: 300,
-              //   child: MatchupDisplay(challengeId: widget.challengeId),
-              // ),
-              Container(
-                color: Colors.grey[200],
-                height: 600,
-                child: TrackPage(participantEmails: participantEmails),
-              ),
-            ],
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                Container(
+                  color: AppColors.primaryAccent,
+                  height: 300,
+                  child: MatchupDisplay(challengeId: widget.challengeId),
+                ),
+                Container(
+                  height: 600,
+                  child: TrackPage(participantEmails: participantEmails),
+                ),
+              ],
+            ),
           );
         },
         loading: () => Center(child: CircularProgressIndicator()),

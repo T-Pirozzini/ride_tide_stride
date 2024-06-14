@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:ride_tide_stride/models/activity.dart';
 import 'package:ride_tide_stride/providers/activity_provider.dart';
+import 'package:ride_tide_stride/theme.dart';
 
 final team1Provider = StateProvider<List<double>>((ref) => []);
 final team2Provider = StateProvider<List<double>>((ref) => []);
@@ -39,9 +40,7 @@ class TrackPage extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Track and Field'),
-      ),
+      backgroundColor: AppColors.primaryColor,
       body: allLoaded
           ? _buildContent(context, ref)
           : Center(child: CircularProgressIndicator()),
@@ -118,6 +117,7 @@ class TrackPage extends ConsumerWidget {
         ),
         Container(
           height: 200,
+          color: Colors.grey[200],
           child: ListView.builder(
             itemCount: participantEmails.length,
             itemBuilder: (context, index) {
@@ -211,6 +211,7 @@ class TrackComponent extends StatelessWidget {
       padding: const EdgeInsets.all(16.0),
       child: LineChart(
         LineChartData(
+          backgroundColor: AppColors.primaryAccent,
           gridData: FlGridData(show: false),
           titlesData: FlTitlesData(
             leftTitles: AxisTitles(
@@ -219,7 +220,7 @@ class TrackComponent extends StatelessWidget {
                 reservedSize: 40,
                 getTitlesWidget: (value, meta) {
                   return Text('${value.toInt()} km',
-                      style: TextStyle(fontSize: 12));
+                      style: TextStyle(fontSize: 12, color: Colors.white));
                 },
               ),
             ),
@@ -235,17 +236,20 @@ class TrackComponent extends StatelessWidget {
                 reservedSize: 30,
                 getTitlesWidget: (value, meta) {
                   return Text('${value.toInt() + 1}',
-                      style: TextStyle(fontSize: 12));
+                      style: TextStyle(fontSize: 12, color: Colors.white));
                 },
               ),
             ),
           ),
-          borderData: FlBorderData(show: true),
+          borderData: FlBorderData(
+            show: true,
+            border: Border.all(width: 2, color: Colors.white),
+          ),
           lineBarsData: [
             LineChartBarData(
               spots: _getSpots(cumulativeTeam1Distances),
               isCurved: true,
-              color: Colors.blue,
+              color: Colors.greenAccent,
               barWidth: 4,
               isStrokeCapRound: true,
               dotData: FlDotData(show: true),
@@ -254,7 +258,7 @@ class TrackComponent extends StatelessWidget {
             LineChartBarData(
               spots: _getSpots(cumulativeTeam2Distances),
               isCurved: true,
-              color: Colors.red,
+              color: Colors.redAccent,
               barWidth: 4,
               isStrokeCapRound: true,
               dotData: FlDotData(show: true),
