@@ -61,9 +61,16 @@ class _ChaosCircuitState extends ConsumerState<ChaosCircuit> {
                   child: MatchupDisplay(challengeId: widget.challengeId),
                 ),
                 Container(
-                  color: Colors.black,
-                  height: 200,
-                  child: TauntDisplay(),
+                  decoration: BoxDecoration(
+                    color: Colors.black,
+                    border: Border.all(color: Colors.white),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                  ),
+                  height: 100,
+                  child: TauntDisplay(participantEmails: participantEmails, challengeDifficulty: challenge.difficulty),
                 ),
                 Container(
                   height: 600,
