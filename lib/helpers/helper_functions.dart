@@ -1,8 +1,11 @@
 import 'dart:ui';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ride_tide_stride/models/activity.dart';
+
+import '../shared/activity_icons.dart';
 
 Future<String> getUserNameString(String email) async {
   // Check if email is "Empty Slot", and avoid fetching from Firestore
@@ -134,4 +137,6 @@ Color hexToColor(String hex) {
   }
   return Color(int.parse(hex, radix: 16));
 }
+
+
 

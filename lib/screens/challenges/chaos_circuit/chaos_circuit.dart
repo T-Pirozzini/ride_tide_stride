@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:ride_tide_stride/providers/challenge_provider.dart';
 import 'package:ride_tide_stride/providers/opponent_provider.dart';
 import 'package:ride_tide_stride/screens/challenges/chaos_circuit/matchup_display.dart';
+import 'package:ride_tide_stride/screens/challenges/chaos_circuit/taunt_display.dart';
 import 'package:ride_tide_stride/screens/challenges/chaos_circuit/track_component.dart';
 import 'package:ride_tide_stride/theme.dart';
 
@@ -58,6 +59,11 @@ class _ChaosCircuitState extends ConsumerState<ChaosCircuit> {
                   color: AppColors.primaryAccent,
                   height: 300,
                   child: MatchupDisplay(challengeId: widget.challengeId),
+                ),
+                Container(
+                  color: Colors.black,
+                  height: 200,
+                  child: TauntDisplay(),
                 ),
                 Container(
                   height: 600,

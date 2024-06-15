@@ -247,13 +247,21 @@ class TrackComponent extends StatelessWidget {
           ),
           lineBarsData: [
             LineChartBarData(
+              belowBarData: BarAreaData(
+                show: true,
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.greenAccent.withOpacity(0.3),
+                    Colors.greenAccent,
+                  ],
+                ),
+              ),
               spots: _getSpots(cumulativeTeam1Distances),
               isCurved: true,
               color: Colors.greenAccent,
               barWidth: 4,
               isStrokeCapRound: true,
               dotData: FlDotData(show: true),
-              belowBarData: BarAreaData(show: false),
             ),
             LineChartBarData(
               spots: _getSpots(cumulativeTeam2Distances),
@@ -262,7 +270,12 @@ class TrackComponent extends StatelessWidget {
               barWidth: 4,
               isStrokeCapRound: true,
               dotData: FlDotData(show: true),
-              belowBarData: BarAreaData(show: false),
+              belowBarData: BarAreaData(
+                  show: true,
+                  gradient: LinearGradient(colors: [
+                    Colors.redAccent.withOpacity(0.3),
+                    Colors.redAccent,
+                  ])),
             ),
           ],
         ),

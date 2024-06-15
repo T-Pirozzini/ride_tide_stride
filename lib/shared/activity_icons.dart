@@ -32,4 +32,7 @@ final activityIcons = {
   'Windsurf': Icons.surfing_outlined,
   'Workout': Icons.fitness_center_outlined,
   'Yoga': Icons.fitness_center_outlined,
+  'Skateboard': Icons.skateboarding_outlined,
+  'Motorbike': Icons.motorcycle_outlined,
+  'Van': Icons.airport_shuttle_outlined,
 };

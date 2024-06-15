@@ -5,6 +5,7 @@ final opponentsProvider = Provider<Map<String, Opponent>>((ref) {
   return {
     "Intro": Opponent.fromMap({
       "name": ["Dipsy", "La La", "Poe", "Tinky"],
+      "activity": ["Walk", "StandUpPaddling", 'Snowshoe', 'IceSkate'],
       "image": [
         "assets/images/dipsy.jpg",
         "assets/images/lala.jpg",
@@ -31,6 +32,7 @@ final opponentsProvider = Provider<Map<String, Opponent>>((ref) {
     }),
     "Advanced": Opponent.fromMap({
       "name": ["Crash", "Todd", "Noise", "Baldy"],
+      "activity": ["Run", "Ride", 'Kayaking', 'Swim'],
       "image": [
         "assets/images/crash.png",
         "assets/images/todd.png",
@@ -57,6 +59,7 @@ final opponentsProvider = Provider<Map<String, Opponent>>((ref) {
     }),
     "Expert": Opponent.fromMap({
       "name": ["Mike", "Leo", "Raph", "Don"],
+      "activity": ["Skateboard", 'Surfing', 'Motorbike', 'Van'],
       "image": [
         "assets/images/mike.jpg",
         "assets/images/leo.jpg",

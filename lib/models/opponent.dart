@@ -4,6 +4,7 @@ class Opponent {
   final Map<String, String> bestTimes;
   final String teamName;
   final Map<String, String> slogan;
+  final List<String> activity;
 
   Opponent({
     required this.name,
@@ -11,11 +12,13 @@ class Opponent {
     required this.bestTimes,
     required this.teamName,
     required this.slogan,
+    required this.activity,
   });
 
   factory Opponent.fromMap(Map<String, dynamic> map) {
     return Opponent(
       name: List<String>.from(map['name']),
+      activity: List<String>.from(map['activity']),
       image: List<String>.from(map['image']),
       bestTimes: Map<String, String>.from(map['bestTimes']),
       teamName: map['teamName'],
