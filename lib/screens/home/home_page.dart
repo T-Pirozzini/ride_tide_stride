@@ -79,12 +79,12 @@ class _HomeState extends State<Home> {
           Builder(
             builder: (BuildContext context) => const CompetitionLobbyPage(),
           ),
-          // Builder(builder: (BuildContext context) => TalkSmack()),
-          Builder(
-            builder: (BuildContext context) => ChaosCircuit(
-              challengeId: 'cUs1tOoYHJPLUbI82u4q',
-            ),
-          )
+          Builder(builder: (BuildContext context) => TalkSmack()),
+          // Builder(
+          //   builder: (BuildContext context) => ChaosCircuit(
+          //     challengeId: 'cUs1tOoYHJPLUbI82u4q',
+          //   ),
+          // )
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(

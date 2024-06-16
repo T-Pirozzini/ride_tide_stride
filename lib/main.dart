@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:dart_openai/dart_openai.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ride_tide_stride/auth/auth_page.dart';
 import 'package:ride_tide_stride/firebase_options.dart';
@@ -11,12 +14,14 @@ import 'package:ride_tide_stride/screens/challenges/challenge_results_page.dart'
 import 'package:ride_tide_stride/services/firebase_api.dart';
 import 'package:ride_tide_stride/theme.dart';
 
-
 final navigatorKey = GlobalKey<NavigatorState>();
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await FirebaseApi().initNotifications();
+  await dotenv.load(fileName: ".env");
+  OpenAI.apiKey = dotenv.env['OPENAI_API_KEY'] ?? '';
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -49,4 +54,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-

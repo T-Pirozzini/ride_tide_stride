@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:ride_tide_stride/providers/challenge_provider.dart';
 import 'package:ride_tide_stride/providers/opponent_provider.dart';
 import 'package:ride_tide_stride/screens/challenges/chaos_circuit/matchup_display.dart';
+import 'package:ride_tide_stride/screens/challenges/chaos_circuit/taunt_display.dart';
 import 'package:ride_tide_stride/screens/challenges/chaos_circuit/track_component.dart';
 import 'package:ride_tide_stride/theme.dart';
 
@@ -51,6 +52,7 @@ class _ChaosCircuitState extends ConsumerState<ChaosCircuit> {
       body: challengeDetails.when(
         data: (challenge) {
           final participantEmails = challenge.participantsEmails;
+          final challengeTimestamp = challenge.timestamp;
           return SingleChildScrollView(
             child: Column(
               children: [
@@ -60,8 +62,20 @@ class _ChaosCircuitState extends ConsumerState<ChaosCircuit> {
                   child: MatchupDisplay(challengeId: widget.challengeId),
                 ),
                 Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black,
+                    border: Border.all(color: Colors.white),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                  ),
+                  height: 100,
+                  child: TauntDisplay(participantEmails: participantEmails, challengeDifficulty: challenge.difficulty),
+                ),                
+                Container(
                   height: 600,
-                  child: TrackPage(participantEmails: participantEmails),
+                  child: TrackComponent(participantEmails: participantEmails, timestamp: challengeTimestamp,),
                 ),
               ],
             ),

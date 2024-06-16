@@ -6,6 +6,7 @@ import 'package:ride_tide_stride/helpers/helper_functions.dart';
 import 'package:ride_tide_stride/providers/challenge_provider.dart';
 import 'package:ride_tide_stride/providers/opponent_provider.dart';
 import 'package:ride_tide_stride/providers/users_provider.dart';
+import 'package:ride_tide_stride/shared/activity_icons.dart';
 
 class MatchupDisplay extends ConsumerStatefulWidget {
   final String challengeId;
@@ -50,6 +51,7 @@ class _MatchupDisplayState extends ConsumerState<MatchupDisplay> {
                               vertical: 4.0, horizontal: 0.0),
                           decoration: BoxDecoration(
                             color: Colors.grey[200],
+                            border: Border.all(color: Colors.greenAccent),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: ListTile(
@@ -80,6 +82,7 @@ class _MatchupDisplayState extends ConsumerState<MatchupDisplay> {
                               vertical: 4.0, horizontal: 0.0),
                           decoration: BoxDecoration(
                             color: Colors.grey[200],
+                            border: Border.all(color: Colors.greenAccent),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: ListTile(
@@ -118,16 +121,27 @@ class _MatchupDisplayState extends ConsumerState<MatchupDisplay> {
                       final name = opponents[challenge.difficulty]!.name[index];
                       final slogan =
                           opponents[challenge.difficulty]!.slogan[name];
+                      final activity =
+                          opponents[challenge.difficulty]!.activity[index];
                       return Container(
                         margin: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
                           color: Colors.grey[200],
+                          border: Border.all(color: Colors.redAccent),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: ListTile(
                           dense: true,
-                          title: Text(name,
-                              style: Theme.of(context).textTheme.headlineSmall),
+                          title: Row(
+                            children: [
+                              Text(name,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineSmall),
+                              SizedBox(width: 8),
+                              Icon(activityIcons[activity]),
+                            ],
+                          ),
                           subtitle: FittedBox(
                             fit: BoxFit.scaleDown,
                             child: Text(slogan!,
