@@ -36,6 +36,7 @@ class _TauntDisplayState extends ConsumerState<TauntDisplay> {
     if (opponents.containsKey(widget.challengeDifficulty)) {
       opponentNames =
           List<String>.from(opponents[widget.challengeDifficulty]['name']);
+      opponentNames.shuffle();
     }
   }
 
@@ -52,6 +53,8 @@ class _TauntDisplayState extends ConsumerState<TauntDisplay> {
       List<String> usernames = await Future.wait(usernameFutures);
       String opponent =
           opponentNames.isNotEmpty ? opponentNames.first : "Opponent";
+      String opponentTeamName = opponents[widget.challengeDifficulty]
+          ['teamName']; // Get the team name from the opponents map
       final response = await OpenAI.instance.chat.create(
         model: "gpt-3.5-turbo-0125", // Using the correct GPT-4o model
         messages: [
@@ -67,7 +70,7 @@ class _TauntDisplayState extends ConsumerState<TauntDisplay> {
                   .user, // Use the enum value for user role
               content: [
                 OpenAIChatCompletionChoiceMessageContentItemModel.text(
-                    "${opponent}: Generate a creative and sometimes rude or arrogant taunt for an exercise challenge. You and your 3 teammates are against these humans: ${usernames.join(", ")}. Call out only one of the specific users by name in your taunt.")
+                    "Generate a creative taunt for an exercise challenge. You and your 3 teammates are against these humans: ${usernames.join(", ")}. Call out only one of the specific users by name in your taunt. List your name followed by a colon before your taunt. Taunt in the style of your team name: $opponentTeamName and true to the character of: $opponent.")
               ]),
         ],
       );

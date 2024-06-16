@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:ride_tide_stride/models/activity.dart';
+import 'package:ride_tide_stride/models/participant_activity.dart';
 import 'package:ride_tide_stride/providers/activity_provider.dart';
+import 'package:ride_tide_stride/screens/challenges/chaos_circuit/progress_display.dart';
 import 'package:ride_tide_stride/theme.dart';
 
 final team1Provider = StateProvider<List<double>>((ref) => []);
@@ -87,12 +89,43 @@ class TrackPage extends ConsumerWidget {
     // print('Team 2 Distances: $team2Distances');
   }
 
+  List<ParticipantActivity> processActivities(List<Activity> activities) {
+    Map<String, List<Activity>> activitiesByDate = {};
+
+    for (var activity in activities) {
+      String date = activity.startDateLocal.split('T')[0];
+      if (!activitiesByDate.containsKey(date)) {
+        activitiesByDate[date] = [];
+      }
+      activitiesByDate[date]!.add(activity);
+    }
+
+    List<ParticipantActivity> participantActivities = [];
+    activitiesByDate.forEach((date, activities) {
+      double totalDistance =
+          activities.fold(0, (sum, activity) => sum + activity.distance / 1000);
+      participantActivities.add(ParticipantActivity(
+          date: date,
+          totalDistance: totalDistance,
+          activityCount: activities.length));
+    });
+
+    return participantActivities;
+  }
+
   Widget _buildContent(BuildContext context, WidgetRef ref) {
     final team1Distances = ref.watch(team1Provider);
     final team2Distances = ref.watch(team2Provider);
 
     return Column(
       children: [
+        // Container(
+        //   height: 50,
+        //   child: ProgressDisplay(
+        //     team1Distances: team1Distances,
+        //     team2Distances: team2Distances,
+        //   ),
+        // ),
         Expanded(
           child: TrackComponent(
             team1Distances: team1Distances,
@@ -135,6 +168,8 @@ class TrackPage extends ConsumerWidget {
                   //       'Activity: ${activity.startDateLocal}, Distance: ${activity.distance}');
                   // }
 
+                  final participantActivities = processActivities(activities);
+
                   // Ensure activities are from the past 12 days
                   activities = activities.where((activity) {
                     final activityDate =
@@ -155,23 +190,24 @@ class TrackPage extends ConsumerWidget {
                     activitiesByDate[date]!.add(activity);
                   }
 
-                  return ListTile(
-                    title: Text(email),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                            'Total Distance: ${totalDistance.toStringAsFixed(2)} km'),
-                        ...activitiesByDate.entries.map((entry) {
-                          double dateTotalDistance = entry.value.fold(
-                              0,
-                              (sum, activity) =>
-                                  sum + activity.distance / 1000);
-                          return Text(
-                              '${entry.key}: ${entry.value.length} activities, ${dateTotalDistance.toStringAsFixed(2)} km');
-                        }).toList(),
-                      ],
-                    ),
+                  return Column(
+                    children: [
+                      ListTile(
+                        title: Text(email),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                                'Total Distance: ${totalDistance.toStringAsFixed(2)} km'),
+                            ...participantActivities
+                                .map((pa) => Text(
+                                    '${pa.date}: ${pa.activityCount} activities, ${pa.totalDistance.toStringAsFixed(2)} km'))
+                                .toList(),
+                          ],
+                        ),
+                      ),
+                      ProgressDisplay(activities: participantActivities),
+                    ],
                   );
                 },
                 loading: () => CircularProgressIndicator(),

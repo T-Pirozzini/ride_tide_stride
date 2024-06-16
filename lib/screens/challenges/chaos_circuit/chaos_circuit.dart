@@ -71,7 +71,7 @@ class _ChaosCircuitState extends ConsumerState<ChaosCircuit> {
                   ),
                   height: 100,
                   child: TauntDisplay(participantEmails: participantEmails, challengeDifficulty: challenge.difficulty),
-                ),
+                ),                
                 Container(
                   height: 600,
                   child: TrackPage(participantEmails: participantEmails),
