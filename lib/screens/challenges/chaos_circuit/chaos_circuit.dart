@@ -52,6 +52,7 @@ class _ChaosCircuitState extends ConsumerState<ChaosCircuit> {
       body: challengeDetails.when(
         data: (challenge) {
           final participantEmails = challenge.participantsEmails;
+          final challengeTimestamp = challenge.timestamp;
           return SingleChildScrollView(
             child: Column(
               children: [
@@ -74,7 +75,7 @@ class _ChaosCircuitState extends ConsumerState<ChaosCircuit> {
                 ),                
                 Container(
                   height: 600,
-                  child: TrackPage(participantEmails: participantEmails),
+                  child: TrackComponent(participantEmails: participantEmails, timestamp: challengeTimestamp,),
                 ),
               ],
             ),

@@ -9,12 +9,14 @@ class ProgressDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Sort activities by date
-    activities.sort((a, b) => a.date.compareTo(b.date));
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: activities.map((activity) => _buildActivityDisplay(activity)).toList(),
+    // Sorting should ideally be done where the list is managed, not in the build method
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: activities
+            .map((activity) => _buildActivityDisplay(activity))
+            .toList(),
+      ),
     );
   }
 
@@ -24,10 +26,10 @@ class ProgressDisplay extends StatelessWidget {
       child: Column(
         children: [
           CircleAvatar(
-            child: Text('${activity.totalDistance.toStringAsFixed(2)} km'),
-            backgroundColor: Colors.blue,  // Customize based on more criteria if needed
+            child: Text(activity.email[0].toUpperCase()),
+            backgroundColor: Colors.blue,
           ),
-          SizedBox(height: 4),
+          Text('${activity.totalDistance.toStringAsFixed(2)} km'),
           Text(DateFormat('MM/dd').format(DateTime.parse(activity.date))),
           Text('${activity.activityCount} activities'),
         ],
@@ -35,5 +37,3 @@ class ProgressDisplay extends StatelessWidget {
     );
   }
 }
-
-
