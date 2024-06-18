@@ -42,11 +42,7 @@ class TrackComponent extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Activity Tracker'),
-        backgroundColor: AppColors.primaryColor,
-      ),
-      backgroundColor: AppColors.primaryColor,
+      backgroundColor: AppColors.primaryAccent,
       body: FutureBuilder<List<List<Activity>>>(
         future: _fetchActivities(ref),
         builder: (context, snapshot) {
@@ -146,10 +142,12 @@ class TrackComponent extends ConsumerWidget {
 
     return Column(
       children: [
-        Expanded(
+        Container(
+          height: 60,
           child: ProgressDisplay(activities: activities),
         ),
-        Expanded(
+        Container(
+          height: 300,
           child: TrackChart(
             team1Distances: team1Distances,
             team2Distances: team2Distances,
