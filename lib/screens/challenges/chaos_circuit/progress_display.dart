@@ -32,56 +32,94 @@ class ProgressDisplay extends StatelessWidget {
             DateFormat('MM/dd').format(DateTime.parse(activity.date)),
             style: TextStyle(fontSize: 8, color: Colors.white),
           ),
-          FutureBuilder<Map<String, dynamic>>(
-            future: getAvatarUrl(activity.email),
-            builder: (BuildContext context,
-                AsyncSnapshot<Map<String, dynamic>> snapshot) {
-              Widget avatarChild = const Text('Loading...');
-              if (snapshot.connectionState == ConnectionState.done) {
-                if (snapshot.hasData) {
-                  avatarChild = badges.Badge(
-                    badgeContent: Text(
-                      '${activity.totalDistance.toStringAsFixed(0)}km',
-                      style: TextStyle(
-                        color:
-                            Colors.greenAccent, // Text color inside the badge
-                        fontSize: 10,
-                      ),
-                    ),
-                    badgeStyle: badges.BadgeStyle(
-                      badgeColor: Colors.black,
-                      shape: badges.BadgeShape.circle,
-                      borderRadius: BorderRadius.circular(
-                          8), // Optional, if you want rounded corners
-                    ),
-                    position:
-                        badges.BadgePosition.bottomEnd(bottom: -4, end: -12),
-                    child: CircleAvatar(
-                      backgroundColor: hexToColor(snapshot.data!['color']),
-                      radius: 15,
-                      child: snapshot.data!['avatarUrl'] != "No Avatar"
-                          ? ClipOval(
-                              child: SvgPicture.network(
-                                snapshot.data!['avatarUrl'],
-                                width: 30,
-                                height: 30,
-                                fit: BoxFit.cover,
-                              ),
-                            )
-                          : Text(activity.email[0].toUpperCase()),
-                    ),
-                  );
-                } else if (snapshot.hasError) {
-                  avatarChild = CircleAvatar(
-                    child: Text(activity.email[0].toUpperCase()),
-                    backgroundColor: Colors.red,
-                  );
-                }
-              }
-              return avatarChild;
-            },
-          ),
+          activity.isOpponent
+              ? _buildOpponentAvatar(activity)
+              : _buildUserAvatar(activity),
         ],
+      ),
+    );
+  }
+
+  Widget _buildUserAvatar(ParticipantActivity activity) {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: getAvatarUrl(activity.email),
+      builder:
+          (BuildContext context, AsyncSnapshot<Map<String, dynamic>> snapshot) {
+        Widget avatarChild = const Text('Loading...');
+        if (snapshot.connectionState == ConnectionState.done) {
+          if (snapshot.hasData) {
+            avatarChild = badges.Badge(
+              badgeContent: Text(
+                '${activity.totalDistance.toStringAsFixed(0)}km',
+                style: TextStyle(
+                  color: Colors.greenAccent, // Text color inside the badge
+                  fontSize: 10,
+                ),
+              ),
+              badgeStyle: badges.BadgeStyle(
+                badgeColor: Colors.black,
+                shape: badges.BadgeShape.circle,
+                borderRadius: BorderRadius.circular(
+                    8), // Optional, if you want rounded corners
+              ),
+              position: badges.BadgePosition.bottomEnd(bottom: -4, end: -12),
+              child: CircleAvatar(
+                backgroundColor: hexToColor(snapshot.data!['color']),
+                radius: 15,
+                child: snapshot.data!['avatarUrl'] != "No Avatar"
+                    ? ClipOval(
+                        child: SvgPicture.network(
+                          snapshot.data!['avatarUrl'],
+                          width: 30,
+                          height: 30,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : Text(activity.email[0].toUpperCase()),
+              ),
+            );
+          } else if (snapshot.hasError) {
+            avatarChild = CircleAvatar(
+              child: Text(activity.email[0].toUpperCase()),
+              backgroundColor: Colors.red,
+            );
+          }
+        }
+        return avatarChild;
+      },
+    );
+  }
+
+  Widget _buildOpponentAvatar(ParticipantActivity activity) {
+    return badges.Badge(
+      badgeContent: Text(
+        '${activity.totalDistance.toStringAsFixed(0)}km',
+        style: TextStyle(
+          color: Colors.greenAccent, // Text color inside the badge
+          fontSize: 10,
+        ),
+      ),
+      badgeStyle: badges.BadgeStyle(
+        badgeColor: Colors.black,
+        shape: badges.BadgeShape.circle,
+        borderRadius:
+            BorderRadius.circular(8), // Optional, if you want rounded corners
+      ),
+      position: badges.BadgePosition.bottomEnd(bottom: -4, end: -12),
+      child: CircleAvatar(
+        backgroundColor: Colors.grey, // Default color for opponent
+        radius: 15,
+        child: activity.avatarUrl != null
+            ? ClipOval(
+                child: Image.asset(
+                  activity.avatarUrl!,
+                  width: 30,
+                  height: 30,
+                  fit: BoxFit.cover,
+                ),
+              )
+            : Text(activity.email[0]
+                .toUpperCase()), // Initial of the opponent's name
       ),
     );
   }

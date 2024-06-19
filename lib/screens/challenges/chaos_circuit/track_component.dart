@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:ride_tide_stride/models/activity.dart';
+import 'package:ride_tide_stride/models/opponent.dart';
 import 'package:ride_tide_stride/models/participant_activity.dart';
 import 'package:ride_tide_stride/providers/activity_provider.dart';
 import 'package:ride_tide_stride/providers/opponent_provider.dart';
@@ -212,35 +213,64 @@ class TrackComponent extends ConsumerWidget {
     return allActivities;
   }
 
-  Widget _buildContent(BuildContext context,
-      List<ParticipantActivity> activities, WidgetRef ref) {
-    final team1Distances = ref.watch(team1Provider);
-    final team2Distances = ref.watch(team2Provider);
+  Widget _buildContent(BuildContext context, List<ParticipantActivity> activities, WidgetRef ref) {
+  final team1DistancesMap = ref.watch(team1Provider);
+  final team2DistancesMap = ref.watch(team2Provider);
 
-    return Column(
-      children: [
-        Container(
-          height: 60,
-          child: ProgressDisplay(activities: activities),
-        ),
-        Container(
-          height: 300,
-          child: TrackChart(
-            team1Distances: _getAggregatedTeamDistances(team1Distances),
-            team2Distances: _getAggregatedTeamDistances(team2Distances),
-          ),
-        ),
-      ],
-    );
-  }
+  List<double> team1Distances = _getAggregatedTeamDistances(team1DistancesMap);
+  List<double> team2Distances = _getAggregatedTeamDistances(team2DistancesMap);
 
-  List<double> _getAggregatedTeamDistances(
-      Map<String, Map<String, double>> teamDistances) {
-    List<double> aggregatedDistances = [];
-    teamDistances.forEach((date, distances) {
-      aggregatedDistances
-          .add(distances.values.fold(0.0, (sum, distance) => sum + distance));
+  return Column(
+    children: [
+      Container(
+        height: 60,
+        child: ProgressDisplay(activities: activities),
+      ),
+      Container(
+        height: 300,
+        child: TrackChart(
+          team1Distances: team1Distances,
+          team2Distances: team2Distances,
+        ),
+      ),
+    ],
+  );
+}
+
+  List<double> _getAggregatedTeamDistances(Map<String, Map<String, double>> teamDistances) {
+  List<double> aggregatedDistances = [];
+  teamDistances.forEach((date, distances) {
+    aggregatedDistances.add(distances.values.fold(0.0, (sum, distance) => sum + distance));
+  });
+  return aggregatedDistances;
+}
+
+  List<ParticipantActivity> _combineAndSortActivities(
+  List<ParticipantActivity> userActivities,
+  Map<String, Map<String, double>> team2Distances,
+  Map<String, Opponent> opponents) {
+  List<ParticipantActivity> combinedActivities = List.from(userActivities);
+
+  team2Distances.forEach((date, distances) {
+    distances.forEach((name, distance) {
+      final opponentEntry = opponents.entries
+          .expand((entry) => entry.value.name.asMap().entries.map((e) => MapEntry(e.value, entry.value)))
+          .firstWhere((entry) => entry.key == name);
+
+      if (opponentEntry != null) {
+        combinedActivities.add(ParticipantActivity(
+          email: name,
+          date: date,
+          totalDistance: distance,
+          activityCount: 1, // Assuming 1 activity per opponent per day
+          isOpponent: true, // Mark as opponent activity
+          avatarUrl: opponentEntry.value.image[opponentEntry.value.name.indexOf(name)], // Set the avatar URL
+        ));
+      }
     });
-    return aggregatedDistances;
-  }
+  });
+
+  combinedActivities.sort((a, b) => DateTime.parse(a.date).compareTo(DateTime.parse(b.date)));
+  return combinedActivities;
+}
 }

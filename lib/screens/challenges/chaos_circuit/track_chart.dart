@@ -16,8 +16,6 @@ class TrackChart extends StatelessWidget {
     List<double> cumulativeTeam2Distances =
         _getCumulativeDistances(team2Distances);
 
-    List<double> opponentTestData = [0, 3, 13, 30, 33, 40, 53, 70, 81, 90];
-
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: LineChart(
@@ -76,7 +74,7 @@ class TrackChart extends StatelessWidget {
             ),
             LineChartBarData(
               // spots: _getSpots(cumulativeTeam2Distances),
-              spots: _getSpots(opponentTestData),
+              spots: _getSpots(cumulativeTeam2Distances),
               isCurved: true,
               color: Colors.redAccent,
               barWidth: 4,
