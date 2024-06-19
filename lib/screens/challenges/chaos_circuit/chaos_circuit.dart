@@ -85,6 +85,8 @@ class _ChaosCircuitState extends ConsumerState<ChaosCircuit> {
                   child: TrackComponent(
                     participantEmails: participantEmails,
                     timestamp: challengeTimestamp,
+                    challengeId: widget.challengeId,
+                    difficulty: challenge.difficulty,
                   ),
                 ),
               ],

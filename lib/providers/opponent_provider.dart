@@ -23,6 +23,7 @@ final opponentsProvider = Provider<Map<String, Opponent>>((ref) {
         "Canoeing": "1:15:00",
       },
       "teamName": "Teletubbies",
+      "distanceMax": 5.0,
       "slogan": {
         "Dipsy": "Dipsy Dashes to Victory!",
         "La La": "La La Leads the Way!",
@@ -50,6 +51,7 @@ final opponentsProvider = Provider<Map<String, Opponent>>((ref) {
         "Canoeing": "0:55:00",
       },
       "teamName": "Crash N' The Boys",
+      "distanceMax": 10.0,
       "slogan": {
         "Crash": "Crash Leaves You in the Dust!",
         "Todd": "Todd Tears You Apart!",
@@ -77,6 +79,7 @@ final opponentsProvider = Provider<Map<String, Opponent>>((ref) {
         "Canoeing": "0:45:00",
       },
       "teamName": "TMNT",
+      "distanceMax": 30.0,
       "slogan": {
         "Mike": "Cowabunga, dudes! I'm too fast for you!",
         "Leo": "Disciplined, determined, and destined to win!",
