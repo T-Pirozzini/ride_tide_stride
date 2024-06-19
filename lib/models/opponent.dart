@@ -5,6 +5,7 @@ class Opponent {
   final String teamName;
   final Map<String, String> slogan;
   final List<String> activity;
+  final double distanceMax;
 
   Opponent({
     required this.name,
@@ -13,6 +14,7 @@ class Opponent {
     required this.teamName,
     required this.slogan,
     required this.activity,
+    required this.distanceMax,
   });
 
   factory Opponent.fromMap(Map<String, dynamic> map) {
@@ -23,6 +25,7 @@ class Opponent {
       bestTimes: Map<String, String>.from(map['bestTimes']),
       teamName: map['teamName'],
       slogan: Map<String, String>.from(map['slogan']),
+      distanceMax: map['distanceMax'].toDouble(),
     );
   }
 }

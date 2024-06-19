@@ -20,7 +20,7 @@ class TrackChart extends StatelessWidget {
       padding: const EdgeInsets.all(16.0),
       child: LineChart(
         LineChartData(
-          backgroundColor: AppColors.primaryAccent,
+          backgroundColor: Colors.black45,
           gridData: FlGridData(show: false),
           titlesData: FlTitlesData(
             leftTitles: AxisTitles(
@@ -57,7 +57,7 @@ class TrackChart extends StatelessWidget {
           lineBarsData: [
             LineChartBarData(
               belowBarData: BarAreaData(
-                show: true,
+                show: false,
                 gradient: LinearGradient(
                   colors: [
                     Colors.greenAccent.withOpacity(0.3),
@@ -73,6 +73,7 @@ class TrackChart extends StatelessWidget {
               dotData: FlDotData(show: true),
             ),
             LineChartBarData(
+              // spots: _getSpots(cumulativeTeam2Distances),
               spots: _getSpots(cumulativeTeam2Distances),
               isCurved: true,
               color: Colors.redAccent,
@@ -80,7 +81,7 @@ class TrackChart extends StatelessWidget {
               isStrokeCapRound: true,
               dotData: FlDotData(show: true),
               belowBarData: BarAreaData(
-                  show: true,
+                  show: false,
                   gradient: LinearGradient(colors: [
                     Colors.redAccent.withOpacity(0.3),
                     Colors.redAccent,

@@ -28,7 +28,7 @@ class _ChaosCircuitState extends ConsumerState<ChaosCircuit> {
         ref.watch(challengeDetailsProvider(widget.challengeId));
 
     return Scaffold(
-      backgroundColor: const Color(0xFFDFD3C3),
+      backgroundColor: AppColors.primaryAccent,
       appBar: AppBar(
         centerTitle: true,
         title: Row(
@@ -62,20 +62,32 @@ class _ChaosCircuitState extends ConsumerState<ChaosCircuit> {
                   child: MatchupDisplay(challengeId: widget.challengeId),
                 ),
                 Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    border: Border.all(color: Colors.white),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
+                  height: 100,
+                  margin: const EdgeInsets.all(8),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      border: Border.all(color: Colors.white),
+                      borderRadius: BorderRadius.all(
+                        Radius.circular(10),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: TauntDisplay(
+                          participantEmails: participantEmails,
+                          challengeDifficulty: challenge.difficulty),
                     ),
                   ),
-                  height: 100,
-                  child: TauntDisplay(participantEmails: participantEmails, challengeDifficulty: challenge.difficulty),
-                ),                
+                ),
                 Container(
                   height: 600,
-                  child: TrackComponent(participantEmails: participantEmails, timestamp: challengeTimestamp,),
+                  child: TrackComponent(
+                    participantEmails: participantEmails,
+                    timestamp: challengeTimestamp,
+                    challengeId: widget.challengeId,
+                    difficulty: challenge.difficulty,
+                  ),
                 ),
               ],
             ),

@@ -107,12 +107,10 @@ DateTime getEndOfMonth() {
   return DateTime(now.year, now.month + 1, 1).subtract(Duration(seconds: 1));
 }
 
- String formatDate(String startDate) {
-                final DateTime date = DateTime.parse(startDate);
-                return DateFormat.yMMMd().format(date); // e.g., Sep 26, 2023
-              }
-
-
+String formatDate(String startDate) {
+  final DateTime date = DateTime.parse(startDate);
+  return DateFormat.yMMMd().format(date); // e.g., Sep 26, 2023
+}
 
 String formatDateTimeToIso8601(DateTime dateTime) {
   return dateTime.toUtc().toIso8601String();
@@ -138,5 +136,18 @@ Color hexToColor(String hex) {
   return Color(int.parse(hex, radix: 16));
 }
 
-
-
+Future<Map<String, dynamic>> getAvatarUrl(String email) async {
+  DocumentSnapshot snapshot =
+      await FirebaseFirestore.instance.collection('Users').doc(email).get();
+  if (!snapshot.exists || snapshot.data() == null) {
+    return {
+      'avatarUrl': 'No Avatar',
+      'color': Colors.greenAccent,
+    };
+  }
+  var data = snapshot.data() as Map<String, dynamic>;
+  return {
+    'avatarUrl': data['avatarUrl'] ?? 'No Avatar',
+    'color': data['color'] ?? Colors.greenAccent,
+  };
+}
