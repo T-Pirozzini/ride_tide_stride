@@ -43,6 +43,7 @@ class _TrackComponentState extends ConsumerState<TrackComponent> {
   void initState() {
     super.initState();
     _initializeData();
+    checkAndFinalizeChallenge();
   }
 
   Future<void> _initializeData() async {
@@ -54,6 +55,53 @@ class _TrackComponentState extends ConsumerState<TrackComponent> {
         _isProcessing = false;
       });
     }
+  }
+
+  Future<void> checkAndFinalizeChallenge() async {
+    final challengeDoc = FirebaseFirestore.instance
+        .collection('Challenges')
+        .doc(widget.challengeId);
+
+    final team1DistancesMap = ref.read(team1Provider);
+    final team2DistancesMap = ref.read(team2Provider);
+
+    final team1TotalDistance = _calculateTotalDistance(team1DistancesMap);
+    final team2TotalDistance = _calculateTotalDistance(team2DistancesMap);
+
+    final now = DateTime.now();
+    final challengeStartDate = widget.timestamp.toDate();
+    final challengeEndDate = challengeStartDate.add(Duration(days: 30));
+
+    if (now.isAfter(challengeEndDate)) {
+      if (team1TotalDistance > team2TotalDistance) {
+        await challengeDoc.update({
+          'active': false,
+          'success': true,
+          'team1TotalDistance': team1TotalDistance,
+          'team2TotalDistance': team2TotalDistance,
+          'endDate': Timestamp.fromDate(now),
+        });
+      } else {
+        await challengeDoc.update({
+          'active': false,
+          'success': false,
+          'team1TotalDistance': team1TotalDistance,
+          'team2TotalDistance': team2TotalDistance,
+          'endDate': Timestamp.fromDate(now),
+        });
+      }
+    }
+  }
+
+  double _calculateTotalDistance(
+      Map<String, Map<String, double>> distancesMap) {
+    double totalDistance = 0.0;
+    distancesMap.forEach((date, distanceMap) {
+      distanceMap.forEach((participant, distance) {
+        totalDistance += distance;
+      });
+    });
+    return totalDistance;
   }
 
   Future<void> _processActivities() async {

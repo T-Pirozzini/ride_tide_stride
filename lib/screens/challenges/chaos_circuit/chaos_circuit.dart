@@ -1,11 +1,14 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:ride_tide_stride/providers/challenge_provider.dart';
 import 'package:ride_tide_stride/providers/opponent_provider.dart';
 import 'package:ride_tide_stride/screens/challenges/chaos_circuit/matchup_display.dart';
 import 'package:ride_tide_stride/screens/challenges/chaos_circuit/taunt_display.dart';
 import 'package:ride_tide_stride/screens/challenges/chaos_circuit/track_component.dart';
+import 'package:ride_tide_stride/screens/leaderboard/timer.dart';
 import 'package:ride_tide_stride/theme.dart';
 
 class ChaosCircuit extends ConsumerStatefulWidget {
@@ -27,33 +30,47 @@ class _ChaosCircuitState extends ConsumerState<ChaosCircuit> {
     final challengeDetails =
         ref.watch(challengeDetailsProvider(widget.challengeId));
 
-    return Scaffold(
-      backgroundColor: AppColors.primaryAccent,
-      appBar: AppBar(
-        centerTitle: true,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Chaos Circuit',
-              style: GoogleFonts.tektur(
-                  textStyle: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w300,
-                      letterSpacing: 1.2)),
+    return challengeDetails.when(
+      data: (challenge) {
+        final participantEmails = challenge.participantsEmails;
+        final challengeTimestamp = challenge.timestamp;
+        final endTime = challengeTimestamp
+            .toDate()
+            .add(Duration(days: 30))
+            .millisecondsSinceEpoch;
+
+        return Scaffold(
+          backgroundColor: AppColors.primaryAccent,
+          appBar: AppBar(
+            centerTitle: true,
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Chaos Circuit',
+                  style: GoogleFonts.tektur(
+                      textStyle: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w300,
+                          letterSpacing: 1.2)),
+                ),
+              ],
             ),
-          ],
-        ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: challengeDetails.when(
-        data: (challenge) {
-          final participantEmails = challenge.participantsEmails;
-          final challengeTimestamp = challenge.timestamp;
-          return SingleChildScrollView(
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back),
+              onPressed: () => Navigator.pop(context),
+            ),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.all(2.0),
+                child: CountdownTimerWidget(
+                  endTime: endTime,
+                  onTimerEnd: () {},
+                ),
+              ),
+            ],
+          ),
+          body: SingleChildScrollView(
             child: Column(
               children: [
                 Container(
@@ -91,10 +108,22 @@ class _ChaosCircuitState extends ConsumerState<ChaosCircuit> {
                 ),
               ],
             ),
-          );
-        },
-        loading: () => Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Error: $error')),
+          ),
+        );
+      },
+      loading: () => Scaffold(
+        appBar: AppBar(
+          centerTitle: true,
+          title: Text('Loading...'),
+        ),
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, stack) => Scaffold(
+        appBar: AppBar(
+          centerTitle: true,
+          title: Text('Error'),
+        ),
+        body: Center(child: Text('Error: $error')),
       ),
     );
   }
