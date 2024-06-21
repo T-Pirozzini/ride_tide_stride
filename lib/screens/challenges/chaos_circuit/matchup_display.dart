@@ -142,7 +142,7 @@ class _MatchupDisplayState extends ConsumerState<MatchupDisplay> {
                                   style: Theme.of(context)
                                       .textTheme
                                       .headlineSmall),
-                              SizedBox(width: 8),
+                              SizedBox(width: 4),
                               Icon(activityIcons[activity]),
                             ],
                           ),

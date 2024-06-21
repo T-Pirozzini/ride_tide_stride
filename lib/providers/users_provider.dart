@@ -11,3 +11,4 @@ final usersStreamProvider = StreamProvider.autoDispose<List<UserDetails>>((ref) 
   final firestoreService = FirestoreService();
   return firestoreService.usersStream();
 });
+

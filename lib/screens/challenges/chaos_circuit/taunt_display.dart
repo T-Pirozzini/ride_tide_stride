@@ -107,7 +107,7 @@ class _TauntDisplayState extends ConsumerState<TauntDisplay> {
             taunt,
             style: GoogleFonts.electrolize(
               textStyle: TextStyle(
-                fontSize: 14,
+                fontSize: 12,
                 color: Colors.white,
                 letterSpacing: 1.2,
               ),

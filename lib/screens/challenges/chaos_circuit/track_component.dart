@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:ride_tide_stride/helpers/helper_functions.dart';
 import 'package:ride_tide_stride/models/activity.dart';
 import 'package:ride_tide_stride/models/opponent.dart';
 import 'package:ride_tide_stride/models/participant_activity.dart';
@@ -22,12 +23,16 @@ class TrackComponent extends ConsumerStatefulWidget {
   final Timestamp timestamp;
   final String challengeId;
   final String difficulty;
+  final String category;
+  final String categoryActivity;
 
   TrackComponent({
     required this.participantEmails,
     required this.timestamp,
     required this.challengeId,
     required this.difficulty,
+    required this.category,
+    required this.categoryActivity,
   });
 
   @override
@@ -105,17 +110,25 @@ class _TrackComponentState extends ConsumerState<TrackComponent> {
   }
 
   Future<void> _processActivities() async {
-    final activitiesByEmail = widget.participantEmails
-        .map((email) =>
-            ref.read(userSpecificRangeActivitiesProvider(email).future))
-        .toList();
-
-    final allActivities = await Future.wait(activitiesByEmail);
+    final DateTime startDate = widget.timestamp.toDate();
+    final activitiesByEmail =
+        await Future.wait(widget.participantEmails.map((email) async {
+      if (widget.category == 'Specific') {
+        final categoryActivities =
+            mapCategoryToActivityTypes(widget.categoryActivity);
+        final args = ActivityArgs(email, startDate, categoryActivities);
+        return await ref
+            .read(userSpecificRangeAndCategoryActivitiesProvider(args).future);
+      } else {
+        final args = {'email': email, 'startDate': startDate};
+        return ref.read(userSpecificRangeActivitiesProvider(args).future);
+      }
+    }).toList());
 
     // Aggregate distances by date from the start date to the current date
     Map<String, Map<String, double>> team1Distances = {};
 
-    for (var activities in allActivities) {
+    for (var activities in activitiesByEmail) {
       for (var activity in activities) {
         String date = activity.startDateLocal.split('T')[0];
         if (!team1Distances.containsKey(date)) {
@@ -137,7 +150,8 @@ class _TrackComponentState extends ConsumerState<TrackComponent> {
     await _saveDistancesToFirestore(team1Distances, 'team1Distances');
 
     // Aggregate activities for ProgressDisplay
-    _activities = _aggregateActivities(widget.participantEmails, allActivities);
+    _activities =
+        _aggregateActivities(widget.participantEmails, activitiesByEmail);
   }
 
   List<ParticipantActivity> _aggregateActivities(
@@ -291,7 +305,7 @@ class _TrackComponentState extends ConsumerState<TrackComponent> {
       body: Column(
         children: [
           Container(
-            height: 80,
+            height: 70,
             child: ProgressDisplay(activities: _activities),
           ),
           Container(

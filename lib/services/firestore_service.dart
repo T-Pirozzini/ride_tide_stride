@@ -38,7 +38,8 @@ class FirestoreService extends ChangeNotifier {
           role: doc['role'],
           dateCreated: (doc['dateCreated'] as Timestamp).toDate(),
           color: doc['color'],
-          avatarUrl: doc.data().containsKey('avatarUrl') ? doc['avatarUrl'] : "",
+          avatarUrl:
+              doc.data().containsKey('avatarUrl') ? doc['avatarUrl'] : "",
         );
       }).toList();
     });
@@ -108,27 +109,29 @@ class FirestoreService extends ChangeNotifier {
     return documents.map((doc) => Activity.fromDocument(doc)).toList();
   }
 
-  // TEMPORARY FUNCTION
-  // Fetch all activities for the current user within the past 2 months
-  Future<List<Activity>> fetchAllUserActivitiesWithinSixMonths(
-      String email) async {
+  // Fetch all activities for the current user within a specific date range
+  Future<List<Activity>> fetchAllUserActivitiesWithinSpecificDateRangeAndActivityTypes(
+      String email, DateTime startDate, List<String> activityTypes) async {
     if (email.isEmpty) {
       throw Exception('Email is required to fetch activities.');
     }
-
-    final Timestamp startDate =
-        Timestamp.fromDate(DateTime.now().subtract(Duration(days: 60)));
+    final DateTime endDate = DateTime.now();
+    final String startDateString = startDate.toIso8601String();
+    final String endDateString = endDate.toIso8601String();
 
     final QuerySnapshot result = await _db
         .collection('activities')
         .where('user_email', isEqualTo: email)
-        .where('timestamp', isGreaterThanOrEqualTo: startDate)
+        .where('type', whereIn: activityTypes)
+        .where('start_date_local', isGreaterThanOrEqualTo: startDateString)
+        .where('start_date_local', isLessThanOrEqualTo: endDateString)
         .get();
 
     final List<DocumentSnapshot> documents = result.docs;
 
     return documents.map((doc) => Activity.fromDocument(doc)).toList();
   }
+  
 
 // fetch all user current month activities
   Future<List<Activity>> fetchAllUserCurrentMonthActivities(fullName) async {
@@ -192,6 +195,8 @@ class FirestoreService extends ChangeNotifier {
       description: result['description'] ?? '',
       difficulty: result['difficulty'] ?? '',
       createdBy: result['createdBy'] ?? '',
+      category: result['category'] ?? '',
+      categoryActivity: result['categoryActivity'] ?? '',
     );
     print("Challenge object: ${challenge.toMap()}");
 
