@@ -3,8 +3,8 @@ workflows:
     name: iOS Workflow
     max_build_duration: 60
     environment:
-      groups:
-        - my-env-vars # Ensure all your variables are in this group
+      groups:        
+        - my-env-vars
       vars:
         FLUTTER_VERSION: stable
         XCODE_VERSION: "14.0"
@@ -18,23 +18,26 @@ workflows:
       - name: Install dependencies
         script: |
           flutter pub get
+          cd ios
+          pod install --repo-update
+          pod update Firebase/CoreOnly
+          cd ..
       - name: Create .env file in root directory
         script: |
           echo "OPENAI_API_KEY=${OPENAI_API_KEY}" > .env
       - name: Build iOS
-        script: |
-          flutter build ios --release --no-codesign
-          xcodebuild -exportArchive -archivePath build/ios/iphoneos/Runner.xcarchive -exportPath build/ios/iphoneos/Runner -exportOptionsPlist ios/Runner/ExportOptions.plist -allowProvisioningUpdates
+        script: flutter build ios --release --no-codesign
     artifacts:
       - build/ios/ipa/*.ipa
-      - build/ios/iphoneos/Runner/*.ipa
     publishing:
       app_store_connect:
-        api_key: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
-        issuer_id: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
         key_id: ${{ secrets.APP_STORE_CONNECT_KEY_IDENTIFIER }}
+        issuer_id: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        api_key: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
         submit_to_testflight: true
-        submit_to_app_store: true
+        submit_to_app_store: true    
       email:
         recipients:
-          - tpirozzini@gmail.com  
+          - tpirozzini@gmail.com
+
+
