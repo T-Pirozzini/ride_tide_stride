@@ -26,7 +26,8 @@ workflows:
         script: |
           echo "OPENAI_API_KEY=${OPENAI_API_KEY}" > .env
       - name: Build iOS
-        script: flutter build ios --release --no-codesign
+        script: |
+          flutter build ios --release
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
