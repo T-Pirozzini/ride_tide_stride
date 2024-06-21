@@ -165,7 +165,7 @@ class _ChaosCircuitState extends ConsumerState<ChaosCircuit> {
             .millisecondsSinceEpoch;
 
         return Scaffold(
-          key: _chaosCircuitScaffoldKey, 
+          key: _chaosCircuitScaffoldKey,
           backgroundColor: AppColors.primaryAccent,
           appBar: AppBar(
             centerTitle: true,
@@ -191,7 +191,7 @@ class _ChaosCircuitState extends ConsumerState<ChaosCircuit> {
                                     ? Icons.directions_bike
                                     : challengeCategoryActivity == "Paddling"
                                         ? Icons.kayaking
-                                        : Icons.directions_walk, 
+                                        : Icons.directions_walk,
                           )
                         : SizedBox.shrink(),
                   ],
@@ -255,7 +255,7 @@ class _ChaosCircuitState extends ConsumerState<ChaosCircuit> {
                   ),
                 ),
                 Container(
-                  height: 600,
+                  height: 400,
                   child: TrackComponent(
                     participantEmails: participantEmails,
                     timestamp: challengeTimestamp,

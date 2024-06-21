@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ride_tide_stride/helpers/helper_functions.dart';
 import 'package:ride_tide_stride/models/activity_type.dart';
 import 'package:ride_tide_stride/providers/activity_provider.dart';
+import 'package:ride_tide_stride/providers/users_provider.dart';
 import 'package:ride_tide_stride/screens/activities/activity_controller.dart';
 import 'package:ride_tide_stride/screens/activities/activity_chart.dart';
+import 'package:ride_tide_stride/screens/challenges/challenge_helpers.dart';
 import 'package:ride_tide_stride/theme.dart';
 
 class ActivitiesListPage extends ConsumerStatefulWidget {
@@ -37,6 +39,7 @@ class _ActivitiesListPageState extends ConsumerState<ActivitiesListPage> {
   Widget build(BuildContext context) {
     final activitiesAsyncValue =
         ref.watch(userActivitiesProvider(widget.userEmail));
+    final usernameAsyncValue = ref.watch(usernameProvider(widget.userEmail));
 
     return Container(
       decoration: BoxDecoration(
@@ -52,7 +55,13 @@ class _ActivitiesListPageState extends ConsumerState<ActivitiesListPage> {
       child: Scaffold(
         key: _scaffoldKey,
         backgroundColor: Colors.transparent,
-        appBar: AppBar(title: Text('Activities for ${widget.userEmail}')),
+        appBar: AppBar(
+          title: usernameAsyncValue.when(
+            data: (username) => Text('Activities for $username'),
+            loading: () => Text('Loading...'),
+            error: (err, stack) => Text('Error'),
+          ),
+        ),
         body: activitiesAsyncValue.when(
           data: (activities) {
             final activitiesByMonth =
