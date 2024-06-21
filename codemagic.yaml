@@ -24,7 +24,7 @@ workflows:
         script: |
           echo "API_URL=${API_URL}" > .env
           echo "API_KEY=${API_KEY}" >> .env
-          mv .env ios/.env
+          mv .env ios/.env # Move the .env file to the ios directory
       - name: Build iOS
         script: flutter build ios --release --no-codesign
     artifacts:
