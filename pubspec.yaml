@@ -61,7 +61,7 @@ dependencies:
   badges: ^3.1.2
   flutter_riverpod: ^2.5.1
   font_awesome_flutter: ^10.7.0
-  firebase_messaging: ^14.9.4  
+  firebase_messaging: 14.7.19  
   dice_bear: ^0.1.7
   flutter_svg: ^2.0.10+1
   dart_openai: ^5.1.0
