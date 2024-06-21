@@ -35,18 +35,25 @@ final userCurrentMonthActivitiesProvider =
   return firestoreService.fetchAllUserCurrentMonthActivities(fullName);
 });
 
-final userSpecificRangeActivitiesProvider =
-    FutureProvider.family<List<Activity>, String>((ref, email) {
+final userSpecificRangeActivitiesProvider = FutureProvider.family<List<Activity>, Map<String, dynamic>>((ref, args) {
   final firestoreService = FirestoreService();
-  final startDate = DateTime.now().subtract(Duration(days: 12));
+  final String email = args['email'];
+  final DateTime startDate = args['startDate'];
   print('Fetching activities for $email starting from $startDate');
-  return firestoreService.fetchAllUserActivitiesWithinSpecificDateRange(
-      email, startDate);
+  return firestoreService.fetchAllUserActivitiesWithinSpecificDateRange(email, startDate);
 });
 
-// TEMPORARY PROVIDED
-final userSixMonthsActivitiesProvider =
-    FutureProvider.family<List<Activity>, String>((ref, email) {
+class ActivityArgs {
+  final String email;
+  final DateTime startDate;
+  final List<String> activityTypes;
+
+  ActivityArgs(this.email, this.startDate, this.activityTypes);
+}
+
+final userSpecificRangeAndCategoryActivitiesProvider = FutureProvider.family<List<Activity>, ActivityArgs>((ref, args) {
   final firestoreService = FirestoreService();
-  return firestoreService.fetchAllUserActivitiesWithinSixMonths(email);
+  return firestoreService.fetchAllUserActivitiesWithinSpecificDateRangeAndActivityTypes(
+      args.email, args.startDate, args.activityTypes);
 });
+

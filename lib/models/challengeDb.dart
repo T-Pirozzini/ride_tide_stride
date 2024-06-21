@@ -7,6 +7,8 @@ class ChallengeDb {
   final String createdBy;
   final Timestamp timestamp;
   final List<dynamic> participantsEmails;
+  final String category;
+  final String categoryActivity;
 
   ChallengeDb({
     required this.name,
@@ -15,6 +17,8 @@ class ChallengeDb {
     required this.createdBy,
     required this.timestamp,
     required this.participantsEmails,
+    required this.category,
+    required this.categoryActivity,
   });
 
   Map<String, dynamic> toMap() {
@@ -25,6 +29,8 @@ class ChallengeDb {
       'createdBy': createdBy,
       'startDate': timestamp,
       'participantsEmails': participantsEmails,
+      'category': category,
+      'categoryActivity': categoryActivity,
     };
   }
 }

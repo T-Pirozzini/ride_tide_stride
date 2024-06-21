@@ -151,3 +151,13 @@ Future<Map<String, dynamic>> getAvatarUrl(String email) async {
     'color': data['color'] ?? Colors.greenAccent,
   };
 }
+
+Map<String, List<String>> activityTypeMappings = {
+  'Running': ['Run', 'VirtualRun'],
+  'Cycling': ['EBikeRide', 'Ride', 'VirtualRide'],
+  'Paddling': ['Canoeing', 'Rowing', 'Kayaking', 'StandUpPaddling'],
+};
+
+List<String> mapCategoryToActivityTypes(String category) {
+  return activityTypeMappings[category] ?? [];
+}

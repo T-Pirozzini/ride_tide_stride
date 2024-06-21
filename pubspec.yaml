@@ -66,6 +66,7 @@ dependencies:
   flutter_svg: ^2.0.10+1
   dart_openai: ^5.1.0
   flutter_dotenv: ^5.1.0
+  auto_size_text: ^3.0.0
 
 dependency_overrides:
   flutter_colorpicker:

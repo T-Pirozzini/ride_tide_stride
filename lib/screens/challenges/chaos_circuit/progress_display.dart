@@ -12,11 +12,12 @@ class ProgressDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Sorting should ideally be done where the list is managed, not in the build method
+    final reversedActivities = activities.reversed.toList();
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: activities
+        children: reversedActivities
             .map((activity) => _buildActivityDisplay(activity))
             .toList(),
       ),
@@ -49,29 +50,34 @@ class ProgressDisplay extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.done) {
           if (snapshot.hasData) {
             avatarChild = badges.Badge(
-              badgeContent: Text(
-                '${activity.totalDistance.toStringAsFixed(0)}km',
-                style: TextStyle(
-                  color: Colors.greenAccent, // Text color inside the badge
-                  fontSize: 10,
+              badgeContent: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Padding(
+                  padding: const EdgeInsets.all(2.0),
+                  child: Text(
+                    '${activity.totalDistance.toStringAsFixed(0)}km',
+                    style: TextStyle(
+                      color: Colors.greenAccent,
+                      fontSize: 8,
+                    ),
+                  ),
                 ),
               ),
               badgeStyle: badges.BadgeStyle(
                 badgeColor: Colors.black,
                 shape: badges.BadgeShape.circle,
-                borderRadius: BorderRadius.circular(
-                    8), // Optional, if you want rounded corners
+                borderRadius: BorderRadius.circular(8),
               ),
               position: badges.BadgePosition.bottomEnd(bottom: -4, end: -12),
               child: CircleAvatar(
                 backgroundColor: hexToColor(snapshot.data!['color']),
-                radius: 15,
+                radius: 20,
                 child: snapshot.data!['avatarUrl'] != "No Avatar"
                     ? ClipOval(
                         child: SvgPicture.network(
                           snapshot.data!['avatarUrl'],
-                          width: 30,
-                          height: 30,
+                          width: 40,
+                          height: 40,
                           fit: BoxFit.cover,
                         ),
                       )
@@ -92,34 +98,38 @@ class ProgressDisplay extends StatelessWidget {
 
   Widget _buildOpponentAvatar(ParticipantActivity activity) {
     return badges.Badge(
-      badgeContent: Text(
-        '${activity.totalDistance.toStringAsFixed(0)}km',
-        style: TextStyle(
-          color: Colors.greenAccent, // Text color inside the badge
-          fontSize: 10,
+      badgeContent: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Padding(
+          padding: const EdgeInsets.all(2.0),
+          child: Text(
+            '${activity.totalDistance.toStringAsFixed(0)}km',
+            style: TextStyle(
+              color: Colors.greenAccent,
+              fontSize: 8,
+            ),
+          ),
         ),
       ),
       badgeStyle: badges.BadgeStyle(
         badgeColor: Colors.black,
         shape: badges.BadgeShape.circle,
-        borderRadius:
-            BorderRadius.circular(8), // Optional, if you want rounded corners
+        borderRadius: BorderRadius.circular(8),
       ),
       position: badges.BadgePosition.bottomEnd(bottom: -4, end: -12),
       child: CircleAvatar(
-        backgroundColor: Colors.grey, // Default color for opponent
-        radius: 15,
+        backgroundColor: Colors.grey,
+        radius: 20,
         child: activity.avatarUrl != null
             ? ClipOval(
                 child: Image.asset(
                   activity.avatarUrl!,
-                  width: 30,
-                  height: 30,
+                  width: 40,
+                  height: 40,
                   fit: BoxFit.cover,
                 ),
               )
-            : Text(activity.email[0]
-                .toUpperCase()), // Initial of the opponent's name
+            : Text(activity.email[0].toUpperCase()),
       ),
     );
   }

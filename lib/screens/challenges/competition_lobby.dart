@@ -63,6 +63,14 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
 
       List participants = List.from(snapshot['participants'] ?? []);
       // Check if the challenge is already full
+      if (snapshot['type'] == 'Chaos Circuit' && participants.length >= 4) {
+        print("Challenge is full");
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Sorry, the challenge is currently full.'),
+        ));
+        // Optionally, show a dialog or a snackbar to inform the user
+        return;
+      }
       if (participants.length >= 8) {
         print("Challenge is full");
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -239,8 +247,7 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                             challengeData['coopOrComp'] ??
                                                 'No coopOrComp',
                                       );
-                                    default:
-                                      // Handle unknown challenge type if necessary
+                                    case 'Snow2Surf':
                                       return Snow2Surf(
                                         challengeId: challengeId,
                                         participantsEmails: participants,
@@ -252,6 +259,11 @@ class _CompetitionLobbyPageState extends State<CompetitionLobbyPage> {
                                                 'No difficulty',
                                         challengeLegs:
                                             challengeData['legsSelected'],
+                                      );
+                                    default:
+                                      // Handle unknown challenge type if necessary
+                                      return ChaosCircuit(
+                                        challengeId: challengeId,
                                       );
                                   }
                                 },

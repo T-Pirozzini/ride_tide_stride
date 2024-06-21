@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:ride_tide_stride/helpers/helper_functions.dart';
 import 'package:ride_tide_stride/models/activity.dart';
 import 'package:ride_tide_stride/models/opponent.dart';
 import 'package:ride_tide_stride/models/participant_activity.dart';
@@ -17,69 +18,117 @@ final team1Provider =
 final team2Provider =
     StateProvider<Map<String, Map<String, double>>>((ref) => {});
 
-class TrackComponent extends ConsumerWidget {
+class TrackComponent extends ConsumerStatefulWidget {
   final List<dynamic> participantEmails;
   final Timestamp timestamp;
   final String challengeId;
   final String difficulty;
+  final String category;
+  final String categoryActivity;
 
   TrackComponent({
     required this.participantEmails,
     required this.timestamp,
     required this.challengeId,
     required this.difficulty,
+    required this.category,
+    required this.categoryActivity,
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final activitiesByEmail = participantEmails
-        .map((email) => ref.watch(userSpecificRangeActivitiesProvider(email)))
-        .toList();
+  _TrackComponentState createState() => _TrackComponentState();
+}
 
-    // Check if all activities are loaded
-    bool allLoaded =
-        activitiesByEmail.every((asyncValue) => asyncValue is AsyncData);
+class _TrackComponentState extends ConsumerState<TrackComponent> {
+  bool _isProcessing = false;
+  List<ParticipantActivity> _activities = [];
+  List<String> _dates = [];
 
-    // Filter out only the data from AsyncValues
-    List<List<Activity>> allActivities = activitiesByEmail
-        .where((asyncValue) => asyncValue is AsyncData)
-        .map((asyncValue) => (asyncValue as AsyncData<List<Activity>>).value)
-        .toList();
-
-    if (allLoaded) {
-      // All activities are loaded, process the data
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _processActivities(ref, allActivities);
-        _processOpponentDistances(ref);
-      });
-    }
-
-    return Scaffold(
-      backgroundColor: AppColors.primaryAccent,
-      body: FutureBuilder<List<List<Activity>>>(
-        future: _fetchActivities(ref),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done &&
-              snapshot.hasData) {
-            List<ParticipantActivity> allActivities =
-                _aggregateActivities(participantEmails, snapshot.data!);
-            allActivities.sort((a, b) =>
-                DateTime.parse(a.date).compareTo(DateTime.parse(b.date)));
-            return _buildContent(context, allActivities, ref);
-          } else if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error.toString()}"));
-          }
-          return Center(child: CircularProgressIndicator());
-        },
-      ),
-    );
+  @override
+  void initState() {
+    super.initState();
+    _initializeData();
+    checkAndFinalizeChallenge();
   }
 
-  void _processActivities(WidgetRef ref, List<List<Activity>> allActivities) {
+  Future<void> _initializeData() async {
+    if (!_isProcessing) {
+      _isProcessing = true;
+      await _processActivities();
+      await _processOpponentDistances();
+      setState(() {
+        _isProcessing = false;
+      });
+    }
+  }
+
+  Future<void> checkAndFinalizeChallenge() async {
+    final challengeDoc = FirebaseFirestore.instance
+        .collection('Challenges')
+        .doc(widget.challengeId);
+
+    final team1DistancesMap = ref.read(team1Provider);
+    final team2DistancesMap = ref.read(team2Provider);
+
+    final team1TotalDistance = _calculateTotalDistance(team1DistancesMap);
+    final team2TotalDistance = _calculateTotalDistance(team2DistancesMap);
+
+    final now = DateTime.now();
+    final challengeStartDate = widget.timestamp.toDate();
+    final challengeEndDate = challengeStartDate.add(Duration(days: 30));
+
+    if (now.isAfter(challengeEndDate)) {
+      if (team1TotalDistance > team2TotalDistance) {
+        await challengeDoc.update({
+          'active': false,
+          'success': true,
+          'team1TotalDistance': team1TotalDistance,
+          'team2TotalDistance': team2TotalDistance,
+          'endDate': Timestamp.fromDate(now),
+        });
+      } else {
+        await challengeDoc.update({
+          'active': false,
+          'success': false,
+          'team1TotalDistance': team1TotalDistance,
+          'team2TotalDistance': team2TotalDistance,
+          'endDate': Timestamp.fromDate(now),
+        });
+      }
+    }
+  }
+
+  double _calculateTotalDistance(
+      Map<String, Map<String, double>> distancesMap) {
+    double totalDistance = 0.0;
+    distancesMap.forEach((date, distanceMap) {
+      distanceMap.forEach((participant, distance) {
+        totalDistance += distance;
+      });
+    });
+    return totalDistance;
+  }
+
+  Future<void> _processActivities() async {
+    final DateTime startDate = widget.timestamp.toDate();
+    final activitiesByEmail =
+        await Future.wait(widget.participantEmails.map((email) async {
+      if (widget.category == 'Specific') {
+        final categoryActivities =
+            mapCategoryToActivityTypes(widget.categoryActivity);
+        final args = ActivityArgs(email, startDate, categoryActivities);
+        return await ref
+            .read(userSpecificRangeAndCategoryActivitiesProvider(args).future);
+      } else {
+        final args = {'email': email, 'startDate': startDate};
+        return ref.read(userSpecificRangeActivitiesProvider(args).future);
+      }
+    }).toList());
+
     // Aggregate distances by date from the start date to the current date
     Map<String, Map<String, double>> team1Distances = {};
 
-    for (var activities in allActivities) {
+    for (var activities in activitiesByEmail) {
       for (var activity in activities) {
         String date = activity.startDateLocal.split('T')[0];
         if (!team1Distances.containsKey(date)) {
@@ -98,93 +147,11 @@ class TrackComponent extends ConsumerWidget {
     ref.read(team1Provider.notifier).state = team1Distances;
 
     // Save the distances to Firestore
-    _saveDistancesToFirestore(ref, team1Distances, 'team1Distances');
-  }
+    await _saveDistancesToFirestore(team1Distances, 'team1Distances');
 
-  Future<void> _saveDistancesToFirestore(WidgetRef ref,
-      Map<String, Map<String, double>> distances, String fieldName) async {
-    final challengeDoc =
-        FirebaseFirestore.instance.collection('Challenges').doc(challengeId);
-    await challengeDoc.update({
-      fieldName: distances,
-    });
-  }
-
-  Future<void> _processOpponentDistances(WidgetRef ref) async {
-    final opponents = ref.read(opponentsProvider);
-    final challengeDoc =
-        FirebaseFirestore.instance.collection('challenges').doc(challengeId);
-    final challengeData = await challengeDoc.get();
-
-    if (!challengeData.exists) {
-      // If document doesn't exist, handle accordingly
-      print('Challenge document does not exist');
-      return;
-    }
-
-    final data = challengeData.data();
-    if (data == null || !data.containsKey('timestamp')) {
-      // If timestamp field is missing, handle accordingly
-      print('Challenge timestamp is missing');
-      return;
-    }
-
-    final challengeStartDate = (data['timestamp'] as Timestamp).toDate();
-    final today = DateTime.now();
-    final dates = _generateDatesList(challengeStartDate, today);
-
-    // Fetch existing Team2Distances
-    Map<String, Map<String, double>> team2Distances = {};
-    if (data.containsKey('Team2Distances')) {
-      final existingTeam2Distances =
-          data['Team2Distances'] as Map<String, dynamic>;
-      existingTeam2Distances.forEach((key, value) {
-        team2Distances[key] = Map<String, double>.from(value as Map);
-      });
-    }
-
-    final opponentTeam = opponents[difficulty];
-    if (opponentTeam == null) {
-      print('No opponents found for difficulty: $difficulty');
-      return;
-    }
-
-    Random random = Random();
-
-    for (var date in dates) {
-      if (!team2Distances.containsKey(date)) {
-        Map<String, double> opponentDistances = {};
-        for (var name in opponentTeam.name) {
-          opponentDistances[name] =
-              random.nextDouble() * opponentTeam.distanceMax;
-        }
-        team2Distances[date] = opponentDistances;
-      }
-    }
-
-    // Update the team2 provider with opponent distances
-    ref.read(team2Provider.notifier).state = team2Distances;
-
-    // Save the opponent distances to Firestore
-    await _saveDistancesToFirestore(ref, team2Distances, 'Team2Distances');
-  }
-
-  List<String> _generateDatesList(DateTime startDate, DateTime endDate) {
-    List<String> dates = [];
-    DateTime currentDate = startDate;
-    while (currentDate.isBefore(endDate) ||
-        currentDate.isAtSameMomentAs(endDate)) {
-      dates.add(DateFormat('yyyy-MM-dd').format(currentDate));
-      currentDate = currentDate.add(Duration(days: 1));
-    }
-    return dates;
-  }
-
-  Future<List<List<Activity>>> _fetchActivities(WidgetRef ref) async {
-    List<Future<List<Activity>>> futures = participantEmails.map((email) {
-      return ref.read(userSpecificRangeActivitiesProvider(email).future);
-    }).toList();
-    return await Future.wait(futures);
+    // Aggregate activities for ProgressDisplay
+    _activities =
+        _aggregateActivities(widget.participantEmails, activitiesByEmail);
   }
 
   List<ParticipantActivity> _aggregateActivities(
@@ -213,64 +180,159 @@ class TrackComponent extends ConsumerWidget {
     return allActivities;
   }
 
-  Widget _buildContent(BuildContext context, List<ParticipantActivity> activities, WidgetRef ref) {
-  final team1DistancesMap = ref.watch(team1Provider);
-  final team2DistancesMap = ref.watch(team2Provider);
+  Future<void> _processOpponentDistances() async {
+    final opponents = ref.read(opponentsProvider);
+    final challengeDoc = FirebaseFirestore.instance
+        .collection('Challenges')
+        .doc(widget.challengeId);
+    final challengeData = await challengeDoc.get();
 
-  List<double> team1Distances = _getAggregatedTeamDistances(team1DistancesMap);
-  List<double> team2Distances = _getAggregatedTeamDistances(team2DistancesMap);
+    if (!challengeData.exists) {
+      // If document doesn't exist, handle accordingly
+      print('Challenge document does not exist');
+      return;
+    }
 
-  return Column(
-    children: [
-      Container(
-        height: 60,
-        child: ProgressDisplay(activities: activities),
-      ),
-      Container(
-        height: 300,
-        child: TrackChart(
-          team1Distances: team1Distances,
-          team2Distances: team2Distances,
-        ),
-      ),
-    ],
-  );
-}
+    final data = challengeData.data();
+    if (data == null || !data.containsKey('timestamp')) {
+      // If timestamp field is missing, handle accordingly
+      print('Challenge timestamp is missing');
+      return;
+    }
 
-  List<double> _getAggregatedTeamDistances(Map<String, Map<String, double>> teamDistances) {
-  List<double> aggregatedDistances = [];
-  teamDistances.forEach((date, distances) {
-    aggregatedDistances.add(distances.values.fold(0.0, (sum, distance) => sum + distance));
-  });
-  return aggregatedDistances;
-}
+    final challengeStartDate = (data['timestamp'] as Timestamp).toDate();
+    final today = DateTime.now();
+    _dates = _generateDatesList(challengeStartDate, today);
 
-  List<ParticipantActivity> _combineAndSortActivities(
-  List<ParticipantActivity> userActivities,
-  Map<String, Map<String, double>> team2Distances,
-  Map<String, Opponent> opponents) {
-  List<ParticipantActivity> combinedActivities = List.from(userActivities);
+    // Fetch existing Team2Distances
+    Map<String, Map<String, double>> team2Distances = {};
+    if (data.containsKey('Team2Distances')) {
+      final existingTeam2Distances =
+          data['Team2Distances'] as Map<String, dynamic>;
+      existingTeam2Distances.forEach((key, value) {
+        team2Distances[key] = Map<String, double>.from(value as Map);
+      });
+    }
 
-  team2Distances.forEach((date, distances) {
-    distances.forEach((name, distance) {
-      final opponentEntry = opponents.entries
-          .expand((entry) => entry.value.name.asMap().entries.map((e) => MapEntry(e.value, entry.value)))
-          .firstWhere((entry) => entry.key == name);
+    final opponentTeam = opponents[widget.difficulty];
+    if (opponentTeam == null) {
+      print('No opponents found for difficulty: ${widget.difficulty}');
+      return;
+    }
 
-      if (opponentEntry != null) {
-        combinedActivities.add(ParticipantActivity(
+    Random random = Random();
+
+    for (var date in _dates) {
+      if (!team2Distances.containsKey(date)) {
+        Map<String, double> opponentDistances = {};
+        for (var name in opponentTeam.name) {
+          // 50% chance that an opponent won't post an activity
+          if (random.nextBool()) {
+            opponentDistances[name] =
+                1 + random.nextDouble() * (opponentTeam.distanceMax - 1);
+          }
+        }
+        team2Distances[date] = opponentDistances;
+      }
+    }
+
+    // Update the team2 provider with opponent distances
+    ref.read(team2Provider.notifier).state = team2Distances;
+
+    // Save the opponent distances to Firestore
+    await _saveDistancesToFirestore(team2Distances, 'Team2Distances');
+
+    // Aggregate opponent activities for ProgressDisplay
+    _activities
+        .addAll(_aggregateOpponentActivities(team2Distances, opponentTeam));
+
+    // Sort activities by date to mix user and opponent activities
+    _activities.sort(
+        (a, b) => DateTime.parse(a.date).compareTo(DateTime.parse(b.date)));
+  }
+
+  List<ParticipantActivity> _aggregateOpponentActivities(
+      Map<String, Map<String, double>> team2Distances, Opponent opponentTeam) {
+    List<ParticipantActivity> opponentActivities = [];
+    team2Distances.forEach((date, distances) {
+      distances.forEach((name, distance) {
+        opponentActivities.add(ParticipantActivity(
           email: name,
           date: date,
           totalDistance: distance,
-          activityCount: 1, // Assuming 1 activity per opponent per day
-          isOpponent: true, // Mark as opponent activity
-          avatarUrl: opponentEntry.value.image[opponentEntry.value.name.indexOf(name)], // Set the avatar URL
+          activityCount: 1,
+          isOpponent: true,
+          avatarUrl: opponentTeam.image[opponentTeam.name.indexOf(name)],
         ));
+      });
+    });
+    return opponentActivities;
+  }
+
+  Future<void> _saveDistancesToFirestore(
+      Map<String, Map<String, double>> distances, String fieldName) async {
+    final challengeDoc = FirebaseFirestore.instance
+        .collection('Challenges')
+        .doc(widget.challengeId);
+    await challengeDoc.update({
+      fieldName: distances,
+    });
+  }
+
+  List<String> _generateDatesList(DateTime startDate, DateTime endDate) {
+    List<String> dates = [];
+    DateTime currentDate = startDate;
+    while (currentDate.isBefore(endDate) ||
+        currentDate.isAtSameMomentAs(endDate)) {
+      dates.add(DateFormat('yyyy-MM-dd').format(currentDate));
+      currentDate = currentDate.add(Duration(days: 1));
+    }
+    return dates;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final team1DistancesMap = ref.watch(team1Provider);
+    final team2DistancesMap = ref.watch(team2Provider);
+
+    List<double> team1Distances =
+        _getAggregatedTeamDistances(team1DistancesMap);
+    List<double> team2Distances =
+        _getAggregatedTeamDistances(team2DistancesMap);
+
+    return Scaffold(
+      backgroundColor: AppColors.primaryAccent,
+      body: Column(
+        children: [
+          Container(
+            height: 70,
+            child: ProgressDisplay(activities: _activities),
+          ),
+          Container(
+            height: 300,
+            child: TrackChart(
+              team1Distances: team1Distances,
+              team2Distances: team2Distances,
+              dates: _dates,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<double> _getAggregatedTeamDistances(
+      Map<String, Map<String, double>> teamDistances) {
+    List<double> aggregatedDistances = [];
+    _dates.forEach((date) {
+      if (teamDistances.containsKey(date)) {
+        aggregatedDistances.add(teamDistances[date]!
+            .values
+            .fold(0.0, (sum, distance) => sum + distance));
+      } else {
+        aggregatedDistances.add(0.0);
       }
     });
-  });
-
-  combinedActivities.sort((a, b) => DateTime.parse(a.date).compareTo(DateTime.parse(b.date)));
-  return combinedActivities;
-}
+    return aggregatedDistances;
+  }
 }

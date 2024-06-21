@@ -7,6 +7,7 @@ import 'package:ride_tide_stride/providers/challenge_provider.dart';
 import 'package:ride_tide_stride/providers/opponent_provider.dart';
 import 'package:ride_tide_stride/providers/users_provider.dart';
 import 'package:ride_tide_stride/shared/activity_icons.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 
 class MatchupDisplay extends ConsumerStatefulWidget {
   final String challengeId;
@@ -56,9 +57,12 @@ class _MatchupDisplayState extends ConsumerState<MatchupDisplay> {
                           ),
                           child: ListTile(
                             dense: true,
-                            title: Text(user.username,
-                                style:
-                                    Theme.of(context).textTheme.headlineSmall),
+                            title: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(user.username,
+                                  style: TextStyle(
+                                      fontSize: 12, color: Colors.black)),
+                            ),
                             leading: CircleAvatar(
                               backgroundColor: hexToColor(user.color),
                               radius: 25,
@@ -138,14 +142,16 @@ class _MatchupDisplayState extends ConsumerState<MatchupDisplay> {
                                   style: Theme.of(context)
                                       .textTheme
                                       .headlineSmall),
-                              SizedBox(width: 8),
+                              SizedBox(width: 4),
                               Icon(activityIcons[activity]),
                             ],
                           ),
-                          subtitle: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(slogan!,
-                                style: Theme.of(context).textTheme.bodySmall),
+                          subtitle: AutoSizeText(
+                            slogan!,
+                            style: Theme.of(context).textTheme.bodySmall,
+                            maxLines: 2,
+                            minFontSize: 4, // Set a minimum font size
+                            overflow: TextOverflow.ellipsis,
                           ),
                           leading: CircleAvatar(
                             radius: 25,

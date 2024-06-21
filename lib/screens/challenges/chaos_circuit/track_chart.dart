@@ -1,12 +1,17 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:ride_tide_stride/theme.dart';
+import 'package:intl/intl.dart';
 
 class TrackChart extends StatelessWidget {
   final List<double> team1Distances;
   final List<double> team2Distances;
+  final List<String> dates;
 
-  TrackChart({required this.team1Distances, required this.team2Distances});
+  TrackChart({
+    required this.team1Distances,
+    required this.team2Distances,
+    required this.dates,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -28,8 +33,8 @@ class TrackChart extends StatelessWidget {
                 showTitles: true,
                 reservedSize: 40,
                 getTitlesWidget: (value, meta) {
-                  return Text('${value.toInt()} km',
-                      style: TextStyle(fontSize: 12, color: Colors.white));
+                  return Text('${value.toInt()}km',
+                      style: TextStyle(fontSize: 10, color: Colors.white));
                 },
               ),
             ),
@@ -44,8 +49,15 @@ class TrackChart extends StatelessWidget {
                 showTitles: true,
                 reservedSize: 30,
                 getTitlesWidget: (value, meta) {
-                  return Text('${value.toInt() + 1}',
-                      style: TextStyle(fontSize: 12, color: Colors.white));
+                  final index = value.toInt();
+                  if (index >= 0 && index < dates.length) {
+                    return Text(
+                      DateFormat('dd').format(DateTime.parse(dates[index])),
+                      style: TextStyle(fontSize: 12, color: Colors.white),
+                    );
+                  } else {
+                    return Container();
+                  }
                 },
               ),
             ),
@@ -65,7 +77,7 @@ class TrackChart extends StatelessWidget {
                   ],
                 ),
               ),
-              spots: _getSpots(cumulativeTeam1Distances),
+              spots: _getDateSpots(cumulativeTeam1Distances, dates),
               isCurved: true,
               color: Colors.greenAccent,
               barWidth: 4,
@@ -73,19 +85,19 @@ class TrackChart extends StatelessWidget {
               dotData: FlDotData(show: true),
             ),
             LineChartBarData(
-              // spots: _getSpots(cumulativeTeam2Distances),
-              spots: _getSpots(cumulativeTeam2Distances),
+              spots: _getDateSpots(cumulativeTeam2Distances, dates),
               isCurved: true,
               color: Colors.redAccent,
               barWidth: 4,
               isStrokeCapRound: true,
               dotData: FlDotData(show: true),
               belowBarData: BarAreaData(
-                  show: false,
-                  gradient: LinearGradient(colors: [
-                    Colors.redAccent.withOpacity(0.3),
-                    Colors.redAccent,
-                  ])),
+                show: false,
+                gradient: LinearGradient(colors: [
+                  Colors.redAccent.withOpacity(0.3),
+                  Colors.redAccent,
+                ]),
+              ),
             ),
           ],
         ),
@@ -104,8 +116,8 @@ class TrackChart extends StatelessWidget {
     return cumulativeDistances;
   }
 
-  // Helper method to convert distances to FlSpots
-  List<FlSpot> _getSpots(List<double> distances) {
+  // Helper method to convert distances to FlSpots with dates
+  List<FlSpot> _getDateSpots(List<double> distances, List<String> dates) {
     List<FlSpot> spots = [];
     for (int i = 0; i < distances.length; i++) {
       spots.add(FlSpot(i.toDouble(), distances[i]));
