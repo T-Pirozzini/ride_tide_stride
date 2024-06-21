@@ -20,11 +20,9 @@ workflows:
           pod install --repo-update
           pod update Firebase/CoreOnly
           cd ..
-      - name: Create .env file
+      - name: Create .env file in root directory
         script: |
-          echo "API_URL=${API_URL}" > .env
-          echo "API_KEY=${API_KEY}" >> .env
-          mv .env ios/.env # Move the .env file to the ios directory
+          echo "OPENAI_API_KEY=${OPENAI_API_KEY}" > .env
       - name: Build iOS
         script: flutter build ios --release --no-codesign
     artifacts:
@@ -33,4 +31,5 @@ workflows:
       email:
         recipients:
           - tpirozzini@gmail.com
+
 
