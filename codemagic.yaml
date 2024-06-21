@@ -3,11 +3,11 @@ workflows:
     name: iOS Workflow
     max_build_duration: 60
     environment:
-      groups:
-        - my-env-vars # Reference the group name you created
+      groups:        
+        - my-env-vars
       vars:
         FLUTTER_VERSION: stable
-        XCODE_VERSION: "14.0" # Specify the required Xcode version
+        XCODE_VERSION: "14.0"
     scripts:
       - name: Set up CocoaPods
         script: |
@@ -27,6 +27,13 @@ workflows:
         script: flutter build ios --release --no-codesign
     artifacts:
       - build/ios/ipa
+    publishing:
+      app_store_connect:
+        api_key_id: ${{ secrets.APP_STORE_CONNECT_KEY_IDENTIFIER }}
+        issuer_id: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        private_key: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        submit_to_testflight: true
+        submit_to_app_store: true
     publishing:
       email:
         recipients:
