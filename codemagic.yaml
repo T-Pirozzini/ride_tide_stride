@@ -29,12 +29,11 @@ workflows:
       - build/ios/ipa
     publishing:
       app_store_connect:
-        api_key_id: ${{ secrets.APP_STORE_CONNECT_KEY_IDENTIFIER }}
+        key_id: ${{ secrets.APP_STORE_CONNECT_KEY_IDENTIFIER }}
         issuer_id: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-        private_key: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        api_key: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
         submit_to_testflight: true
-        submit_to_app_store: true
-    publishing:
+        submit_to_app_store: true    
       email:
         recipients:
           - tpirozzini@gmail.com
