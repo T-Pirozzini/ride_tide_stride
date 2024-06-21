@@ -8,8 +8,9 @@ workflows:
       vars:
         FLUTTER_VERSION: stable
         XCODE_VERSION: "14.0"
-        PROVISIONING_PROFILE_NAME: codemagicProvision3
+        PROVISIONING_PROFILE_NAME: RideTideStride ios_app_store 1718997035
         BUNDLE_IDENTIFIER: com.example.rideTideStride
+        DEVELOPMENT_TEAM: B6XGXJ6JZL
     scripts:
       - name: Set up CocoaPods
         script: |
@@ -28,6 +29,7 @@ workflows:
       - name: Build iOS
         script: |
           flutter build ios --release
+          xcodebuild -exportArchive -archivePath build/ios/iphoneos/Runner.xcarchive -exportPath build/ios/iphoneos/Runner -exportOptionsPlist ios/Runner/ExportOptions.plist -allowProvisioningUpdates
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
@@ -40,5 +42,6 @@ workflows:
       email:
         recipients:
           - tpirozzini@gmail.com
+
 
 
