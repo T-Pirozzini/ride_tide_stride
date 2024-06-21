@@ -8,7 +8,7 @@ workflows:
       vars:
         FLUTTER_VERSION: stable
         XCODE_VERSION: "14.0"
-        PROVISIONING_PROFILE_NAME: RideTideStride ios_app_store 1718997035
+        PROVISIONING_PROFILE_NAME: codemagicProvision
         BUNDLE_IDENTIFIER: com.example.rideTideStride
         DEVELOPMENT_TEAM: B6XGXJ6JZL
     scripts:

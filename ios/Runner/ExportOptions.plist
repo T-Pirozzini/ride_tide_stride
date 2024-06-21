@@ -5,11 +5,11 @@
   <key>method</key>
   <string>app-store</string>
   <key>teamID</key>
-  <string>B6XGXJ6JZL</string> <!-- Replace with your actual team ID -->
+  <string>B6XGXJ6JZL</string>
   <key>provisioningProfiles</key>
   <dict>
-    <key>com.example.rideTideStride</key> <!-- Replace with your actual bundle identifier -->
-    <string>RideTideStride ios_app_store 1718997035</string> <!-- Replace with your actual provisioning profile name -->
+    <key>com.example.rideTideStride</key> 
+    <string>codemagicProvision</string> 
   </dict>
   <key>signingStyle</key>
   <string>automatic</string>
