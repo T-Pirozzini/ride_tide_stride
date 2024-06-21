@@ -8,6 +8,8 @@ workflows:
       vars:
         FLUTTER_VERSION: stable
         XCODE_VERSION: "14.0"
+        PROVISIONING_PROFILE_NAME: codemagicProvision3
+        BUNDLE_IDENTIFIER: com.example.rideTideStride
     scripts:
       - name: Set up CocoaPods
         script: |
@@ -35,11 +37,4 @@ workflows:
         submit_to_app_store: true
       email:
         recipients:
-          - tpirozzini@gmail.com
-    ios:
-      code_signing:
-        provisioning_profile_name: codemagicProvision3
-        bundle_identifier: com.example.rideTideStride
-
-
-
+          - tpirozzini@gmail.com  
