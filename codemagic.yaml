@@ -1,0 +1,27 @@
+workflows:
+  ios-workflow:
+    name: iOS Workflow
+    max_build_duration: 60
+    environment:
+      vars:
+        FLUTTER_VERSION: stable
+        XCODE_VERSION: "14.0" 
+    scripts:
+      - name: Set up CocoaPods
+        script: |
+          gem install cocoapods
+          pod repo update
+      - name: Install dependencies
+        script: |
+          flutter pub get
+          cd ios
+          pod install --repo-update
+          cd ..
+      - name: Build iOS
+        script: flutter build ios --release --no-codesign
+    artifacts:
+      - build/ios/ipa
+    publishing:
+      email:
+        recipients:
+          - tpirozzini@gmail.com
