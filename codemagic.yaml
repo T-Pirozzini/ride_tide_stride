@@ -16,10 +16,13 @@ workflows:
         script: |
           gem install cocoapods
           pod repo update
+      - name: Remove Podfile.lock
+        script: |
+          cd ios
+          rm Podfile.lock
       - name: Install dependencies
         script: |
           flutter pub get
-          rm ios/Podfile.lock
           cd ios
           pod install --repo-update
           pod update Firebase/Auth
@@ -45,6 +48,7 @@ workflows:
       email:
         recipients:
           - tpirozzini@gmail.com
+
 
 
 
