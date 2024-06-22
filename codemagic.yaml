@@ -19,13 +19,16 @@ workflows:
       - name: Install dependencies
         script: |
           flutter pub get
+          rm ios/Podfile.lock
           cd ios
           pod install --repo-update
-          pod update Firebase/CoreOnly
+          pod update Firebase/Auth
           cd ..
       - name: Create .env file in root directory
         script: |
           echo "OPENAI_API_KEY=${OPENAI_API_KEY}" > .env
+      - name: Set up code signing settings on Xcode project
+        script: xcode-project use-profiles
       - name: Build iOS
         script: |
           flutter build ios --release
@@ -42,6 +45,7 @@ workflows:
       email:
         recipients:
           - tpirozzini@gmail.com
+
 
 
 
