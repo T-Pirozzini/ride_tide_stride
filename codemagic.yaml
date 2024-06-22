@@ -8,7 +8,9 @@ workflows:
       vars:
         FLUTTER_VERSION: stable
         XCODE_VERSION: "14.0"        
-        BUNDLE_IDENTIFIER: com.example.rideTideStride        
+        BUNDLE_IDENTIFIER: com.example.rideTideStride
+        PROVISIONING_PROFILE_NAME: codemagicProvision
+        DEVELOPMENT_TEAM: B6XGXJ6JZL        
     scripts:
       - name: Set up CocoaPods
         script: |
