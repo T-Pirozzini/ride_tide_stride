@@ -20,6 +20,7 @@ workflows:
           cd ios
           pod install --repo-update
           pod update Firebase/Auth
+          pod update Firebase/CoreOnly
           cd ..
       - name: Create .env file in root directory
         script: |
