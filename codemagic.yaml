@@ -4,13 +4,7 @@ workflows:
     max_build_duration: 60
     environment:
       groups:        
-        - my-env-vars
-      vars:
-        FLUTTER_VERSION: stable
-        XCODE_VERSION: "14.0"        
-        BUNDLE_IDENTIFIER: com.example.rideTideStride
-        PROVISIONING_PROFILE_NAME: codemagicProvision
-        DEVELOPMENT_TEAM: B6XGXJ6JZL        
+        - my-env-vars             
     scripts:
       - name: Set up CocoaPods
         script: |
@@ -29,12 +23,7 @@ workflows:
           cd ..
       - name: Create .env file in root directory
         script: |
-          echo "OPENAI_API_KEY=${OPENAI_API_KEY}" > .env
-      - name: Set up code signing settings on Xcode project
-        script: xcode-project use-profiles
-      - name: Build iOS
-        script: |
-          flutter build ios --release          
+          echo "OPENAI_API_KEY=${OPENAI_API_KEY}" > .env               
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
