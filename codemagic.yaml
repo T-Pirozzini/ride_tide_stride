@@ -7,10 +7,8 @@ workflows:
         - my-env-vars
       vars:
         FLUTTER_VERSION: stable
-        XCODE_VERSION: "14.0"
-        PROVISIONING_PROFILE_NAME: codemagicProvision
-        BUNDLE_IDENTIFIER: com.example.rideTideStride
-        DEVELOPMENT_TEAM: B6XGXJ6JZL
+        XCODE_VERSION: "14.0"        
+        BUNDLE_IDENTIFIER: com.example.rideTideStride        
     scripts:
       - name: Set up CocoaPods
         script: |
@@ -34,8 +32,7 @@ workflows:
         script: xcode-project use-profiles
       - name: Build iOS
         script: |
-          flutter build ios --release
-          xcodebuild -exportArchive -archivePath build/ios/iphoneos/Runner.xcarchive -exportPath build/ios/iphoneos/Runner -exportOptionsPlist ios/Runner/ExportOptions.plist -allowProvisioningUpdates
+          flutter build ios --release          
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
