@@ -23,16 +23,7 @@ workflows:
           cd ..
       - name: Create .env file in root directory
         script: |
-          echo "OPENAI_API_KEY=${OPENAI_API_KEY}" > .env               
-    artifacts:
-      - build/ios/ipa/*.ipa
-    publishing:
-      app_store_connect:
-        key_id: ${{ secrets.APP_STORE_CONNECT_KEY_IDENTIFIER }}
-        issuer_id: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-        api_key: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
-        submit_to_testflight: true
-        submit_to_app_store: true    
+          echo "OPENAI_API_KEY=${OPENAI_API_KEY}" > .env              
       email:
         recipients:
           - tpirozzini@gmail.com
