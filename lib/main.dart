@@ -19,7 +19,7 @@ final navigatorKey = GlobalKey<NavigatorState>();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await FirebaseApi().initNotifications();
+  // await FirebaseApi().initNotifications();
   await dotenv.load(fileName: ".env");
   OpenAI.apiKey = dotenv.env['OPENAI_API_KEY'] ?? '';
   runApp(const ProviderScope(child: MyApp()));

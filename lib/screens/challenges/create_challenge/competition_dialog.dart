@@ -379,174 +379,168 @@ class _AddCompetitionDialogState extends State<AddCompetitionDialog> {
                 ),
                 Container(
                   height: 200,
-                  child: Expanded(
-                    child: usePageView
-                        ? Column(
-                            children: [
-                              Container(
-                                height: 150,
-                                child: PageView(
-                                  controller: _pageController,
-                                  onPageChanged: (int page) {
+                  child: usePageView
+                      ? Column(
+                          children: [
+                            Container(
+                              height: 150,
+                              child: PageView(
+                                controller: _pageController,
+                                onPageChanged: (int page) {
+                                  setState(() {
+                                    _currentPage = page;
+                                    _updateDifficultyButton(
+                                        _selectedChallenge, page);
+                                  });
+                                },
+                                children:
+                                    currentChallenge.previewPaths.map((path) {
+                                  return Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        getNameAndDistance(_currentPage),
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      SizedBox(height: 10),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Column(
+                                            children: [
+                                              Text(
+                                                'swipe',
+                                                style: TextStyle(
+                                                    fontSize: 8,
+                                                    fontStyle:
+                                                        FontStyle.italic),
+                                              ),
+                                              Icon(
+                                                  Icons
+                                                      .keyboard_double_arrow_left,
+                                                  size: 30,
+                                                  color:
+                                                      AppColors.primaryColor),
+                                            ],
+                                          ),
+                                          Container(
+                                            height: 100,
+                                            child: Image.asset(
+                                              path,
+                                              fit: BoxFit.fitHeight,
+                                              height: 150,
+                                            ),
+                                          ),
+                                          Column(
+                                            children: [
+                                              Text(
+                                                'swipe',
+                                                style: TextStyle(
+                                                    fontSize: 8,
+                                                    fontStyle:
+                                                        FontStyle.italic),
+                                              ),
+                                              Icon(
+                                                  Icons
+                                                      .keyboard_double_arrow_right,
+                                                  size: 30,
+                                                  color:
+                                                      AppColors.primaryColor),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                            _buildPageIndicators(
+                              currentChallenge.previewPaths.length,
+                              _currentPage,
+                            ),
+                            Text(_selectedDifficultyButton,
+                                style: Theme.of(context).textTheme.titleMedium),
+                          ],
+                        )
+                      : Column(
+                          children: [
+                            Expanded(
+                              child: Image.asset(
+                                currentChallenge.previewPaths.first,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                TextButton(
+                                  onPressed: () {
                                     setState(() {
-                                      _currentPage = page;
-                                      _updateDifficultyButton(
-                                          _selectedChallenge, page);
+                                      _selectedDifficultyButton = 'Intro';
                                     });
                                   },
-                                  children:
-                                      currentChallenge.previewPaths.map((path) {
-                                    return Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          getNameAndDistance(_currentPage),
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                        SizedBox(height: 10),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Column(
-                                              children: [
-                                                Text(
-                                                  'swipe',
-                                                  style: TextStyle(
-                                                      fontSize: 8,
-                                                      fontStyle:
-                                                          FontStyle.italic),
-                                                ),
-                                                Icon(
-                                                    Icons
-                                                        .keyboard_double_arrow_left,
-                                                    size: 30,
-                                                    color:
-                                                        AppColors.primaryColor),
-                                              ],
-                                            ),
-                                            Container(
-                                              height: 100,
-                                              child: Image.asset(
-                                                path,
-                                                fit: BoxFit.fitHeight,
-                                                height: 150,
-                                              ),
-                                            ),
-                                            Column(
-                                              children: [
-                                                Text(
-                                                  'swipe',
-                                                  style: TextStyle(
-                                                      fontSize: 8,
-                                                      fontStyle:
-                                                          FontStyle.italic),
-                                                ),
-                                                Icon(
-                                                    Icons
-                                                        .keyboard_double_arrow_right,
-                                                    size: 30,
-                                                    color:
-                                                        AppColors.primaryColor),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    );
-                                  }).toList(),
+                                  child: Text('Intro'),
+                                  style: _selectedDifficultyButton == 'Intro'
+                                      ? TextButton.styleFrom(
+                                          foregroundColor: Colors.white,
+                                          backgroundColor:
+                                              AppColors.primaryColor,
+                                        )
+                                      : null,
                                 ),
-                              ),
-                              _buildPageIndicators(
-                                currentChallenge.previewPaths.length,
-                                _currentPage,
-                              ),
-                              Text(_selectedDifficultyButton,
-                                  style:
-                                      Theme.of(context).textTheme.titleMedium),
-                            ],
-                          )
-                        : Column(
-                            children: [
-                              Expanded(
-                                child: Image.asset(
-                                  currentChallenge.previewPaths.first,
-                                  fit: BoxFit.cover,
+                                TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _selectedDifficultyButton = 'Advanced';
+                                    });
+                                  },
+                                  child: Text('Advanced'),
+                                  style: _selectedDifficultyButton == 'Advanced'
+                                      ? TextButton.styleFrom(
+                                          foregroundColor: Colors.white,
+                                          backgroundColor:
+                                              AppColors.primaryColor,
+                                        )
+                                      : null,
                                 ),
-                              ),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  TextButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        _selectedDifficultyButton = 'Intro';
-                                      });
+                                TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _selectedDifficultyButton = 'Expert';
+                                    });
+                                  },
+                                  child: Text('Expert'),
+                                  style: _selectedDifficultyButton == 'Expert'
+                                      ? TextButton.styleFrom(
+                                          foregroundColor: Colors.white,
+                                          backgroundColor:
+                                              AppColors.primaryColor,
+                                        )
+                                      : null,
+                                ),
+                              ],
+                            ),
+                            currentChallenge.name == "Snow2Surf"
+                                ? TextButton(
+                                    onPressed: () async {
+                                      await selectActivityLegs();
+                                      setState(() {});
                                     },
-                                    child: Text('Intro'),
-                                    style: _selectedDifficultyButton == 'Intro'
-                                        ? TextButton.styleFrom(
-                                            foregroundColor: Colors.white,
-                                            backgroundColor:
-                                                AppColors.primaryColor,
-                                          )
-                                        : null,
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        _selectedDifficultyButton = 'Advanced';
-                                      });
-                                    },
-                                    child: Text('Advanced'),
-                                    style:
-                                        _selectedDifficultyButton == 'Advanced'
-                                            ? TextButton.styleFrom(
-                                                foregroundColor: Colors.white,
-                                                backgroundColor:
-                                                    AppColors.primaryColor,
-                                              )
-                                            : null,
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        _selectedDifficultyButton = 'Expert';
-                                      });
-                                    },
-                                    child: Text('Expert'),
-                                    style: _selectedDifficultyButton == 'Expert'
-                                        ? TextButton.styleFrom(
-                                            foregroundColor: Colors.white,
-                                            backgroundColor:
-                                                AppColors.primaryColor,
-                                          )
-                                        : null,
-                                  ),
-                                ],
-                              ),
-                              currentChallenge.name == "Snow2Surf"
-                                  ? TextButton(
-                                      onPressed: () async {
-                                        await selectActivityLegs();
-                                        setState(() {});
-                                      },
-                                      style: TextButton.styleFrom(
-                                        foregroundColor: Colors.white,
-                                        backgroundColor:
-                                            AppColors.secondaryAccent,
-                                      ),
-                                      child: Text(
-                                          'Select Activity Legs (${_selectedActivities.values.where((v) => v).length} of 4)'),
-                                    )
-                                  : SizedBox.shrink(),
-                            ],
-                          ),
-                  ),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Colors.white,
+                                      backgroundColor:
+                                          AppColors.secondaryAccent,
+                                    ),
+                                    child: Text(
+                                        'Select Activity Legs (${_selectedActivities.values.where((v) => v).length} of 4)'),
+                                  )
+                                : SizedBox.shrink(),
+                          ],
+                        ),
                 ),
                 SizedBox(height: 5),
                 currentChallenge.name != "Chaos Circuit"
