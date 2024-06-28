@@ -47,7 +47,7 @@ class _CompGraphState extends State<CompGraph>
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(4.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [

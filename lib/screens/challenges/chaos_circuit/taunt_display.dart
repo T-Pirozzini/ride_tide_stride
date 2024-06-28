@@ -23,6 +23,7 @@ class TauntDisplay extends ConsumerStatefulWidget {
 class _TauntDisplayState extends ConsumerState<TauntDisplay> {
   String taunt = "Loading...";
   List opponentNames = [];
+  List participantNames = [];
 
   @override
   void initState() {
@@ -51,6 +52,9 @@ class _TauntDisplayState extends ConsumerState<TauntDisplay> {
 
       // Now you can use Future.wait on a List<Future<String>>
       List<String> usernames = await Future.wait(usernameFutures);
+      usernames.shuffle();
+      String selectedUsername = usernames.first;
+
       String opponent =
           opponentNames.isNotEmpty ? opponentNames.first : "Opponent";
       String opponentTeamName = opponents[widget.challengeDifficulty]
@@ -70,7 +74,7 @@ class _TauntDisplayState extends ConsumerState<TauntDisplay> {
                   .user, // Use the enum value for user role
               content: [
                 OpenAIChatCompletionChoiceMessageContentItemModel.text(
-                    "Generate a creative taunt for an exercise challenge. You and your 3 teammates are against these humans: ${usernames.join(", ")}. Call out only one of the specific users by name in your taunt. List your name followed by a colon before your taunt. Taunt in the style of your team name: $opponentTeamName and true to the character of: $opponent.")
+                    "Generate a creative and sometimes rude or arrogant taunt for an exercise challenge. You and your 3 teammates are against these humans: ${usernames.join(", ")}. Call out ${selectedUsername} by name in your taunt. Taunt in the style of your team name: $opponentTeamName and true to the character of: $opponent. Your taunt should begin with your name followed by a colon. Keep the taunt under 200 characters.")
               ]),
         ],
       );
@@ -102,7 +106,7 @@ class _TauntDisplayState extends ConsumerState<TauntDisplay> {
       backgroundColor: Colors.black,
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(2.0),
           child: TypewriterText(
             taunt,
             style: GoogleFonts.electrolize(
@@ -179,9 +183,11 @@ class _TypewriterTextState extends State<TypewriterText> {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      _displayedText,
-      style: widget.style,
+    return SingleChildScrollView(
+      child: Text(
+        _displayedText,
+        style: widget.style,
+      ),
     );
   }
 }

@@ -505,7 +505,7 @@ class _StravaFlutterPageState extends State<StravaFlutterPage> {
                                           'Connecting to Strava is Optional',
                                           style: Theme.of(context)
                                               .textTheme
-                                              .headlineMedium),
+                                              .headlineSmall),
                                     ),
                                   ],
                                 ),

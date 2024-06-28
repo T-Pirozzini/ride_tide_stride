@@ -79,7 +79,7 @@ final opponentsProvider = Provider<Map<String, Opponent>>((ref) {
         "Canoeing": "0:45:00",
       },
       "teamName": "TMNT",
-      "distanceMax": 30.0,
+      "distanceMax": 20.0,
       "slogan": {
         "Mike": "Cowabunga, dudes! Too fast for you!",
         "Leo": "Disciplined, determined, and destined to win!",

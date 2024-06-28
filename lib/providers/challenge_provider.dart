@@ -18,5 +18,7 @@ final challengeDetailsProvider =
         List<dynamic>.from(challengeData['participantsEmails'] ?? []),
     category: challengeData['category'],
     categoryActivity: challengeData['categoryActivity'],
+    team1TotalDistance: challengeData['team1TotalDistance'],
+    team2TotalDistance: challengeData['team2TotalDistance'],
   );
 });

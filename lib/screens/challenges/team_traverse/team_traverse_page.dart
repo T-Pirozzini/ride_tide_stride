@@ -607,7 +607,7 @@ class _TeamTraversePageState extends State<TeamTraversePage> {
                     Card(
                       elevation: 2,
                       child: Text(
-                        'Goal: ${widget.mapDistance}km',
+                        'Goal: ${widget.mapDistance}',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,

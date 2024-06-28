@@ -566,7 +566,7 @@ class _MtnScramblePageState extends State<MtnScramblePage> {
                                 mapElevation: mapElevation,
                                 totalDistanceKM: 0.0,
                                 mapDistance: 0.0,
-                                elevationOrDistance: "Elevation",
+                                elevationOrDistance: "Elevation",                                
                               )
                             : SizedBox(),
                       ],
