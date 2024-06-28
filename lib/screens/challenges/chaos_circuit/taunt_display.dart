@@ -183,9 +183,11 @@ class _TypewriterTextState extends State<TypewriterText> {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      _displayedText,
-      style: widget.style,
+    return SingleChildScrollView(
+      child: Text(
+        _displayedText,
+        style: widget.style,
+      ),
     );
   }
 }
