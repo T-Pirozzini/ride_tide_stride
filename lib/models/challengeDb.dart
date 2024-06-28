@@ -9,6 +9,8 @@ class ChallengeDb {
   final List<dynamic> participantsEmails;
   final String category;
   final String categoryActivity;
+  final double team1TotalDistance;
+  final double team2TotalDistance;
 
   ChallengeDb({
     required this.name,
@@ -19,6 +21,8 @@ class ChallengeDb {
     required this.participantsEmails,
     required this.category,
     required this.categoryActivity,
+    required this.team1TotalDistance,
+    required this.team2TotalDistance,
   });
 
   Map<String, dynamic> toMap() {
@@ -31,6 +35,8 @@ class ChallengeDb {
       'participantsEmails': participantsEmails,
       'category': category,
       'categoryActivity': categoryActivity,
+      'team1TotalDistance': team1TotalDistance,
+      'team2TotalDistance': team2TotalDistance,
     };
   }
 }

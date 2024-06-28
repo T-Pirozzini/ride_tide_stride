@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:ride_tide_stride/helpers/helper_functions.dart';
 import 'package:ride_tide_stride/models/activity.dart';
@@ -77,21 +78,22 @@ class _TrackComponentState extends ConsumerState<TrackComponent> {
     final challengeStartDate = widget.timestamp.toDate();
     final challengeEndDate = challengeStartDate.add(Duration(days: 30));
 
+    await challengeDoc.update({
+      'team1TotalDistance': team1TotalDistance,
+      'team2TotalDistance': team2TotalDistance,
+    });
+
     if (now.isAfter(challengeEndDate)) {
       if (team1TotalDistance > team2TotalDistance) {
         await challengeDoc.update({
           'active': false,
           'success': true,
-          'team1TotalDistance': team1TotalDistance,
-          'team2TotalDistance': team2TotalDistance,
           'endDate': Timestamp.fromDate(now),
         });
       } else {
         await challengeDoc.update({
           'active': false,
           'success': false,
-          'team1TotalDistance': team1TotalDistance,
-          'team2TotalDistance': team2TotalDistance,
           'endDate': Timestamp.fromDate(now),
         });
       }
@@ -304,6 +306,21 @@ class _TrackComponentState extends ConsumerState<TrackComponent> {
       backgroundColor: AppColors.primaryAccent,
       body: Column(
         children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Text(
+                'Recent Activities: Scroll to view more',
+                style: GoogleFonts.pressStart2p(
+                  textStyle: TextStyle(
+                    color: Colors.white,
+                    fontSize: 8,
+                  ),
+                ),
+              ),
+              Icon(Icons.keyboard_double_arrow_right, color: Colors.white)
+            ],
+          ),
           Container(
             height: 70,
             child: ProgressDisplay(activities: _activities),

@@ -74,7 +74,7 @@ class _TauntDisplayState extends ConsumerState<TauntDisplay> {
                   .user, // Use the enum value for user role
               content: [
                 OpenAIChatCompletionChoiceMessageContentItemModel.text(
-                    "Generate a creative and sometimes rude or arrogant taunt for an exercise challenge. You and your 3 teammates are against these humans: ${usernames.join(", ")}. Call out ${selectedUsername} by name in your taunt. Taunt in the style of your team name: $opponentTeamName and true to the character of: $opponent. Your taunt should begin with your name followed by a colon.")
+                    "Generate a creative and sometimes rude or arrogant taunt for an exercise challenge. You and your 3 teammates are against these humans: ${usernames.join(", ")}. Call out ${selectedUsername} by name in your taunt. Taunt in the style of your team name: $opponentTeamName and true to the character of: $opponent. Your taunt should begin with your name followed by a colon. Keep the taunt under 200 characters.")
               ]),
         ],
       );
@@ -106,7 +106,7 @@ class _TauntDisplayState extends ConsumerState<TauntDisplay> {
       backgroundColor: Colors.black,
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(2.0),
           child: TypewriterText(
             taunt,
             style: GoogleFonts.electrolize(

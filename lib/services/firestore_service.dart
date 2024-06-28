@@ -110,8 +110,9 @@ class FirestoreService extends ChangeNotifier {
   }
 
   // Fetch all activities for the current user within a specific date range
-  Future<List<Activity>> fetchAllUserActivitiesWithinSpecificDateRangeAndActivityTypes(
-      String email, DateTime startDate, List<String> activityTypes) async {
+  Future<List<Activity>>
+      fetchAllUserActivitiesWithinSpecificDateRangeAndActivityTypes(
+          String email, DateTime startDate, List<String> activityTypes) async {
     if (email.isEmpty) {
       throw Exception('Email is required to fetch activities.');
     }
@@ -131,7 +132,6 @@ class FirestoreService extends ChangeNotifier {
 
     return documents.map((doc) => Activity.fromDocument(doc)).toList();
   }
-  
 
 // fetch all user current month activities
   Future<List<Activity>> fetchAllUserCurrentMonthActivities(fullName) async {
@@ -197,6 +197,8 @@ class FirestoreService extends ChangeNotifier {
       createdBy: result['createdBy'] ?? '',
       category: result['category'] ?? '',
       categoryActivity: result['categoryActivity'] ?? '',
+      team1TotalDistance: result['team1TotalDistance'] ?? 0.0,
+      team2TotalDistance: result['team2TotalDistance'] ?? 0.0,
     );
     print("Challenge object: ${challenge.toMap()}");
 

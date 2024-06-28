@@ -159,6 +159,8 @@ class _ChaosCircuitState extends ConsumerState<ChaosCircuit> {
         final challengeTimestamp = challenge.timestamp;
         final challengeCategory = challenge.category;
         final challengeCategoryActivity = challenge.categoryActivity;
+        final team1TotalDistance = challenge.team1TotalDistance;
+        final team2TotalDistance = challenge.team2TotalDistance;
         final endTime = challengeTimestamp
             .toDate()
             .add(Duration(days: 30))
@@ -230,6 +232,35 @@ class _ChaosCircuitState extends ConsumerState<ChaosCircuit> {
             child: Column(
               children: [
                 CountdownTimerWidget(endTime: endTime, onTimerEnd: () {}),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0, vertical: 0.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        team1TotalDistance.toStringAsFixed(2) + ' km',
+                        style: GoogleFonts.blackOpsOne(
+                          textStyle: TextStyle(
+                            color: Colors.greenAccent[200],
+                            fontSize: 18,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        team2TotalDistance.toStringAsFixed(2) + ' km',
+                        style: GoogleFonts.blackOpsOne(
+                          textStyle: TextStyle(
+                            color: Colors.redAccent[200],
+                            fontSize: 18,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 Container(
                   color: AppColors.primaryAccent,
                   height: 300,

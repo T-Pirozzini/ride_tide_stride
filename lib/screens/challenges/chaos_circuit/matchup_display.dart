@@ -52,16 +52,22 @@ class _MatchupDisplayState extends ConsumerState<MatchupDisplay> {
                               vertical: 4.0, horizontal: 0.0),
                           decoration: BoxDecoration(
                             color: Colors.grey[200],
-                            border: Border.all(color: Colors.greenAccent),
+                            border:
+                                Border.all(color: Colors.greenAccent, width: 2),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: ListTile(
                             dense: true,
-                            title: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(user.username,
-                                  style: TextStyle(
-                                      fontSize: 12, color: Colors.black)),
+                            contentPadding:
+                                EdgeInsets.symmetric(horizontal: 4.0),
+                            title: Container(
+                              alignment: Alignment.centerLeft,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(user.username,
+                                    style: TextStyle(
+                                        fontSize: 12, color: Colors.black)),
+                              ),
                             ),
                             leading: CircleAvatar(
                               backgroundColor: hexToColor(user.color),
@@ -91,6 +97,8 @@ class _MatchupDisplayState extends ConsumerState<MatchupDisplay> {
                           ),
                           child: ListTile(
                             dense: true,
+                            contentPadding:
+                                EdgeInsets.symmetric(horizontal: 4.0),
                             title: Text('Open',
                                 style:
                                     Theme.of(context).textTheme.headlineSmall),
@@ -131,11 +139,12 @@ class _MatchupDisplayState extends ConsumerState<MatchupDisplay> {
                         margin: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
                           color: Colors.grey[200],
-                          border: Border.all(color: Colors.redAccent),
+                          border: Border.all(color: Colors.redAccent, width: 2),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: ListTile(
                           dense: true,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 4.0),
                           title: Row(
                             children: [
                               Text(name,
