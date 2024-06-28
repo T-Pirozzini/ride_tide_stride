@@ -8,14 +8,15 @@ class CoopGraph extends StatelessWidget {
   final double mapDistance;
   final String elevationOrDistance;
 
-  const CoopGraph(
-      {super.key,
-      required this.progress,
-      required this.totalElevationM,
-      required this.mapElevation,
-      required this.totalDistanceKM,
-      required this.mapDistance,
-      required this.elevationOrDistance});
+  const CoopGraph({
+    super.key,
+    required this.progress,
+    required this.totalElevationM,
+    required this.mapElevation,
+    required this.totalDistanceKM,
+    required this.mapDistance,
+    required this.elevationOrDistance,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -37,10 +38,15 @@ class CoopGraph extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              Text(
-                "${totalElevationM.toStringAsFixed(2)} m / $mapElevation m",
-                textAlign: TextAlign.center,
-              ),
+              elevationOrDistance == "Elevation"
+                  ? Text(
+                      "${totalElevationM.toStringAsFixed(2)} m / $mapElevation m",
+                      textAlign: TextAlign.center,
+                    )
+                  : Text(
+                      "${totalDistanceKM.toStringAsFixed(2)} m / $mapDistance m",
+                      textAlign: TextAlign.center,
+                    ),
               Text(
                 "${(progress * 100).toStringAsFixed(2)}% Completed",
                 textAlign: TextAlign.center,
